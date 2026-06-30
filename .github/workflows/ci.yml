@@ -22,7 +22,7 @@ jobs:
     permissions:
       contents: read
     uses: >-
-      modeled-information-format/.github/.github/workflows/pin-check.yml@789b6baf9a1451f406ff507aabb5c5be8a9d48a4
+      modeled-information-format/.github/.github/workflows/pin-check.yml@5c856f8118976bfd3bb64a8911f69dc9b00b4cad
 
   # Workflow YAML lint via the central reusable-actionlint (verified, pinned
   # actionlint download lives in the reusable).
