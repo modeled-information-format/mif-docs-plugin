@@ -10,7 +10,7 @@ tags:
   - mif-docs
   - skill
   - adr
-  - madr
+  - structured-madr
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-30T00:00:00Z'
@@ -32,17 +32,24 @@ provenance:
       '@type': prov:Entity
     - '@id': urn:mif:skill:adr
       '@type': prov:Entity
+    - '@id': urn:mif:adr-0001-align-adr-to-smadr
+      '@type': prov:Entity
 citations:
   - '@type': Citation
-    citationType: specification
+    citationType: repository
     citationRole: methodology
-    title: MADR — Markdown Architectural Decision Records (4.0.0)
+    title: 'Structured MADR — modeled-information-format/structured-madr, the Action this genre validates against'
+    url: https://github.com/modeled-information-format/structured-madr
+  - '@type': Citation
+    citationType: specification
+    citationRole: background
+    title: 'MADR — Markdown Architectural Decision Records, the base format Structured MADR builds on'
     url: https://adr.github.io/madr/
     accessed: '2026-06-30'
   - '@type': Citation
-    citationType: article
+    citationType: documentation
     citationRole: background
-    title: Architectural Decision Records — the ADR community and organization
+    title: 'Architectural Decision Records — the ADR community and organization'
     url: https://adr.github.io/
     accessed: '2026-06-30'
   - '@type': Citation
@@ -53,6 +60,8 @@ citations:
 relationships:
   - type: relates-to
     target: urn:mif:reference-skills-by-purpose
+  - type: relates-to
+    target: urn:mif:adr-0001-align-adr-to-smadr
   - type: relates-to
     target: urn:mif:reference-skill-rust-rfc
   - type: relates-to
@@ -75,32 +84,34 @@ extensions:
 # Skill reference: `adr`
 
 The `adr` skill authors one document genre: an **Architectural Decision Record**
-in the MADR (Markdown Architectural Decision Records) format — a single,
-consequential, hard-to-reverse decision captured with its drivers, the options
-weighed, the chosen outcome, and the consequences accepted. This reference
-describes what that document type is, how the skill produces one, when it earns
-its place, and the provenance and sources behind it.
+in the org's **Structured MADR** format — a single, consequential, hard-to-reverse
+decision captured with its drivers, the options weighed, the chosen outcome, and
+the consequences accepted. This reference describes what that document type is, how
+the skill produces one, when it earns its place, and the provenance and sources
+behind it.
 
 | Property | Value |
 | --- | --- |
-| Authors | An Architectural Decision Record in MADR format |
+| Authors | An Architectural Decision Record in Structured MADR format |
 | Purpose group | Decisions & proposals |
-| MIF `conceptType` | `semantic` |
+| MIF `conceptType` | `semantic` (genre `type: adr`) |
 | Target MIF level | 3 |
-| Primary source | [MADR 4.0.0](https://adr.github.io/madr/) |
+| Primary source | [structured-madr](https://github.com/modeled-information-format/structured-madr) |
 
 ## What this document type is
 
 An ADR records one architecturally significant decision: a choice that is costly
-to change, shapes structure or dependencies, or constrains future work. The skill
-authors it natively in the **MADR open standard**, the lightweight Markdown
-template maintained by the ADR community. A MADR document names the decision in
-its title, then states the **context and problem statement**, the **decision
-drivers** (the forces that matter), the **considered options**, the **decision
-outcome** with its justification, and the **consequences** — both the good and the
-bad that follow from the choice. Richer MADR variants add per-option pros and cons
-and confirmation criteria, and a status that moves an accepted decision through its
-lifecycle (proposed, accepted, deprecated, superseded).
+to change, shapes structure or dependencies, or constrains future work. The genre
+is the plugin's flagship, and per the suite's own accepted decision record —
+[ADR-0001](../../../adr/0001-align-adr-genre-to-structured-madr/) — it is aligned
+**fully** to **Structured MADR** (`structured-madr`), the
+`modeled-information-format` org's canonical ADR format, built on the open
+[MADR](https://adr.github.io/madr/) template. A Structured MADR document names the
+decision in its title, then states the **status**, the **context and problem
+statement**, the **decision drivers** (the forces that matter), the **considered
+options** with their risks, the **decision** with its justification, and the
+**consequences** — both the good and the bad. A lifecycle status moves an accepted
+decision through proposed, accepted, deprecated, and superseded.
 
 An ADR is therefore *not* a how-to guide (use [diataxis-how-to](../diataxis-how-to/)
 for task steps) and *not* a requirements document (use [prd](../prd/) or
@@ -112,33 +123,35 @@ future readers understand *why*.
 
 ## How the skill produces one
 
-`adr` is a genre skill: it carries the MADR pattern as durable instructions plus
-exemplars, and writes the artifact over a MIF floor so the result is at once a
-human-readable record and a machine-conformant unit.
+`adr` is a genre skill: it carries the Structured MADR pattern as durable
+instructions plus exemplars. Every ADR it writes carries `type: adr` and
+`conceptType: semantic` and conforms to the org's Action-validated format.
 
-- **Pattern, made operational.** The skill encodes the MADR sections — context,
-  drivers, options-with-risk, outcome, consequences, audit trail — and refuses
-  anti-triggered work, redirecting how-to and requirements requests to the right
-  sibling.
-- **Exemplars set the bar.** Like every genre in the suite it ships `good-l1.md`
-  (the MIF Level-1 floor), `good.md` (the Level-3 target), `bad.md` (a
-  counter-example), and `evals/evals.json`. The `check-exemplars` gate proves
-  `good-l1.md` validates at L1 and `good.md` at L3, so the pattern the skill teaches
-  is itself continuously verified.
-- **MIF projection.** The ADR is authored with MIF frontmatter (via the shared
-  `mif-frontmatter` substrate) and a `conceptType` of `semantic`, reflecting that an
-  ADR is declarative knowledge about a decision rather than a sequence of steps.
-  `mif-validate` proves the Markdown ↔ JSON-LD round-trip is lossless before the
-  document is considered done.
+- **Pattern, made operational.** The skill encodes the required Structured MADR
+  frontmatter (`title`, `description`, `type: adr`, `category`, `status`,
+  `created`, `updated`, `author`, `project`) and the ordered sections — Status,
+  Context, Decision Drivers, Considered Options, Decision, Consequences — and
+  refuses anti-triggered work, redirecting how-to and requirements requests.
+- **Validated by the canonical Action, not the suite.** The genre reuses the
+  `modeled-information-format/structured-madr` GitHub Action as the authority,
+  which validates an ADR in **both** of its modes: `smadr` (the structural
+  frontmatter-and-section schema) and `mif` (MIF conformance, levels 1–3). It does
+  not re-implement ADR validation.
+- **The one exempt genre.** Because ADRs validate through that Action, the `adr`
+  genre is the single genre **exempt** from the suite's `mif-validate` (which keys
+  on `conceptType`); the fail-closed PostToolUse guard likewise skips `type: adr`
+  documents. CI runs the Action over every shipped ADR via the `adr-smadr` job in
+  both modes. This deliberate two-path split keeps the plugin's ADRs
+  indistinguishable, to the validator, from any other ADR in the org.
 
 ## When it is beneficial
 
 Reach for `adr` when a team makes or captures a decision that is **consequential
 and hard to reverse** — a datastore choice, a service boundary, a protocol, a
 build-vs-buy call — and needs the rationale on record for the engineers who arrive
-later and ask "why is it this way?" A decision log of MADR records turns tacit
-architectural memory into durable, searchable knowledge and prevents the same
-debate from recurring.
+later and ask "why is it this way?" A decision log of Structured MADR records turns
+tacit architectural memory into durable, searchable knowledge and prevents the same
+debate from recurring, while staying conformant with the whole org's tooling.
 
 Do **not** write an ADR for a small or easily reversed change (a plain issue
 suffices), for end-user task instructions (a how-to), or for requirements that
@@ -149,23 +162,30 @@ better instrument; the ADR is the artifact you write once the choice is settled.
 ## Example
 
 An ADR titled *"Use event-driven messaging between order and inventory services"*
-opens with the context — synchronous calls were coupling deploys and causing
-cascading timeouts — lists decision drivers (decoupling, resilience, operational
-familiarity), weighs the options (direct HTTP, shared database, a message broker)
-with the risks of each, then records the outcome: a broker, accepted because it
-decouples deploys at the cost of new operational surface. The consequences section
-states the tradeoff plainly, and the status marks it accepted with a date.
+opens with the status and the context — synchronous calls were coupling deploys and
+causing cascading timeouts — lists decision drivers (decoupling, resilience,
+operational familiarity), weighs the options (direct HTTP, shared database, a
+message broker) with the risks of each, then records the decision: a broker,
+accepted because it decouples deploys at the cost of new operational surface. The
+consequences section states the tradeoff plainly. The suite's own
+[ADR-0001](../../../adr/0001-align-adr-genre-to-structured-madr/) is itself a
+worked example of the genre.
 
 ## Provenance & citations
 
-- **Genre source — MADR:** the canonical Markdown Architectural Decision Records
-  template, <https://adr.github.io/madr/>, maintained within the broader ADR
-  community and organization, <https://adr.github.io/>.
+- **Genre format — Structured MADR:** the org's canonical, Action-validated ADR
+  format, <https://github.com/modeled-information-format/structured-madr>, built on
+  the open MADR template, <https://adr.github.io/madr/>, maintained within the ADR
+  community, <https://adr.github.io/>.
+- **Governing decision:** the alignment is recorded in the suite's accepted
+  [ADR-0001](../../../adr/0001-align-adr-genre-to-structured-madr/), which reversed
+  an earlier decouple direction.
 - **Skill provenance:** authored by the `adr` skill in the mif-docs plugin,
-  <https://github.com/modeled-information-format/mif-docs-plugin>; the skill's
-  exemplars and `evals/` define and verify the pattern.
-- **MIF conformance:** the document projects to canonical JSON-LD under the MIF
-  specification, <https://mif-spec.dev>, and is proven lossless by `mif-validate`.
+  <https://github.com/modeled-information-format/mif-docs-plugin>; its exemplars and
+  `evals/` define the pattern.
+- **Validation:** ADRs are validated by the `structured-madr` Action in `smadr` and
+  `mif` modes (the `adr-smadr` CI job); the genre is exempt from the suite's
+  `mif-validate` per ADR-0001.
 - **Index:** this skill is one entry in the [skills by purpose](../../skills-by-purpose/)
   catalog; its sibling decisions-and-proposals genres are
   [rust-rfc](../rust-rfc/) and [python-pep](../python-pep/).
