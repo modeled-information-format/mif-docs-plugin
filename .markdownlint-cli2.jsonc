@@ -4,7 +4,9 @@
     "default": true,
     "MD013": { "line_length": 100, "code_blocks": false, "tables": false }, // enforce a deliberate prose width; code/tables legitimately exceed
     "MD024": { "siblings_only": true }, // duplicate headings ok under different parents (e.g. per-option "### Positive")
-    "MD025": { "front_matter_title": "" } // frontmatter `title:` is metadata, not a second document H1
+    "MD025": { "front_matter_title": "" }, // frontmatter `title:` is metadata, not a second document H1
+    "MD033": false, // inline HTML — required only for the centered README social-preview hero (no markdown equivalent)
+    "MD041": false // first-line-heading — the README leads with the hero image lockup, mirroring the org's other repos
   },
   "globs": ["**/*.md"],
   "ignores": ["node_modules/**", "dist/**", "schema/.cache/**"]

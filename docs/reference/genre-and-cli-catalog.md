@@ -1,0 +1,159 @@
+---
+id: reference-genre-and-cli
+type: semantic
+created: '2026-06-30T10:00:00Z'
+modified: '2026-06-30T10:00:00Z'
+namespace: reference/catalog
+title: mif-docs genre and CLI catalog
+tags:
+  - reference
+  - mif-docs
+  - catalog
+temporal:
+  '@type': TemporalMetadata
+  validFrom: '2026-06-30T00:00:00Z'
+  recordedAt: '2026-06-30T10:00:00Z'
+  ttl: P1Y
+provenance:
+  '@type': Provenance
+  sourceType: agent_inferred
+  trustLevel: high_confidence
+  agent: anthropic/claude-code
+  wasAttributedTo:
+    '@id': https://github.com/modeled-information-format
+    '@type': prov:Agent
+  wasGeneratedBy:
+    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@type': prov:Activity
+  wasDerivedFrom:
+    - '@id': https://github.com/modeled-information-format/mif-docs-plugin
+      '@type': prov:Entity
+    - '@id': urn:mif:skill-set:mif-docs-genres
+      '@type': prov:Entity
+citations:
+  - '@type': Citation
+    citationType: tool
+    citationRole: source
+    title: mif-docs — MIF documentation plugin for Claude Code
+    url: https://github.com/modeled-information-format/mif-docs-plugin
+  - '@type': Citation
+    citationType: specification
+    citationRole: methodology
+    title: Diátaxis — Reference
+    url: https://diataxis.fr/reference/
+    accessed: '2026-06-30'
+relationships:
+  - type: relates-to
+    target: urn:mif:tutorial-getting-started
+  - type: relates-to
+    target: urn:mif:how-to-validate-and-author
+  - type: relates-to
+    target: urn:mif:explanation-one-artifact-two-readers
+ontology:
+  '@type': OntologyReference
+  id: mif-docs
+  version: 1.0.0
+  uri: https://mif-spec.dev/ontologies/mif-docs
+entity:
+  name: mif-docs genre and CLI catalog
+  entity_type: reference-document
+extensions:
+  x-genre-count: 19
+  x-substrate-count: 3
+  x-recipe-count: 4
+---
+
+# mif-docs genre and CLI catalog
+
+An exhaustive lookup for the **mif-docs v0.1.0** plugin: every skill it ships,
+every doc-set recipe, and every script in `scripts/` with its arguments and exit
+behavior. Consult an entry; do not read this end to end.
+
+## Genre skills (19)
+
+Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, and
+`evals/evals.json`.
+
+| Skill | Artifact it authors | MIF conceptType | Target level |
+| --- | --- | --- | --- |
+| `diataxis-tutorial` | Learning-oriented hands-on lesson | `procedural` | 2 |
+| `diataxis-how-to` | Task-oriented recipe | `procedural` | 2 |
+| `diataxis-reference` | Information-oriented lookup of one thing | `semantic` | 3 |
+| `diataxis-explanation` | Understanding-oriented discussion | `semantic` | 3 |
+| `arc42-arch-doc` | arc42 12-section architecture document | `semantic` | 3 |
+| `c4-model-diagram` | C4 model document (Context/Container/Component/Code) | `semantic` | 3 |
+| `google-design-doc` | Google-style engineering design doc | `semantic` | 3 |
+| `adr` | Architectural Decision Record (Structured MADR) | `semantic` | 3 |
+| `rust-rfc` | Rust-style RFC / enhancement proposal | `semantic` | 3 |
+| `python-pep` | Python Enhancement Proposal | `semantic` | 3 |
+| `changelog` | Keep a Changelog 1.x version history | `semantic` | 2 |
+| `sre-runbook` | Tactical step-by-step incident runbook | `procedural` | 2 |
+| `playbook` | Strategic multi-incident operations playbook | `procedural` | 3 |
+| `prd` | Product Requirements Document | `semantic` | 3 |
+| `feature-spec` | Lightweight AI-ready feature specification | `semantic` | 2 |
+| `ai-architecture-doc` | Composite AI-spec architecture document | `semantic` | 3 |
+| `kiro-requirements` | Kiro `requirements.md` (user stories + EARS) | `semantic` | 3 |
+| `kiro-design` | Kiro `design.md` (technical design) | `semantic` | 3 |
+| `kiro-tasks` | Kiro `tasks.md` (checkbox implementation plan) | `procedural` | 2 |
+
+## Substrate skills (3) and the planner
+
+These do not author a finished genre artifact; they supply or check the MIF layer
+that every genre rides on, plus the multi-document engine.
+
+| Skill | Role |
+| --- | --- |
+| `mif-frontmatter` | Author MIF Level 1–3 frontmatter for any document, climbing L1→L3 as detail allows. |
+| `ears-acceptance-criteria` | Turn a requirement or driver into an EARS-notation acceptance criterion. |
+| `mif-validate` | Deterministically prove a document is MIF-conformant and convert between forms. |
+| `doc-set-planner` | Plan a subject into a coordinated SET of documents, fan out to genres, reconcile the relationship graph. |
+
+## Doc-set recipes (4)
+
+`doc-set-planner` decomposes a broad subject using one of four recipes. Each
+recipe names its member genres and the cross-document relationship graph that
+`planner-check` verifies for link-completeness.
+
+| Recipe | Decomposes into |
+| --- | --- |
+| `diataxis` | tutorial + how-to + reference + explanation |
+| `ai-spec` | AI-ready specification set (feature-spec + ai-architecture-doc + EARS criteria) |
+| `kiro` | Kiro three-document set: requirements + design + tasks |
+| `architecture` | Architecture set: arc42 + C4 + ADRs |
+
+## Scripts (`scripts/`)
+
+All scripts run on Node.js 20+ and are invoked as `node scripts/<name>.mjs`.
+Every script is fail-closed: any failure exits non-zero.
+
+| Script | Invocation | Exit behavior |
+| --- | --- | --- |
+| `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file). |
+| `mif-convert.mjs` | `mif-convert <emit-jsonld\|emit-markdown\|roundtrip> <file> [--no-check]` | `0` success; `1` schema check / non-lossless round-trip; `2` usage error. |
+| `hydrate-schema.mjs` | `hydrate-schema [latest\|<version>]` | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
+| `hydrate-ontology.mjs` | `hydrate-ontology` | `0` ontology cached from published URI / ontologies repo / local sibling checkout; `1` unresolved. |
+| `validate-ontology.mjs` | `validate-ontology` | `0` ontology valid and all `entity_type` / relationship types resolve; `1` not hydrated or dangling reference. |
+| `validate-plugin.mjs` | `validate-plugin` | `0` `plugin.json`, `marketplace.json`, and every `SKILL.md` frontmatter valid; `1` any structural violation. |
+| `check-exemplars.mjs` | `check-exemplars` | `0` every genre's `good-l1.md` validates at L1 and `good.md` at its target level; `1` otherwise. |
+| `planner-check.mjs` | `planner-check [<recipe>]` | `0` recipe(s) decompose to real member skills and the cross-link graph is complete; `1` otherwise. |
+
+### Argument notes
+
+- `mif-validate --level` defaults to `1`. The level overlay layers required
+  fields on top of the canonical schema: L2 requires `namespace`, `modified`,
+  `temporal`; L3 additionally requires `provenance` and `temporal.validFrom`.
+- `mif-convert emit-markdown` schema-checks the JSON-LD input before projecting,
+  unless `--no-check` is given. `roundtrip` reports whether md↔JSON-LD is lossless.
+- `hydrate-schema` resolves `latest` by default and records the resolved version
+  in `schema/VENDOR.lock`; offline, `mif-validate` falls back to the last
+  hydrated copy and warns.
+- `planner-check` with no argument checks every recipe under
+  `skills/doc-set-planner/recipes/`.
+
+## See also
+
+The getting-started tutorial walks through installing and validating a first
+document; the how-to gives the validate/author/convert recipe; the explanation
+covers why each document is both a human artifact and a machine unit. All three
+are linked from this reference's `relationships[]`, which keeps rationale out of
+the catalog per Diátaxis.

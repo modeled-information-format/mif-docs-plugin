@@ -1,3 +1,13 @@
+<p align="center">
+  <img src=".github/social-preview.png" width="860"
+       alt="mif-docs Documentation Suite, built on MIF: one skill per document genre, every
+            doc read by both a person and a parser. The chevron-M mark and wordmark on a dark
+            field; three pillars (nineteen document genres; one artifact, two readers; proven
+            conformant) beside a Diataxis quadrant of four genre cards — tutorial, how-to,
+            reference, explanation — each a machine-cyan typed structure carrying a human-amber
+            meaning dot, all resting on a single machine-cyan MIF L1-to-L3 floor.">
+</p>
+
 # mif-docs
 
 A **standalone Claude Code plugin** that ships **one skill per concrete document
@@ -10,6 +20,24 @@ native genre *and* a MIF-conformant unit: structured frontmatter that projects t
 the canonical JSON-LD and validates fail-closed against
 `https://mif-spec.dev/schema/`.
 
+## Install
+
+From the `modeled-information-format` plugin marketplace:
+
+```bash
+claude plugin marketplace add modeled-information-format/claude-code-plugins
+claude plugin install mif-docs@modeled-information-format
+```
+
+The release is attested with SLSA build provenance — verify the artifact before
+trusting it:
+
+```bash
+gh attestation verify mif-docs-plugin-v0.1.0.tar.gz \
+  --repo modeled-information-format/mif-docs-plugin \
+  --signer-workflow modeled-information-format/mif-docs-plugin/.github/workflows/release.yml
+```
+
 ## What's inside
 
 | Layer | Skills |
@@ -17,6 +45,22 @@ the canonical JSON-LD and validates fail-closed against
 | **Genre skills** | `diataxis-tutorial`, `diataxis-how-to`, `diataxis-reference`, `diataxis-explanation`, `arc42-arch-doc`, `c4-model-diagram`, `google-design-doc`, `adr`, `rust-rfc`, `python-pep`, `changelog`, `sre-runbook`, `playbook`, `prd`, `feature-spec`, `ai-architecture-doc`, `kiro-requirements`, `kiro-design`, `kiro-tasks` |
 | **Shared substrate** | `mif-frontmatter` (L1–L3 authoring), `ears-acceptance-criteria`, `mif-validate` (deterministic canonical-schema gate) |
 | **Orchestration** | `doc-set-planner` (engine) + the `diataxis` / `ai-spec` / `kiro` / `architecture` recipes |
+
+## Documentation
+
+The plugin documents itself with its own genre skills — every doc below is a
+MIF-conformant artifact validated by `mif-validate` (ADRs by the structured-madr
+Action), organized in the Diataxis quadrants:
+
+- **Tutorial** — [Getting started](docs/tutorials/getting-started.md)
+- **How-to** — [Validate and author a document](docs/how-to/validate-and-author-a-document.md)
+- **Reference** — [Genre & CLI catalog](docs/reference/genre-and-cli-catalog.md)
+- **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md)
+- **Architecture** — [arc42](docs/architecture/arc42.md) · [C4 model](docs/architecture/c4.md)
+- **Decisions** — [Architecture Decision Records](docs/adr/)
+- **Runbooks** — [Cut an attested release](docs/runbooks/cut-an-attested-release.md) ·
+  [Hydrate schema & ontology](docs/runbooks/hydrate-schema-and-ontology.md)
+- **[Changelog](CHANGELOG.md)**
 
 ## MIF conformance
 

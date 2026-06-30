@@ -1,0 +1,120 @@
+<svg width="1280" height="640" viewBox="0 0 1280 640" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="mif-docs — one skill per document genre, every doc read by a person and a parser">
+  <title>mif-docs — Documentation Suite built on MIF</title>
+  <desc>Dark field. The chevron-M MIF mark and wordmark. Title "Documentation Suite". Three pillars — nineteen document genres, one artifact two readers, proven conformant — beside a Diataxis quadrant of four document cards (tutorial, how-to, reference, explanation). Each card is a machine-cyan typed structure carrying a human-amber meaning dot, and all four rest on a single machine-cyan MIF L1-to-L3 floor.</desc>
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="1280" y2="640" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0A0D13"/>
+      <stop offset="1" stop-color="#0E121B"/>
+    </linearGradient>
+    <radialGradient id="readGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#34D3E8" stop-opacity="0.13"/>
+      <stop offset="1" stop-color="#34D3E8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Field -->
+  <rect width="1280" height="640" fill="url(#field)"/>
+  <!-- Faint inset frame -->
+  <rect x="36" y="36" width="1208" height="568" rx="20" fill="none" stroke="#222C3C" stroke-width="2"/>
+
+  <!-- ===== Identity lockup (top-left): chevron-M mark + wordmark ===== -->
+  <g transform="translate(84 66) scale(1.15)" fill="none" stroke-width="4" stroke-linejoin="round" stroke-linecap="round">
+    <path d="M6 42 L6 6 L24 29" stroke="#34D3E8"/>
+    <path d="M24 29 L42 6 L42 42" stroke="#F5B642"/>
+    <path d="M24 25.6 L27.4 29 L24 32.4 L20.6 29 Z" fill="#E8EEF6" stroke="none"/>
+  </g>
+  <text x="150" y="112" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="30" font-weight="700" letter-spacing="0.04em" fill="#E8EEF6">MIF</text>
+  <text x="222" y="112" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="15" fill="#7C8AA0" letter-spacing="0.05em">Modeled Information Format</text>
+
+  <!-- ===== Title block (left column) ===== -->
+  <text x="84" y="214" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="60" font-weight="700" letter-spacing="-0.02em" fill="#E8EEF6">Documentation Suite</text>
+  <text x="86" y="254" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="19" fill="#AEBCCF" letter-spacing="0.01em">One skill per document genre — every doc, two readers.</text>
+
+  <!-- ===== Three pillars ===== -->
+  <!-- 1 · Genres (machine-cyan square = the typed structure of each genre) -->
+  <rect x="86" y="316" width="16" height="16" rx="2" fill="#34D3E8"/>
+  <text x="122" y="324" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="600" fill="#E8EEF6">Nineteen document genres</text>
+  <text x="122" y="350" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="16" fill="#7C8AA0">ADR, Diataxis, RFC, runbook, PRD, arc42/C4 — each over a MIF floor.</text>
+
+  <!-- 2 · One artifact, two readers (light vertex node = the convergence point) -->
+  <path d="M94 398 L100.4 404.4 L94 410.8 L87.6 404.4 Z" fill="#E8EEF6"/>
+  <text x="122" y="406" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="600" fill="#E8EEF6">One artifact, two readers</text>
+  <text x="122" y="432" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="16" fill="#7C8AA0">Markdown a person reads, JSON-LD a parser resolves — losslessly.</text>
+
+  <!-- 3 · Proven conformant (human-amber dot = the meaning a person reads, proven) -->
+  <circle cx="94" cy="488" r="9" fill="#F5B642"/>
+  <text x="122" y="496" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="24" font-weight="600" fill="#E8EEF6">Proven conformant</text>
+  <text x="122" y="522" font-family="system-ui, -apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="16" fill="#7C8AA0">Deterministic mif-validate, fail-closed on every genre write.</text>
+
+  <!-- ===== Diataxis-quadrant motif (right column) ===== -->
+  <circle cx="1034" cy="356" r="150" fill="url(#readGlow)"/>
+  <text x="1034" y="226" text-anchor="middle" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="13" letter-spacing="0.08em" fill="#34D3E8">diataxis</text>
+
+  <!-- four genre cards: machine-cyan typed structure (frame) + human-amber meaning dot + muted prose lines -->
+  <!-- card template: elevated fill, cyan stroke, three muted prose lines (the human read), one amber dot (the meaning), a mono genre label -->
+  <g>
+    <!-- TL · tutorial -->
+    <g transform="translate(872 246)">
+      <rect width="150" height="96" rx="8" fill="#151B27" stroke="#34D3E8" stroke-width="2"/>
+      <rect x="16" y="22" width="64" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="36" width="96" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="50" width="52" height="5" rx="2.5" fill="#2E3A4D"/>
+      <circle cx="126" cy="26" r="6" fill="#F5B642"/>
+      <text x="16" y="80" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="13" fill="#AEBCCF">tutorial</text>
+    </g>
+    <!-- TR · how-to -->
+    <g transform="translate(1046 246)">
+      <rect width="150" height="96" rx="8" fill="#151B27" stroke="#34D3E8" stroke-width="2"/>
+      <rect x="16" y="22" width="80" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="36" width="58" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="50" width="88" height="5" rx="2.5" fill="#2E3A4D"/>
+      <circle cx="126" cy="26" r="6" fill="#F5B642"/>
+      <text x="16" y="80" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="13" fill="#AEBCCF">how-to</text>
+    </g>
+    <!-- BL · reference -->
+    <g transform="translate(872 362)">
+      <rect width="150" height="96" rx="8" fill="#151B27" stroke="#34D3E8" stroke-width="2"/>
+      <rect x="16" y="22" width="90" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="36" width="70" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="50" width="96" height="5" rx="2.5" fill="#2E3A4D"/>
+      <circle cx="126" cy="26" r="6" fill="#F5B642"/>
+      <text x="16" y="80" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="13" fill="#AEBCCF">reference</text>
+    </g>
+    <!-- BR · explanation -->
+    <g transform="translate(1046 362)">
+      <rect width="150" height="96" rx="8" fill="#151B27" stroke="#34D3E8" stroke-width="2"/>
+      <rect x="16" y="22" width="58" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="36" width="92" height="5" rx="2.5" fill="#2E3A4D"/>
+      <rect x="16" y="50" width="74" height="5" rx="2.5" fill="#2E3A4D"/>
+      <circle cx="126" cy="26" r="6" fill="#F5B642"/>
+      <text x="16" y="80" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="13" fill="#AEBCCF">explanation</text>
+    </g>
+  </g>
+
+  <!-- the cards rest on a single machine-cyan MIF floor: short ticks down to the baseline -->
+  <g stroke="#34D3E8" stroke-width="2" opacity="0.5">
+    <line x1="947" y1="458" x2="947" y2="486"/>
+    <line x1="1121" y1="458" x2="1121" y2="486"/>
+  </g>
+  <line x1="858" y1="486" x2="1210" y2="486" stroke="#34D3E8" stroke-width="2.5"/>
+  <text x="1034" y="512" text-anchor="middle" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace" font-size="14" letter-spacing="0.04em">
+    <tspan fill="#34D3E8">MIF</tspan><tspan dx="10" fill="#7C8AA0">L1 → L3 floor</tspan>
+  </text>
+
+  <!-- ===== Footer locators ===== -->
+  <text x="84" y="572" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="15" fill="#7C8AA0" letter-spacing="0.01em">modeled-information-format/mif-docs-plugin</text>
+  <text x="1192" y="572" text-anchor="end" font-family="Menlo, 'SF Mono', 'JetBrains Mono', monospace"
+        font-size="15" fill="#7C8AA0" letter-spacing="0.02em">mif-spec.dev</text>
+</svg>

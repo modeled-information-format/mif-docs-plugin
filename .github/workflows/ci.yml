@@ -66,6 +66,15 @@ jobs:
             node scripts/mif-validate.mjs "$f" --level 1
             echo "::endgroup::"
           done
+      - name: MIF-validate the project's own docs (the suite documents itself)
+        run: |
+          # The suite documents itself: every doc under docs/ is a full MIF
+          # artifact (the project ADRs are L3 MIF, not structured-MADR). Gate each
+          # at the level it claims so its provenance/citations cannot rot.
+          l3() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L3 $f"; node scripts/mif-validate.mjs "$f" --level 3; echo "::endgroup::"; done; }
+          l2() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L2 $f"; node scripts/mif-validate.mjs "$f" --level 2; echo "::endgroup::"; done; }
+          l3 docs/adr/*.md docs/architecture/*.md docs/runbooks/*.md docs/reference/*.md docs/explanation/*.md
+          l2 docs/tutorials/*.md docs/how-to/*.md CHANGELOG.md
       - name: Enforce the L1-floor + highest-level exemplar climb
         run: node scripts/check-exemplars.mjs
       - name: Doc-set planner recipes are link-complete
