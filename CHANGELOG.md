@@ -63,6 +63,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 _No unreleased changes yet._
 
+## [0.1.2] - 2026-06-30
+
+### Fixed
+
+- The fail-closed `mif-guard` hook no longer blocks a markdown file whose only
+  `type:` is nested under another key. The genre-signal detection now anchors
+  `type`, `ontology`, and `diataxis_type` to the top level of the frontmatter, so
+  an auto-memory file carrying `metadata.type: reference` is left alone while real
+  MIF genre documents are still validated and non-conformant ones are still
+  blocked. Adds a regression test and fixture.
+
 ## [0.1.0] - 2026-06-30
 
 ### Added
