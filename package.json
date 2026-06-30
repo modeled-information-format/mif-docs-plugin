@@ -1,7 +1,7 @@
 {
   "name": "mif-docs",
-  "version": "0.1.0",
-  "description": "MIF-first documentation skill suite plugin — tooling (mif-validate, plugin manifest validation).",
+  "version": "0.1.1",
+  "description": "MIF-first documentation skill suite plugin \u2014 tooling (mif-validate, plugin manifest validation).",
   "type": "module",
   "private": true,
   "license": "MIT",
