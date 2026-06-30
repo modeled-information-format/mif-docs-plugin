@@ -2,6 +2,7 @@
 id: pep-9999-math-clamp
 type: semantic
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: pep/standards-track
 title: Add math.clamp() to the Standard Library
 tags:
@@ -10,6 +11,45 @@ tags:
   - standards-track
   - math
   - stdlib
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  recordedAt: 2026-06-29T10:00:00Z
+  ttl: P1Y
+provenance:
+  "@type": Provenance
+  sourceType: user_explicit
+  trustLevel: high_confidence
+citations:
+  - "@type": Citation
+    citationType: specification
+    citationRole: methodology
+    title: "PEP 12 – Sample reStructuredText PEP Template"
+    url: https://peps.python.org/pep-0012/
+    accessed: 2026-06-29
+  - "@type": Citation
+    citationType: documentation
+    citationRole: supports
+    title: "Python math module — numeric helpers (copysign, fsum, isclose)"
+    url: https://docs.python.org/3/library/math.html
+    accessed: 2026-06-29
+    relevance: 0.9
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "C++ std::clamp (constrains a value to a range)"
+    url: https://en.cppreference.com/w/cpp/algorithm/clamp
+    accessed: 2026-06-29
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "Rust f64::clamp"
+    url: https://doc.rust-lang.org/std/primitive.f64.html#method.clamp
+    accessed: 2026-06-29
+relationships:
+  - type: relates-to
+    target: /semantic/pep/pep-0485-math-isclose.md
+    strength: 0.8
 ---
 
 # PEP 9999 – Add math.clamp() to the Standard Library
@@ -156,3 +196,21 @@ def clamp(x, lo, hi, /):
   cross-reference, or only to `math`?
 - Whether to also expose a vectorized form is explicitly out of scope; that
   belongs to NumPy's `clip`, not the standard library.
+
+<!--
+MIF Level 3 (full): on top of the L1 floor (id, type, created) and the L2 layer
+(namespace, modified, temporal), this PEP carries provenance, citations, and a
+typed relationship. A machine consumer reads the frontmatter — not the prose — to
+answer:
+  - "Is this still current?" -> temporal.validFrom + ttl P1Y (with recordedAt),
+    so a freshness gate can flag the proposal a year out instead of guessing.
+  - "Where did it come from / can I trust it?" -> provenance.sourceType
+    (user_explicit) and trustLevel (high_confidence).
+  - "What backs the design?" -> citations[] resolve to PEP 12, the math module
+    docs, and the C++/Rust clamp precedents the Rationale leans on.
+  - "What else does it touch?" -> relationships[] links it to PEP 485
+    (math.isclose), the precedent for adding a function to math.
+The same document projects losslessly to JSON-LD for machines and back to this
+markdown for humans. Compare templates/good-l1.md (the L1 floor: opaque prose to
+a machine).
+-->

@@ -2,6 +2,7 @@
 id: runbook-checkout-api-p99-latency-slo-burn
 type: procedural
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: runbook/checkout-api
 title: "Checkout API: p99 Latency SLO Burn"
 tags:
@@ -9,6 +10,25 @@ tags:
   - sre
   - latency
   - checkout-api
+ontology:
+  "@type": OntologyReference
+  id: runbook
+  version: 1.0.0
+  uri: https://mif-spec.dev/ontologies/runbook
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  recordedAt: 2026-06-29T10:00:00Z
+  ttl: P6M
+provenance:
+  "@type": Provenance
+  sourceType: user_explicit
+  trustLevel: verified
+relationships:
+  - type: relates-to
+    target: /procedural/playbooks/checkout-incident-response.md
+  - type: relates-to
+    target: /semantic/slos/checkout-api-latency-slo.md
 ---
 
 # Checkout API: p99 Latency SLO Burn
@@ -167,3 +187,26 @@ histogram_quantile(0.99,
   only after the dependency owner confirms the upstream is healthy.
 
 Close the alert and file a short follow-up note linking the dashboard snapshot.
+
+<!--
+MIF Level 3 (highest this genre supports). The frontmatter lets a machine
+consumer act on this runbook without parsing the prose:
+
+- `temporal.validFrom` + `ttl: P6M` — answer "is this runbook still fresh?" A CI
+  freshness gate flags it for review six months after `validFrom`, so on-call
+  never follows a stale procedure.
+- `ontology` (`runbook` v1.0.0) — type the document so a tool knows it is an
+  operational runbook, not a playbook or a postmortem, and can apply the right
+  schema/expectations.
+- `provenance` (`sourceType: user_explicit`, `trustLevel: verified`) — answer
+  "where did this come from, can I trust it?" An agent ranks a verified,
+  human-authored runbook above an inferred draft.
+- `relationships[]` — answer "what does this connect to?" without reading the
+  body: `relates-to` the incident-response **playbook** (the strategic doc that
+  references this tactical fix) and `relates-to` the **SLO/alert** definition it
+  remediates, so a dependency walker can trace alert → runbook → playbook.
+
+The same document still reads as a human runbook and projects losslessly to
+JSON-LD and back. See good-l1.md for the L1 floor — valid, but opaque to all of
+the above.
+-->

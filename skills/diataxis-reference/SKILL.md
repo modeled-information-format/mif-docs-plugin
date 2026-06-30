@@ -41,8 +41,39 @@ exhaustive; it is not a tutorial (learning-oriented) and not an explanation
 
 `type: semantic` (declarative knowledge — facts that are true independent of any
 task or moment). Climb to L2 with `namespace` (e.g. `reference/cli`), `tags`, and
-`title` when known. Gate every output with `mif-validate --level 1`.
+`title` when known. Gate every output with `mif-validate`; the floor is
+`--level 1`.
 
-See `templates/good.md` (a conformant CLI command reference) and
-`templates/bad.md` (a reference that has drifted into tutorial/explanation mixing
-— the most common error).
+## Why machine-readable — the point of MIF here
+
+A reference is consumed by agents as much as by people: an agent looking up a
+flag's default needs to know the page still describes the current tool, can be
+trusted, and where to go for the *why* it deliberately omits. As plain prose
+(L1) all of that requires reading and inferring. The MIF layer makes those
+questions answerable by *reading frontmatter*:
+
+| Question an agent asks | Answered by (frontmatter) |
+| --- | --- |
+| Is this reference still current? | `temporal.validFrom` / `ttl` |
+| What does it document; can I trust it? | `provenance` (W3C-PROV `wasDerivedFrom`) + `trustLevel` |
+| What evidence backs it? | `citations[]` (the tool, the Diátaxis spec) |
+| Where is the rationale a reference omits? | typed `relationships[]` (`relates-to` the explanation) |
+
+The same document still reads as a human reference and projects losslessly to
+JSON-LD and back — one artifact, two readers.
+
+## The L1 -> L3 climb (exemplars)
+
+This skill ships the **same `mifx export` reference at two MIF levels** so the
+climb is explicit:
+
+- `templates/good-l1.md` — **L1 floor**: `id`, `type`, `created` + body. A valid,
+  readable reference, but opaque to a machine consumer.
+- `templates/good.md` — **L3 (highest the genre supports)**: adds `modified`,
+  `temporal` validity, W3C-PROV `provenance` (`wasDerivedFrom` the CLI it
+  documents), `citations[]`, and a typed `relates-to` `relationships[]` link to
+  the explanation doc. Validate with `mif-validate --level 3`.
+
+Author at the **highest level the drafting context supports** (grade down rather
+than fabricate). `templates/bad.md` shows the antipattern: a reference that has
+drifted into tutorial/explanation mixing — the most common error.

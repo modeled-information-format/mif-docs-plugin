@@ -53,8 +53,39 @@ voice conversational and let the design dictate which optional subsections appea
 `type: semantic` — a design doc is declarative design knowledge plus its
 rationale, not a time-bound event or a how-to. Climb to L2 with `namespace`
 (`design/<area>`), `modified`, `title`, and `tags` when the review context
-supplies them. Gate every output with `mif-validate --level 1`.
+supplies them. Gate every output with `mif-validate` at its target level; the
+floor is `--level 1`.
 
-See `templates/good.md` (a conformant, trade-off-explicit design doc) and
-`templates/bad.md` (a design doc that omits Non-Goals and Alternatives — the most
-common failure, where a proposal masquerades as a design doc).
+## Why machine-readable — the point of MIF here
+
+A design doc's rationale is mostly re-consumed by machines: an agent checking
+whether a design still holds, a CI gate flagging a stale one, a dependency walker
+tracing which ADR realizes it or which feature spec it relates to. As prose (L1)
+all of that needs reading and inference. The MIF layer makes those questions
+answerable by *reading frontmatter*:
+
+| Question an agent asks | Answered by (frontmatter) |
+| --- | --- |
+| Is this design still current? | `temporal.validFrom` / `ttl` |
+| Where did it come from; can I trust it? | `provenance` (W3C-PROV) + `trustLevel` |
+| What realizes it or relates to it? | typed `relationships[]` (`realized-by`, `relates-to`) |
+| What evidence backs the choices? | `citations[]` |
+
+The same document still reads as a human design doc and projects losslessly to
+JSON-LD and back — one artifact, two readers.
+
+## The L1 -> L3 climb (two exemplars)
+
+This genre ships the **same design at two MIF levels** so the climb is explicit:
+
+- `templates/good-l1.md` — **L1 floor**: `id`, `type`, `created` + body. A valid
+  design doc, but opaque to a machine consumer.
+- `templates/good.md` — **L3 (highest this genre supports)**: adds `namespace`,
+  `modified`, `temporal` validity, W3C-PROV `provenance`, `citations[]`, and a
+  typed `relationships[]` graph (`realized-by` an ADR, `relates-to` a feature
+  spec). Validate with `mif-validate --level 3`.
+
+Author at the **highest level the drafting context supports** (grade down rather
+than fabricate). `templates/bad.md` shows the antipattern: a design doc that
+omits Non-Goals and Alternatives — the most common failure, where a proposal
+masquerades as a design doc.

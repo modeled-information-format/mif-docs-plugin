@@ -67,6 +67,18 @@ genre label `arc42` lives in `namespace`/`tags`, never in `type`. Climb to L2
 naturally with a `namespace` (e.g. `architecture/<system>`), `title`, and `tags`
 when the system is known. Gate every output with `mif-validate --level 1`.
 
-See `templates/good.md` (a condensed but complete 12-section arc42 doc) and
-`templates/bad.md` (an arc42 doc with missing sections and `TBD` filler — the
-most common failure).
+### Why machine-readable
+
+The same 12 sections of prose are readable by a person at any level. The MIF
+frontmatter is what lets an *agent* reason about the document without parsing it:
+`temporal` answers "is this architecture still current?", `provenance` answers
+"where did it come from and who stands behind it?", typed `relationships[]`
+answer "what C4 model and ADRs does it connect to?", and `ontology` answers "what
+kind of document is this?". Climb only as far as the system honestly supports.
+
+See `templates/good-l1.md` (the same Linkly architecture at the **L1 floor** —
+`id`/`type`/`created` only; valid, but opaque to every query above) and
+`templates/good.md` (the same doc at **MIF Level 3** — ontology, temporal
+validity, W3C-PROV provenance, an arc42.org citation, and typed cross-genre
+relationships). `templates/bad.md` shows the common failure: missing sections and
+`TBD` filler.

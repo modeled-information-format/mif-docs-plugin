@@ -70,6 +70,21 @@ Draft ──> Accepted ──> Final
 or a how-to. Climb to L2 with `namespace` (e.g. `pep/standards-track`), `tags`,
 and `title` when known. Gate every output with `mif-validate --level 1`.
 
-See `templates/good.md` (a conformant Standards Track PEP) and `templates/bad.md`
+### Why machine-readable
+
+The frontmatter lets an agent answer questions about a PEP without parsing the
+prose: is this proposal still current, where did it come from, what backs the
+design, and which other PEPs does it touch. The L1 floor carries none of that —
+to a machine it is opaque text. The climb adds the answers as structured fields:
+
+- **L1 floor** — `id`, `type`, `created` + body. A complete PEP, but opaque to a
+  machine. See `templates/good-l1.md`.
+- **L3 (the highest this genre honestly supports)** — adds `modified`,
+  `temporal` (validity window + `ttl`), `provenance` (source + trust), typed
+  `citations[]`, and a `relationships[]` link. See `templates/good.md`, which
+  gates at `mif-validate --level 3`.
+
+See `templates/good.md` (a conformant Standards Track PEP at L3),
+`templates/good-l1.md` (the same PEP at the L1 floor), and `templates/bad.md`
 (a PEP with a malformed header and missing required sections — the most common
 review-blocking errors).

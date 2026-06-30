@@ -52,13 +52,35 @@ Every section is judged against five properties:
   remediation you cannot undo.
 - Escalation names a role/rotation and a concrete trigger, not "if it's bad".
 
-## MIF frontmatter
+## Why machine-readable — the point of MIF here
 
-`type: procedural` (a how-to executed under pressure). Climb to L2 with
-`namespace` (e.g. `runbook/<service>`), `tags`, `title` when known; add
-`modified`/`temporal` when a review cadence exists. Gate every output with
-`mif-validate --level 1`.
+A runbook is consumed under pressure, often by tooling before a human: an agent
+checking whether the procedure is still current, a CI freshness gate flagging a
+stale one, a dependency walker tracing which alert it remediates and which
+playbook coordinates it. As prose (L1) every one of those needs reading and
+inference. The MIF frontmatter makes them answerable by *reading frontmatter*:
 
-See `templates/good.md` (a conformant runbook for an API p99 latency SLO burn)
-and `templates/bad.md` (a runbook with vague triage, no detection criteria, and
-no rollback — the failure modes that get people paged twice).
+| Question a tool asks | Answered by (frontmatter) |
+| --- | --- |
+| Is this procedure still fresh? | `temporal.validFrom` + `ttl` (review cadence) |
+| What playbook / SLO does it connect to? | typed `relationships[]` (`relates-to`) |
+| Who authored it; can I trust it? | `provenance` (`sourceType`, `trustLevel`) |
+| What kind of doc is this? | `ontology` (`runbook`) |
+
+## MIF frontmatter — the L1 -> L3 climb (two exemplars)
+
+`type: procedural` (a how-to executed under pressure). This skill ships the
+**same runbook at two MIF levels** so the climb is explicit:
+
+- `templates/good-l1.md` — **L1 floor**: `id`, `type`, `created` + body. A
+  complete, valid runbook, but opaque to a machine consumer. Gate with
+  `mif-validate --level 1`.
+- `templates/good.md` — **L3 (highest this genre supports)**: adds `namespace`,
+  `modified`, `ontology` typing, `temporal` validity (`ttl: P6M` review cadence),
+  `provenance`, and typed `relationships[]` to the incident playbook and the
+  SLO/alert. Gate with `mif-validate --level 3`.
+
+Author at the **highest level the drafting context supports** (grade down rather
+than fabricate). `templates/bad.md` shows the antipattern: vague triage, no
+detection criteria, and no rollback — the failure modes that get people paged
+twice.

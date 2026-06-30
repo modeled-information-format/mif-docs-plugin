@@ -2,12 +2,40 @@
 id: reference-mifx-export
 type: semantic
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: reference/cli
 title: "mifx export — command reference"
 tags:
   - reference
   - cli
   - mifx
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  recordedAt: 2026-06-29T10:00:00Z
+  ttl: P1Y
+provenance:
+  "@type": Provenance
+  sourceType: system_generated
+  trustLevel: verified
+  wasDerivedFrom:
+    "@id": "urn:mif:tool:mifx-export"
+    "@type": prov:Entity
+citations:
+  - "@type": Citation
+    citationType: tool
+    citationRole: source
+    title: "mifx — the MIF command-line interface"
+    url: https://mif-spec.dev/tools/mifx
+  - "@type": Citation
+    citationType: specification
+    citationRole: methodology
+    title: "Diátaxis — Reference"
+    url: https://diataxis.fr/reference/
+    accessed: 2026-06-26
+relationships:
+  - type: relates-to
+    target: /semantic/explanation/mifx-export-serialisation-formats.md
 ---
 
 # mifx export
@@ -83,3 +111,17 @@ Export a directory as YAML at level 2, writing a manifest:
 ```text
 mifx export docs/ --format yaml --level 2 --manifest dist/manifest.json
 ```
+
+<!--
+MIF Level 3 (full): the same reference good-l1.md carries as opaque prose, now
+machine-answerable from frontmatter. A consumer can ask, without parsing the
+body: "is this reference still current?" (`temporal.validFrom` + `ttl: P1Y`);
+"what does it document and can I trust it?" (`provenance` — system_generated,
+`trustLevel: verified`, `wasDerivedFrom` the `urn:mif:tool:mifx-export` entity,
+since a reference is derived from the thing it documents); "what backs it?"
+(`citations[]` — the tool and the Diátaxis reference spec); "where do I go to
+understand WHY these formats exist?" (`relationships[]` — `relates-to` the
+explanation doc, keeping rationale out of the reference per Diátaxis). The same
+document still reads as a human reference and projects losslessly to JSON-LD and
+back — one artifact, two readers. See good-l1.md for the L1 floor.
+-->

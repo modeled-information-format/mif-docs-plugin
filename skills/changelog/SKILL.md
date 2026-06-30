@@ -38,10 +38,32 @@ and a release date.
 
 ## MIF frontmatter
 
-`type: episodic` (a changelog is a time-bound record). Climb to L2 with
-`namespace` (e.g. `changelog/<project>`), `tags`, and `title` when known. Gate
-every output with `mif-validate --level 1`.
+`type: episodic` (a changelog is a time-bound record). Gate every output with
+`mif-validate`; the floor is `--level 1`.
 
-See `templates/good.md` (a conformant changelog with Unreleased plus released
-versions) and `templates/bad.md` (a changelog reduced to ungrouped, undated,
-unversioned git-log lines — the most common failure).
+### Why machine-readable
+
+A changelog is read as much by agents as by people — a release bot asking "what
+window does this history cover?", a freshness check asking "when was this last
+updated?", a dependency walker asking "what does this document?". As plain prose
+(L1) every one of those needs the markdown parsed and inferred. The MIF layer
+makes them answerable by *reading frontmatter*: `temporal.validFrom`..`recordedAt`
+bound the release window, `modified` dates the last edit, and a typed
+`relationships[]` (`relates-to`) names the tool the log documents. The same file
+still reads as a human changelog and projects losslessly to JSON-LD and back.
+
+Because a changelog is episodic, **L2 is the honest ceiling** for this genre:
+`temporal` fits, but `provenance`/`citations` (L3) would be fabricated — a
+release history is not an attributable external claim.
+
+### The L1 -> L2 climb (two exemplars)
+
+- `templates/good-l1.md` — **L1 floor**: `id`, `type`, `created` + body. A valid
+  changelog, but opaque to a machine consumer.
+- `templates/good.md` — **L2 (highest this genre supports)**: adds `namespace`,
+  `modified`, `temporal` validity, and a typed `relates-to` relationship.
+  Validate with `mif-validate --level 2`.
+
+Author at the highest level the context honestly supports (grade down rather than
+fabricate). `templates/bad.md` shows the antipattern: a changelog reduced to
+ungrouped, undated, unversioned git-log lines — the most common failure.

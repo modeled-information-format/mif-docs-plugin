@@ -2,12 +2,20 @@
 id: changelog-mif-convert
 type: episodic
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: changelog/mif-convert
 title: Changelog
 tags:
   - changelog
   - release-notes
   - mif-convert
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-01-15T00:00:00Z
+  recordedAt: 2026-05-18T00:00:00Z
+relationships:
+  - type: relates-to
+    target: /procedural/mif-convert/cli-reference.md
 ---
 
 # Changelog
@@ -63,3 +71,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Schema fetches are pinned to a vendored copy, removing a network fetch during
   validation.
+
+<!--
+MIF Level 2 (standard): adds `modified`, `temporal`, and a typed `relates-to`
+relationship to the L1 floor. A changelog is episodic, so `temporal` is the
+honest ceiling for this genre — `validFrom` is the first release (2026-01-15,
+1.0.0) and `recordedAt` is the latest entry (2026-05-18, 1.2.0); there is no
+`validUntil`/`ttl` because a release history does not expire, and no
+`provenance`/`citations` because nothing here is an attributable external claim.
+Now a machine consumer can answer, from frontmatter alone: "what release window
+does this record cover?" (`temporal.validFrom`..`recordedAt`), "when was it last
+touched?" (`modified`), and "what does it document?" (`relationships[]` ->
+`relates-to` the mif-convert CLI reference) — without parsing the prose.
+Compare good-l1.md, the same changelog reduced to the L1 floor.
+-->

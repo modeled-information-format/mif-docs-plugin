@@ -44,9 +44,28 @@ keep those modes out.
 
 `type: semantic` (declarative knowledge — an explanation conveys understanding,
 not a procedure or a dated event). Climb to L2 with `namespace`, `tags`, `title`
-when known; reach L3 (`provenance`, `citations[]`) when the rationale draws on
-attributable sources. Gate every output with `mif-validate --level 1`.
+when known; reach L3 (`temporal`, `provenance`, `citations[]`, typed
+`relationships[]`) when the rationale draws on attributable sources. Gate every
+output with `mif-validate --level 1`.
 
-See `templates/good.md` (a conformant explanation) and `templates/bad.md` (an
-"explanation" that has collapsed into a how-to procedure and a reference dump —
-the most common failure).
+### Why machine-readable
+
+Prose explains *why* to a human; the frontmatter explains the same document to a
+machine. An agent should not have to parse this sentence to learn whether the
+rationale is still current, who stands behind it, what source backs it, or what it
+relates to. The MIF layer answers those questions structurally: `temporal` says
+when the rationale is valid and due for review, `provenance` says who authored it
+and how far to trust it, `citations[]` names the authoritative source, and typed
+`relationships[]` link to the tutorial and reference docs an agent can traverse.
+
+The exemplars show the climb:
+
+- `templates/good-l1.md` — the **L1 floor** (`id`, `type`, `created` + body). A
+  complete, valid explanation that is nonetheless opaque to a machine: none of the
+  questions above can be answered without reading the prose.
+- `templates/good.md` — the **same subject at L3**, carrying real `temporal`,
+  `provenance`, a citation to the MIF spec, and typed `relationships[]`. The
+  trailing comment names exactly what that metadata lets a machine do.
+
+See also `templates/bad.md` (an "explanation" that has collapsed into a how-to
+procedure and a reference dump — the most common failure).

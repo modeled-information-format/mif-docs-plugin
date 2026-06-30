@@ -34,6 +34,18 @@
         "Notes explanation is discursive while reference is structured/neutral",
         "Gives an example topic for each"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "Promote our two-view design rationale to MIF Level 3 so an agent can tell if it's current, who authored it, and what it cites.",
+      "expected_output": "An understanding-oriented explanation whose frontmatter carries temporal, provenance, citations, and typed relationships, passing mif-validate --level 3.",
+      "files": [],
+      "expectations": [
+        "Keeps the body discursive and understanding-oriented (still an explanation, not a how-to)",
+        "Adds temporal (validFrom/ttl/recordedAt), provenance (sourceType + trustLevel + wasAttributedTo), citations[], and typed relationships[]",
+        "Every metadata value is genuine for the document, not placeholder filler",
+        "Passes mif-validate --level 3 with a lossless markdown<->JSON-LD round-trip"
+      ]
     }
   ]
 }

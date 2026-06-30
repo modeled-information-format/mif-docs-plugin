@@ -2,6 +2,7 @@
 id: rfc-optional-chaining-operator
 type: semantic
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: rfc/language-features
 title: "RFC: Optional Chaining with the ?. Operator"
 tags:
@@ -9,6 +10,49 @@ tags:
   - language-feature
   - ergonomics
   - option
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  recordedAt: 2026-06-29T10:00:00Z
+  ttl: P1Y
+provenance:
+  "@type": Provenance
+  sourceType: user_explicit
+  trustLevel: high_confidence
+citations:
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "C# null-conditional operators ?. and ?[]"
+    url: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/operators/member-access-operators
+    accessed: 2026-06-26
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "The Swift Programming Language — Optional Chaining"
+    url: https://docs.swift.org/swift-book/documentation/the-swift-programming-language/optionalchaining/
+    accessed: 2026-06-26
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "Kotlin — Null safety (safe-call operator ?.)"
+    url: https://kotlinlang.org/docs/null-safety.html
+    accessed: 2026-06-26
+  - "@type": Citation
+    citationType: specification
+    citationRole: background
+    title: "TC39 Optional Chaining proposal (ECMAScript 2020)"
+    url: https://github.com/tc39/proposal-optional-chaining
+    accessed: 2026-06-26
+  - "@type": Citation
+    citationType: documentation
+    citationRole: background
+    title: "The Rust Reference — The question mark operator"
+    url: https://doc.rust-lang.org/reference/expressions/operator-expr.html
+    accessed: 2026-06-26
+relationships:
+  - type: relates-to
+    target: /semantic/rfc/rfc-try-operator.md
 ---
 
 # RFC: Optional Chaining with the `?.` Operator
@@ -176,7 +220,8 @@ or unsafe, and `unwrap()` remains the path of least resistance.
   broad demand for the ergonomic even in dynamically typed settings.
 - Within this language, the existing **`?` try-operator** establishes the
   precedent that a short-circuiting postfix sigil is idiomatic; `?.` is its
-  `Option`-flattening sibling.
+  `Option`-flattening sibling, and this RFC `relates-to` that operator's own
+  proposal (see `relationships[]`) because the two must agree on tokenization.
 
 ## Unresolved questions
 
@@ -199,3 +244,18 @@ or unsafe, and `unwrap()` remains the path of least resistance.
   short-circuit rule.
 - **Assignment through the chain** (`a?.b = x`, a no-op when `a` is `None`),
   mirroring the C# null-conditional assignment story.
+
+<!--
+MIF Level 3 (full). Beyond the L1 floor (id/type/created), this RFC carries:
+`temporal` (validFrom + ttl P1Y + recordedAt) so an agent can flag a proposal
+that has sat undecided past its one-year freshness window; `provenance`
+(sourceType: user_explicit, trustLevel: high_confidence) so a consumer knows a
+human authored it deliberately, not an inference; `citations[]` so the Prior-art
+claims (C#, Swift, Kotlin, JS/TC39, the Rust `?` operator) are resolvable instead
+of name-dropped; and a typed `relationships[]` (`relates-to` the `?` try-operator
+RFC) so the proposal graph is walkable. A machine can now answer "is this still
+fresh?", "who asserted it?", "what backs its prior-art claims?", and "what else
+does it touch?" from frontmatter alone. The same document projects losslessly to
+JSON-LD and back. Compare good-l1.md, the bare L1 floor where none of this is
+answerable.
+-->

@@ -2,12 +2,27 @@
 id: feature-contact-csv-export
 type: semantic
 created: 2026-06-29T10:00:00Z
+modified: 2026-06-29T10:00:00Z
 namespace: spec/feature/contacts
 title: Contact CSV Export
 tags:
   - feature-spec
   - contacts
   - export
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  ttl: P1Y
+  recordedAt: 2026-06-29T10:00:00Z
+provenance:
+  "@type": Provenance
+  sourceType: user_explicit
+  trustLevel: high_confidence
+relationships:
+  - type: derived-from
+    target: /semantic/prd/contacts-data-portability.md
+  - type: depends-on
+    target: /semantic/ai-architecture-doc/contacts-platform-architecture.md
 ---
 
 # Contact CSV Export
@@ -64,3 +79,14 @@ JSON) are out of scope and tracked separately.
 - **Mid-stream database error:** after headers are already flushed, terminate the
   stream and log the failure; the client receives a truncated download and a
   `5xx` is recorded in metrics (status cannot be retroactively changed).
+
+<!--
+MIF Level 3: this spec carries `modified`, `temporal` validity (valid from
+2026-06-29, `ttl: P1Y`), `provenance` (`user_explicit` / `high_confidence`), and
+typed `relationships[]`. From frontmatter alone — no prose parsing — a machine
+consumer can answer: "is this spec still in its validity window?" (`temporal`),
+"where did it come from?" (`derived-from` the contacts data-portability PRD), and
+"what does it depend on?" (`depends-on` the contacts platform AI-architecture
+doc). The same document projects losslessly to JSON-LD and back. Compare
+good-l1.md — the L1 floor, opaque to every one of those queries.
+-->

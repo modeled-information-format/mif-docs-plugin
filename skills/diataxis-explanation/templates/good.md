@@ -8,6 +8,32 @@ tags:
   - explanation
   - mif
   - design-rationale
+modified: 2026-06-29T10:00:00Z
+temporal:
+  "@type": TemporalMetadata
+  validFrom: 2026-06-29T00:00:00Z
+  validUntil: 2027-06-29T00:00:00Z
+  recordedAt: 2026-06-29T10:00:00Z
+  ttl: P1Y
+provenance:
+  "@type": Provenance
+  sourceType: user_explicit
+  trustLevel: high_confidence
+  wasAttributedTo:
+    "@id": "urn:mif:team:mif-spec-authors"
+    "@type": prov:Agent
+citations:
+  - "@type": Citation
+    citationType: specification
+    citationRole: source
+    title: "MIF — Modeled Information Format Specification v1.0"
+    url: https://mif-spec.dev/
+    accessed: 2026-06-29
+relationships:
+  - type: relates-to
+    target: /reference/cli/reference-mifx-export.md
+  - type: relates-to
+    target: /tutorials/getting-started/tutorial-first-mif-doc.md
 ---
 
 # Why MIF Separates the Human and Machine Views
@@ -86,6 +112,19 @@ Separating the human and machine views is not MIF hedging its bets — it is MIF
 taking both audiences seriously at once and using a lossless round-trip to keep
 its promise to each. The cost is the discipline of maintaining that round-trip;
 the payoff is documentation that is pleasant to write and trustworthy to compute
-over. To see the contract in practice, follow the how-to for converting a markdown
-file into MIF, or consult the `mif-frontmatter` reference for the field-by-field
-mechanics.
+over. To see the contract in practice, work through the `diataxis-tutorial`
+exemplar that writes a first MIF document, or consult the `diataxis-reference`
+exemplar for the field-by-field mechanics — both are recorded as typed
+`relates-to` edges in this document's `relationships[]`.
+
+<!--
+This document is MIF Level 3. The frontmatter — not the prose — is what lets a
+machine reason about it: `temporal` (validFrom/validUntil + ttl P1Y, recordedAt)
+answers "is this rationale still current, and when is it due for review?";
+`provenance` (sourceType user_explicit, trustLevel high_confidence, wasAttributedTo
+a prov:Agent) answers "who stands behind this and how far do I trust it?";
+`citations[]` answers "what authoritative source backs the claim?" (the MIF
+specification); and the typed `relationships[]` let an agent traverse to the
+tutorial and reference docs without parsing this sentence. Compare good-l1.md,
+which carries the same explanation at the L1 floor and can answer none of these.
+-->

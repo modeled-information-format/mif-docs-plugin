@@ -37,5 +37,9 @@ jobs:
             node scripts/mif-validate.mjs "$f" --level 1
             echo "::endgroup::"
           done
+      - name: Enforce the L1-floor + highest-level exemplar climb
+        run: node scripts/check-exemplars.mjs
+      - name: Doc-set planner recipes are link-complete
+        run: node scripts/planner-check.mjs
       - name: Markdown lint
         run: npm run lint:md

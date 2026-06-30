@@ -58,10 +58,32 @@ section and build it from the reference section, the split is correct.
 ## MIF frontmatter
 
 `type: semantic` — an RFC is declarative design knowledge, not a how-to and not
-a time-bound event. Climb to L2 with `namespace` (e.g. `rfc/language-features`),
-`title`, and `tags` when known; keep `modified`/`temporal` off unless a real
-review cadence exists. Gate every output with `mif-validate --level 1`.
+a time-bound event.
 
-See `templates/good.md` (a complete nine-section RFC) and `templates/bad.md`
-(an RFC that dropped Drawbacks and Alternatives and hand-waves its Motivation —
-the genre's defining failure).
+### Why machine-readable
+
+The frontmatter lets an agent reason about the RFC without parsing prose. With
+the full layer it can answer "is this proposal still fresh, or has it sat
+undecided past its review window?" (`temporal`), "who asserted it and how
+confident are they?" (`provenance`), "what backs the prior-art claims?"
+(`citations[]`), and "what other proposals does it touch?" (`relationships[]`) —
+all from structured fields, not by reading the body.
+
+### The L1 → L3 climb
+
+- **L1 floor** — `templates/good-l1.md`: `id`, `type`, `created` + body. A
+  complete, valid RFC, but opaque to a machine — none of the questions above are
+  answerable. Gate with `mif-validate --level 1`.
+- **L2** — add `namespace` (e.g. `rfc/language-features`), `modified`, and
+  `temporal` (proposal-freshness window) when a real review cadence exists.
+- **L3 full** — `templates/good.md`: the same RFC carrying `temporal`
+  (`validFrom` + `ttl: P1Y` + `recordedAt`), `provenance` (`sourceType:
+  user_explicit`, `trustLevel: high_confidence`), `citations[]` for the prior
+  art, and a typed `relationships[]` (`relates-to` the `?` try-operator RFC).
+  Gate with `mif-validate --level 3`. The document projects losslessly to
+  JSON-LD and back.
+
+See `templates/good-l1.md` (the floor) and `templates/good.md` (the complete
+nine-section RFC at L3) for the climb, and `templates/bad.md` (an RFC that
+dropped Drawbacks and Alternatives and hand-waves its Motivation — the genre's
+defining failure).
