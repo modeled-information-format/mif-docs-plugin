@@ -1,6 +1,7 @@
 ---
 name: c4-model-diagram
 description: Author a C4 model architecture document — Simon Brown's four levels of abstraction (System Context, Container, Component, Code) rendered as notation-independent Mermaid C4 diagrams plus an element catalog of people, systems, containers, and components. Use when the user needs to map or communicate software architecture at varying zoom levels for mixed technical/non-technical audiences. Anti-trigger; for a point-in-time decision record use adr, for a sequence/data-flow or deployment-only view use the matching diagram genre instead.
+argument-hint: "<the system to map across C4 levels>"
 ---
 
 # c4-model-diagram

@@ -1,6 +1,7 @@
 ---
 name: ears-acceptance-criteria
 description: Turn a requirement, decision driver, or finding into an EARS-notation acceptance criterion that a human and an agent grade identically. Use when authoring acceptance criteria for a PRD, feature spec, architecture doc, ADR decision driver, or Kiro requirements document.
+argument-hint: "<the requirement or driver to convert>"
 ---
 
 # ears-acceptance-criteria

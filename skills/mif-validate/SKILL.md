@@ -1,6 +1,7 @@
 ---
 name: mif-validate
 description: Deterministically prove a document is MIF-conformant — schema-check its JSON-LD against the canonical mif-spec.dev schema, enforce the L1/L2/L3 floor, and verify the markdown<->JSON-LD round-trip is lossless. Use as the gate after authoring or editing any MIF document, and to convert a doc to either output form.
+argument-hint: "<path to the document> [--level 1|2|3]"
 ---
 
 # mif-validate

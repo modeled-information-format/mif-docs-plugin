@@ -1,6 +1,7 @@
 ---
 name: diataxis-tutorial
 description: Write a Diataxis tutorial — a learning-oriented, hands-on lesson that takes a beginner through a single concrete success by doing, not explaining. Use when the user needs onboarding/getting-started content where the goal is the learner's confidence, not task completion or reference lookup. Anti-trigger; for accomplishing a known task use diataxis-how-to, for facts use diataxis-reference.
+argument-hint: "<what the learner will build>"
 ---
 
 # diataxis-tutorial

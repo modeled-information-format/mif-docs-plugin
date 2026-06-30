@@ -1,6 +1,7 @@
 ---
 name: adr
 description: Write an Architectural Decision Record (ADR) in the Structured MADR format — one decision, its drivers, the options weighed with risk, the chosen outcome, the consequences accepted, and an audit trail — validated by the structured-madr Action in both smadr and MIF modes. Use when a team is making or capturing a consequential, hard-to-reverse technical choice and needs it documented with rationale. Anti-trigger; for a how-to use diataxis-how-to, for requirements use prd or feature-spec, not an ADR.
+argument-hint: "<the decision to record>"
 ---
 
 # adr

@@ -1,6 +1,7 @@
 ---
 name: mif-frontmatter
 description: Author MIF (Modeled Information Format) Level 1-3 frontmatter for any document, climbing from the L1 floor to L2/L3 only when the drafting context supplies real detail. Use whenever a doc needs MIF-conformant YAML frontmatter that projects losslessly to the canonical JSON-LD.
+argument-hint: "<path to the document> [--level 1|2|3]"
 ---
 
 # mif-frontmatter

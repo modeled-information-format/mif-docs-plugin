@@ -1,6 +1,7 @@
 ---
 name: sre-runbook
 description: Write an SRE operational runbook — a tactical, step-by-step procedure an on-call responder follows to detect, diagnose, and remediate ONE specific alert or failure condition under pressure. Use when the user needs incident-response content for a named alert/symptom (latency SLO burn, queue backlog, replica lag). Anti-trigger; for strategic, multi-incident response design write a playbook, and for a learning lesson use diataxis-tutorial.
+argument-hint: "<the alert or symptom to remediate>"
 ---
 
 # sre-runbook

@@ -1,6 +1,7 @@
 ---
 name: rust-rfc
 description: Write a Rust-style RFC (request for comments / enhancement proposal) — a structured design proposal with Summary, Motivation, Guide-level explanation, Reference-level explanation, Drawbacks, Rationale and alternatives, Prior art, Unresolved questions, and Future possibilities. Use when a substantial language/library/platform change needs written design consensus BEFORE implementation. Anti-trigger; for a decision already made and being recorded use an ADR (structured-madr), and for a bug or small change use a plain issue.
+argument-hint: "<the proposed change>"
 ---
 
 # rust-rfc

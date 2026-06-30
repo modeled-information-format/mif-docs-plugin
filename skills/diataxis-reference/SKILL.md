@@ -1,6 +1,7 @@
 ---
 name: diataxis-reference
 description: Write a Diataxis reference — a dry, information-oriented, exhaustive description of ONE thing (a CLI command, config file, API endpoint, or schema) whose structure mirrors the thing itself. Use when the user needs lookup material they consult, not read through. Anti-trigger; for learning by doing use diataxis-tutorial, for accomplishing a known task use diataxis-how-to.
+argument-hint: "<the one thing to describe (CLI, config, API, schema)>"
 ---
 
 # diataxis-reference

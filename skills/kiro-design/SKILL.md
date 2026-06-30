@@ -1,6 +1,7 @@
 ---
 name: kiro-design
 description: Write the design.md of an AWS Kiro three-document spec set — the technical design that traces back to numbered requirements. Use as the second Kiro artifact, between requirements.md and tasks.md. Anti-trigger; for the requirements use kiro-requirements, for the implementation task list use kiro-tasks.
+argument-hint: "<the feature> [path to requirements.md]"
 ---
 
 # kiro-design

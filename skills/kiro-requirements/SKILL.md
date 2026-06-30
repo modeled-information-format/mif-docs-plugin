@@ -1,6 +1,7 @@
 ---
 name: kiro-requirements
 description: Write the requirements.md of an AWS Kiro three-document spec set — numbered requirements, each a user story plus EARS acceptance criteria. Use as the first artifact of a Kiro spec, feeding design.md and tasks.md. Anti-trigger; for the technical design use kiro-design, for the task list use kiro-tasks.
+argument-hint: "<the feature to capture requirements for>"
 ---
 
 # kiro-requirements

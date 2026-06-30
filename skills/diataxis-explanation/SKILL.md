@@ -1,6 +1,7 @@
 ---
 name: diataxis-explanation
 description: Write a Diataxis explanation — an understanding-oriented discussion that illuminates the why behind a topic, its background, design rationale, trade-offs, history, and connections to other ideas. Use when the reader needs to grasp a concept or decision, not perform a task or look up a fact. Anti-trigger; for accomplishing a known task use diataxis-how-to, for a beginner learning by doing use diataxis-tutorial, for fact lookup use diataxis-reference.
+argument-hint: "<the topic to explain>"
 ---
 
 # diataxis-explanation

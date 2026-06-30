@@ -1,6 +1,7 @@
 ---
 name: ai-architecture-doc
 description: Write a composite AI-spec architecture document that embeds an arc42/C4-style structure plus testable non-functional requirements and an ADR-style decision log in one spec-channel artifact. Use for an architecture spec a coding agent can consume. Anti-trigger; for a pure narrative use arc42-arch-doc, for diagrams alone use c4-model-diagram.
+argument-hint: "<the system or feature to spec for an agent>"
 ---
 
 # ai-architecture-doc

@@ -1,6 +1,7 @@
 ---
 name: python-pep
 description: Write a Python Enhancement Proposal (PEP) — a formal design document proposing a change to the Python language, standard library, or process, with the canonical RFC822 header preamble plus Abstract, Motivation, Rationale, Specification, Backwards Compatibility, Security Implications, How to Teach This, Reference Implementation, Rejected Ideas, and Open Issues. Use when the user is proposing or drafting a Python language/stdlib/process change in PEP form. Anti-trigger; for a project's own architecture decision use an ADR skill, and for end-user task instructions use a how-to.
+argument-hint: "<the proposed Python change>"
 ---
 
 # python-pep

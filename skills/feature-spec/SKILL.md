@@ -1,6 +1,7 @@
 ---
 name: feature-spec
 description: Write a lightweight, AI-ready Feature Specification — a ~500-2000 token spec with Overview, EARS acceptance criteria, Design, and Edge Cases that an implementer or coding agent can act on directly. Use when a single feature needs a concise build-ready spec. Anti-trigger; for org-wide architecture use arc42-arch-doc, for a decision record use adr, for a multi-feature product doc use prd.
+argument-hint: "<the feature to specify>"
 ---
 
 # feature-spec

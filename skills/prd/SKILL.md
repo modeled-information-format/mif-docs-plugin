@@ -1,6 +1,7 @@
 ---
 name: prd
 description: Write a Product Requirements Document that leads with the problem, defines success metrics and non-goals, and expresses functional requirements as testable EARS criteria. Use when scoping what to build and why before design. Anti-trigger; for the technical how use feature-spec or a design doc, not a PRD.
+argument-hint: "<the product or feature to scope>"
 ---
 
 # prd

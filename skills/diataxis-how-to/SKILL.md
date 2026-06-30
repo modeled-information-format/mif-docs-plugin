@@ -1,6 +1,7 @@
 ---
 name: diataxis-how-to
 description: Write a Diataxis how-to guide — a task-oriented recipe that walks a competent user through accomplishing one real, already-understood goal, start to finish. Use when the user knows what they want to do and needs the steps, not learning or background. Anti-trigger; for a beginner learning by doing use diataxis-tutorial, for looking up facts use diataxis-reference.
+argument-hint: "<the task to accomplish>"
 ---
 
 # diataxis-how-to

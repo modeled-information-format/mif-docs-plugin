@@ -1,6 +1,7 @@
 ---
 name: doc-set-planner
 description: Plan and decompose a broad documentation subject into a coordinated SET of MIF documents, fan out to the genre member skills, and reconcile the cross-document MIF relationship graph. Use when a request spans multiple documents ("document the auth system", "produce the full spec set for feature X") rather than a single genre artifact.
+argument-hint: "<subject> [--recipe diataxis|ai-spec|kiro|architecture]"
 ---
 
 # doc-set-planner

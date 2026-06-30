@@ -1,6 +1,7 @@
 ---
 name: google-design-doc
 description: Write a Google-style engineering design doc — an informal, trade-off-focused narrative that frames a problem, proposes one design, and weighs the alternatives it rejected. Use when an engineer must align a team on a non-trivial technical approach before building and wants the rationale and the decision on record. Anti-trigger; for a single immutable decision use adr, for product requirements use feature-spec, for an operational procedure use sre-runbook.
+argument-hint: "<the design problem to align on>"
 ---
 
 # google-design-doc

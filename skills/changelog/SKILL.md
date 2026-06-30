@@ -1,6 +1,7 @@
 ---
 name: changelog
 description: Write or update a CHANGELOG in the Keep a Changelog 1.x format — a human-curated, reverse-chronological record of notable changes per released version, grouped by Added/Changed/Deprecated/Removed/Fixed/Security and versioned with SemVer. Use when the user needs release notes or a version history humans will read. Anti-trigger; not for forward-looking roadmaps, marketing release announcements, or a raw dump of git commit log lines.
+argument-hint: "<changes or version to record> [path to CHANGELOG.md]"
 ---
 
 # changelog

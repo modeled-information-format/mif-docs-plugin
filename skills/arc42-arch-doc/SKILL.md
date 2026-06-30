@@ -1,6 +1,7 @@
 ---
 name: arc42-arch-doc
 description: Author an arc42 architecture document — the 12-section industry template (introduction & goals, constraints, context, solution strategy, building blocks, runtime, deployment, cross-cutting concepts, decisions, quality requirements, risks & tech debt, glossary) that captures a system's architecture as durable declarative knowledge. Use when the user needs a system/software architecture description, an arc42 doc, a software architecture document (SAD), or to record how a system is structured and why. Anti-trigger; for a single decision use an ADR (structured-madr/Nygard), and for task steps use a runbook/how-to.
+argument-hint: "<the system to document>"
 ---
 
 # arc42-arch-doc

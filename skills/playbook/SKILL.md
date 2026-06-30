@@ -1,6 +1,7 @@
 ---
 name: playbook
 description: Write a strategic operational playbook that coordinates a CLASS of situations (e.g. a Sev1 outage) across roles, decision points, and phases. Use for higher-altitude incident/operations coordination. Anti-trigger; for fixing one specific alert step-by-step use sre-runbook (tactical), not a playbook.
+argument-hint: "<the incident class to coordinate>"
 ---
 
 # playbook

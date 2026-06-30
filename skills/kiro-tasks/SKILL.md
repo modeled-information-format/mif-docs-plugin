@@ -1,6 +1,7 @@
 ---
 name: kiro-tasks
 description: Write the tasks.md of an AWS Kiro three-document spec set — a numbered, checkbox implementation plan where each task is small, test-driven, and traces to the design/requirements it implements. Use as the third Kiro artifact that drives implementation. Anti-trigger; for requirements use kiro-requirements, for the design use kiro-design.
+argument-hint: "<the feature> [path to design.md]"
 ---
 
 # kiro-tasks
