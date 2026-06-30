@@ -29,10 +29,12 @@ jobs:
         run: npm run validate-plugin
       - name: Hydrate canonical MIF schema
         run: npm run hydrate-schema
-      - name: Hydrate mif-docs ontology (from ../ontologies / published URI)
-        run: npm run hydrate-ontology
-      - name: Validate ontology + every genre's entity_type/relationships resolve
-        run: npm run validate-ontology
+      # Ontology validation runs at DEV (sibling ../ontologies) and at RELEASE,
+      # where the mif-docs ontology is vendored/pulled into the build artifact.
+      # It is intentionally NOT in push/PR CI: the ontology lives in the private
+      # modeled-information-format/ontologies repo, unreachable here without auth.
+      # `npm run validate-ontology` is the gate; the release workflow runs it
+      # against the vendored ontology.
       - name: MIF-validate every shipped good.md template
         run: |
           # The adr genre is fully aligned to structured-MADR (type: adr) and is

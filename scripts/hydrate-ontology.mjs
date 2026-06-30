@@ -15,13 +15,18 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CACHE = join(ROOT, "ontologies", ".cache");
 const OUT = join(CACHE, "mif-docs.ontology.yaml");
 const LOCK = join(CACHE, "VENDOR.lock");
-const URI = "https://mif-spec.dev/ontologies/mif-docs/mif-docs.ontology.yaml";
+// Resolution order: published canonical URI -> the ontologies repo on GitHub
+// (works in CI once that repo is pushed) -> the local sibling checkout (dev).
+const SOURCES = [
+  "https://mif-spec.dev/ontologies/mif-docs/mif-docs.ontology.yaml",
+  "https://raw.githubusercontent.com/modeled-information-format/ontologies/main/ontologies/mif-docs/mif-docs.ontology.yaml",
+];
 const SIBLING = join(ROOT, "..", "ontologies", "ontologies", "mif-docs", "mif-docs.ontology.yaml");
 
-async function fromUri() {
-  const res = await fetch(URI, { redirect: "follow" });
+async function fromUri(uri) {
+  const res = await fetch(uri, { redirect: "follow" });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  return { text: await res.text(), source: URI };
+  return { text: await res.text(), source: uri };
 }
 function fromSibling() {
   if (!existsSync(SIBLING)) throw new Error(`sibling ontologies repo not found at ${SIBLING}`);
@@ -30,9 +35,12 @@ function fromSibling() {
 
 async function main() {
   let got;
-  try { got = await fromUri(); }
-  catch (e) {
-    console.warn(`  published ontology unavailable (${e.message}); using sibling ../ontologies (dev)`);
+  for (const uri of SOURCES) {
+    try { got = await fromUri(uri); break; }
+    catch (e) { console.warn(`  ${uri} unavailable (${e.message})`); }
+  }
+  if (!got) {
+    console.warn("  remote ontology unavailable; using sibling ../ontologies (dev)");
     got = fromSibling();
   }
   mkdirSync(CACHE, { recursive: true });
