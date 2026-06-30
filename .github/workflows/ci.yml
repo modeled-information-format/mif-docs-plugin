@@ -70,6 +70,8 @@ jobs:
         run: node scripts/check-exemplars.mjs
       - name: Doc-set planner recipes are link-complete
         run: node scripts/planner-check.mjs
+      - name: Fail-closed MIF guard hook blocks non-MIF genre output
+        run: npm run test:hook
       - name: Markdown lint
         run: npm run lint:md
 

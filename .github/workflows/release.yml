@@ -51,6 +51,7 @@ jobs:
           done
           node scripts/check-exemplars.mjs
           node scripts/planner-check.mjs
+          npm run test:hook
           npm run lint:md
 
       - name: Build reproducible source tarball

@@ -31,6 +31,23 @@ The bundled schema is a refreshable **cache**, never the authority: it
 auto-hydrates from `mif-spec.dev/schema` and records the resolved version in
 `schema/VENDOR.lock`. Offline, it falls back to the last hydrated copy and warns.
 
+### Fail-closed guard (the conformance is enforced, not trusted)
+
+The plugin promises MIF output, so it enforces it. `hooks/hooks.json` registers a
+`PostToolUse` hook (`hooks/mif-guard.mjs`) on `Write`, `Edit`, and `MultiEdit`.
+When a genre document is written, the guard runs `mif-validate --level 1` on it
+and, if it is not conformant, **exits 2 to block** and feeds the failure back so
+the document must be fixed before work continues. There is no fail-open path: a
+genre doc that cannot be proven conformant is blocked.
+
+A file is guarded only when it is markdown whose frontmatter carries a
+document-genre signal (a MIF `type`/`ontology`/`entity_type` block, or the legacy
+`diataxis_type` marker). Plain markdown with no genre frontmatter is left alone,
+and `type: adr` documents are skipped here because the `adr` genre is
+structured-MADR and validated by the structured-madr action, not `mif-validate`.
+The guard's behaviour is proven both ways (passes a conformant doc, blocks a
+non-MIF one) by `npm run test:hook`, which CI runs on every push.
+
 ## Quickstart
 
 ```bash
