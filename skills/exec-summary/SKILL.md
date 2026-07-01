@@ -1,6 +1,6 @@
 ---
 name: exec-summary
-description: Write a 1-2 page decision-oriented executive summary — BLUF, Key Findings, Recommendation, Risks & Caveats — composable as the leadership-summary section of a fuller market-research or pentest report. Use when the deliverable is a short brief for decision-makers who will act without reading a full report. Anti-trigger; for the full study those decision-makers are summarizing use prd or market-research-report, not this genre.
+description: Write a 1-2 page decision-oriented executive summary — BLUF, Key Findings, Recommendation, Risks & Caveats — composable as the leadership-summary section of a fuller market-research or pentest report. Use when the deliverable is a short brief for decision-makers who will act without reading a full report. Anti-trigger; for the full study those decision-makers are summarizing use market-research-report or security-pentest (or prd for product requirements), not this genre.
 argument-hint: "<the decision this summary supports>"
 ---
 
