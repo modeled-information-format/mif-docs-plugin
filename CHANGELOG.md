@@ -63,6 +63,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 _No unreleased changes yet._
 
+## [0.3.1] - 2026-07-01
+
+### Changed
+
+- Hardened `evals/evals.json` across all 23 pre-existing doc-genre skills:
+  converted LLM-only expectations into `deterministic_checks`, and retargeted
+  prompts to write to a named output file instead of `transcript.md`
+  (deterministic coverage rose from 0% to roughly 63%).
+- Applied 10 skill-instruction fixes verified by the autoresearch improvement
+  loop against the hardened evals: `arc42-arch-doc` and `diataxis-tutorial`
+  (removed a self-referential banned-word bug), `c4-model-diagram` (mermaid
+  outer-fence widening guidance), `diataxis-how-to` (restored a
+  relocate-don't-delete rule for genre drift), `ears-acceptance-criteria` and
+  `feature-spec` (commit to a plausible component name and flag it as an
+  assumption), `mif-frontmatter` (surfaces the `type` enum whenever the L1
+  floor is discussed), `mif-validate` (states determinism/lossless-round-trip
+  guarantees in its answers), `python-pep` and `rust-rfc` (Status
+  single-state clarity; review-must-include-corrected-text rule).
+- Fixed 20 further eval-suite defects found by three rounds of GitHub Copilot
+  review: fragile shell-command-based counting checks replaced with regex,
+  case-sensitive EARS pattern checks made case-insensitive across five
+  skills, an overly literal phrase check broadened, seven `Step N` checks
+  word-boundaried against `Step N0` false positives, a `Status:` check
+  tightened to `Draft`-only for a brand-new-PEP scenario, an unanchored
+  "must start with" check anchored to the file start, and a synopsis check
+  loosened from requiring a code fence to accepting any form.
+
 ## [0.3.0] - 2026-07-01
 
 ### Added
