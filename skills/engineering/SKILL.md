@@ -30,11 +30,18 @@ overlay for formal ANSI/NISO Z39.18 technical-report conformance.
    dependencies, migration steps, risks, rollout, operational concerns.
 6. **Consequences** — what becomes easier, what becomes harder, what to revisit.
 
+Add an architecture or flow figure — a Mermaid `flowchart` or `sequenceDiagram`
+— when the findings support a system or component structure worth visualizing.
+This is optional and additive; a report with no such structure to show is
+still conformant without one.
+
 ## Rules that keep it an engineering report
 
 - The Trade-offs comparison table is mandatory, not optional matter — it is the
   section that grounds the Decision. Render it as a Markdown table, never
   ASCII art or an image.
+- Any architecture or flow figure is a fenced `mermaid` code block — never
+  ASCII art, an image link, or Graphviz/DOT.
 - Every option gets a fair, neutral description before the table judges it; a
   strawman option is a review smell.
 - The Decision must reference the comparison table's evidence, not assert a
