@@ -93,15 +93,16 @@ _No unreleased changes yet._
 ### Changed
 
 - License switched from Apache-2.0 to MIT; `plugin.json`, `marketplace.json`,
-  `package.json`, and `README` updated accordingly.
+  `package.json`, and `README.md` updated accordingly.
 
 ## [0.1.0] - 2026-06-30
 
 ### Added
 
 - Initial public release of the mif-docs plugin
-  (`modeled-information-format/mif-docs-plugin`), distributed under the MIT
-  license through the org marketplace `claude-code-plugins`.
+  (`modeled-information-format/mif-docs-plugin`), distributed under the Apache-2.0
+  license through the org marketplace `claude-code-plugins` (relicensed to MIT in
+  0.1.1).
 - **19 genre skills**, one per document genre: `diataxis-tutorial`,
   `diataxis-how-to`, `diataxis-reference`, `diataxis-explanation`,
   `arc42-arch-doc`, `c4-model-diagram`, `google-design-doc`, `adr`, `rust-rfc`,
