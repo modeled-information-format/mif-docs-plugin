@@ -59,7 +59,7 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 23
+  x-skill-count: 24
   x-purpose-group-count: 9
 ---
 
@@ -68,7 +68,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 23 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 24 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -88,7 +88,7 @@ Each skill name links to its full reference doc.
 | Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
-| Decisions & proposals | [`adr`](../skills/adr/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, or propose one change for consensus. |
+| Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
 | Product & feature specs | [`prd`](../skills/prd/), [`feature-spec`](../skills/feature-spec/) | Scope what to build and the build-ready slice of it. |
 | Kiro spec set | [`kiro-requirements`](../skills/kiro-requirements/), [`kiro-design`](../skills/kiro-design/), [`kiro-tasks`](../skills/kiro-tasks/) | The AWS Kiro three-document feature workflow. |
 | Operations | [`sre-runbook`](../skills/sre-runbook/), [`playbook`](../skills/playbook/) | Drive response to a failure — one alert, or a class of incidents. |
@@ -242,7 +242,8 @@ rejected.
 
 - **Authors:** a design narrative to align a team before building.
 - **Reach for it when:** a non-trivial technical approach needs sign-off, with rationale on record.
-- **Not this when:** a single immutable decision (use `adr`), product
+- **Not this when:** a single immutable decision (use `adr`), an evaluation
+  built around a mandatory comparison table (use `engineering`), product
   requirements (use `feature-spec`), or an operational procedure (use
   `sre-runbook`).
 - **MIF level / type:** L3, `semantic`.
@@ -260,8 +261,9 @@ in one spec-channel artifact a coding agent can consume.
 
 ## Decisions & proposals
 
-One records a decision already made; the others propose a change and seek
-consensus before it is made.
+One records a decision already made, one evaluates options against criteria
+before a decision is made, and the others propose a change and seek consensus
+before it is made.
 
 ### `adr`
 
@@ -272,7 +274,26 @@ smadr and MIF modes.
 
 - **Authors:** a single, auditable architecture decision record.
 - **Reach for it when:** capturing a consequential, hard-to-reverse technical choice with rationale.
-- **Not this when:** writing a how-to (use `diataxis-how-to`) or requirements (use `prd` / `feature-spec`).
+- **Not this when:** writing a how-to (use `diataxis-how-to`) or requirements
+  (use `prd` / `feature-spec`); an evaluation needing a comparison table
+  belongs in `engineering` instead.
+- **MIF level / type:** L3, `semantic`.
+
+### `engineering`
+
+An engineering decision / evaluation report — Problem/Context, Options
+Considered, a mandatory options-vs-criteria Trade-offs comparison table,
+Decision, Implementation Notes, and Consequences, with an additive optional
+ANSI/NISO Z39.18 technical-report overlay.
+
+- **Authors:** an engineering decision or evaluation report grounded in a
+  required comparison table.
+- **Reach for it when:** a team must evaluate concrete options against stated
+  decision drivers and document the choice for the engineers who build or
+  operate it.
+- **Not this when:** the decision is already made with no evaluation to show
+  (use `adr`), or the alignment narrative reasons in prose rather than a
+  mandatory table (use `google-design-doc`).
 - **MIF level / type:** L3, `semantic`.
 
 ### `rust-rfc`

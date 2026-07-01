@@ -135,7 +135,9 @@ ask "why didn't we just do X?" The doc's informality is a feature: it lowers the
 cost of writing enough that the thinking actually happens on paper.
 
 Do **not** use it when the decision is already made and you only need to record it
-immutably with its drivers — that is an [adr](../adr/). Do not use it for product
+immutably with its drivers — that is an [adr](../adr/). If the alignment must be
+grounded in a mandatory options-vs-criteria comparison table rather than prose
+trade-offs, use [engineering](../engineering/) instead. Do not use it for product
 requirements; lead with the problem and success metrics in a
 [feature-spec](../feature-spec/) instead. For an operational procedure, write a
 runbook. When you need durable whole-system structure rather than a single

@@ -83,7 +83,7 @@ claude plugin marketplace add modeled-information-format/claude-code-plugins
 claude plugin install mif-docs@modeled-information-format
 ```
 
-You now have **mif-docs v0.1.0** available, which ships 19 genre skills, three
+You now have **mif-docs v0.2.0** available, which ships 20 genre skills, three
 substrate skills, and the `doc-set-planner`. The install also registers the
 PostToolUse guard you will meet in Step 4.
 

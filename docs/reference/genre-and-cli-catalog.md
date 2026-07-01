@@ -60,7 +60,7 @@ entity:
   name: mif-docs genre and CLI catalog
   entity_type: reference-document
 extensions:
-  x-genre-count: 19
+  x-genre-count: 20
   x-substrate-count: 3
   x-recipe-count: 4
 ---
@@ -71,7 +71,7 @@ An exhaustive lookup for the **mif-docs v0.1.0** plugin: every skill it ships,
 every doc-set recipe, and every script in `scripts/` with its arguments and exit
 behavior. Consult an entry; do not read this end to end.
 
-## Genre skills (19)
+## Genre skills (20)
 
 Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, and
 `evals/evals.json`.
@@ -85,6 +85,7 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `arc42-arch-doc` | arc42 12-section architecture document | `semantic` | 3 |
 | `c4-model-diagram` | C4 model document (Context/Container/Component/Code) | `semantic` | 3 |
 | `google-design-doc` | Google-style engineering design doc | `semantic` | 3 |
+| `engineering` | Engineering decision / evaluation report (options-vs-criteria comparison table) | `semantic` | 3 |
 | `adr` | Architectural Decision Record (Structured MADR) | `semantic` | 3 |
 | `rust-rfc` | Rust-style RFC / enhancement proposal | `semantic` | 3 |
 | `python-pep` | Python Enhancement Proposal | `semantic` | 3 |

@@ -25,9 +25,9 @@ technology the whole pipeline standardizes on.
 
 | Option | Throughput | At-least-once | Ops simplicity | Managed option |
 | --- | --- | --- | --- | --- |
-| Kafka (self-managed) | 2M msg/s sustained on 3 brokers [1] | Yes | Low — ~0.5 FTE/cluster [2] | No |
-| AWS SQS (FIFO) | Capped at 3,000 TPS/queue by default [3] | Yes | High | Yes |
-| Redpanda Cloud | Kafka-compatible; no ZooKeeper dependency [4] | Yes | High | Yes |
+| Kafka (self-managed) | 2M msg/s sustained on 3 brokers [1] | Yes | Low — ~0.5 FTE/cluster | No |
+| AWS SQS (FIFO) | Capped at 3,000 TPS/queue by default [2] | Yes | High | Yes |
+| Redpanda Cloud | Kafka-compatible; no ZooKeeper dependency [3] | Yes | High | Yes |
 
 ## Decision
 
@@ -51,9 +51,8 @@ Redpanda Cloud's availability.
 ## References
 
 1. Apache Kafka documentation — <https://kafka.apache.org/documentation/>
-2. Industry reporting on Kafka operational overhead.
-3. AWS SQS quotas — <https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html>
-4. Redpanda documentation — <https://docs.redpanda.com/>
+2. AWS SQS quotas — <https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/quotas-messages.html>
+3. Redpanda documentation — <https://docs.redpanda.com/>
 
 <!--
 MIF Level 1 (floor): id, type, created + body. A complete, valid engineering

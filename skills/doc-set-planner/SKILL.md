@@ -38,7 +38,8 @@ reconcile the cross-document MIF `relationships[]` graph.
 ## What stays standalone
 
 Singletons have no member set and are invoked directly: `adr`, `changelog`,
-`sre-runbook`, `playbook`, `rust-rfc`, `python-pep`, `google-design-doc`.
+`sre-runbook`, `playbook`, `rust-rfc`, `python-pep`, `google-design-doc`,
+`engineering`.
 
 ## Link-completeness check
 
