@@ -22,7 +22,7 @@
         {
           "type": "regex_match",
           "file": "architecture.md",
-          "pattern": "(WHEN|IF|WHILE)[^\\n]+SHALL",
+          "pattern": "(?i)(WHEN|IF|WHILE)[^\\n]+SHALL",
           "description": "At least one NFR is expressed as a testable EARS-style (WHEN/IF/WHILE ... SHALL) requirement"
         },
         {
@@ -118,7 +118,7 @@
         {
           "type": "regex_match",
           "file": "architecture.md",
-          "pattern": "(WHEN|IF|WHILE)[^\\n]+SHALL",
+          "pattern": "(?i)(WHEN|IF|WHILE)[^\\n]+SHALL",
           "description": "Still expresses NFRs in EARS form even with placeholder values"
         }
       ],
