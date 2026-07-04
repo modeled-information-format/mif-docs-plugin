@@ -281,6 +281,6 @@ earlier decouple-from-smadr direction was reversed in favor of full alignment.
 **Action Required:** Keep the `adr-smadr` CI job green in both `smadr` and `mif`
 modes for every shipped ADR.
 
-[adr-0002]: 0002-host-ontologies-in-a-separate-repo.md
-[adr-0003]: 0003-attested-delivery-release-pattern.md
+[adr-0002]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0002-host-ontologies-in-a-separate-repo/
+[adr-0003]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0003-attested-delivery-release-pattern/
 [smadr]: https://github.com/modeled-information-format/structured-madr

@@ -278,6 +278,6 @@ ontology stays in the sibling repo, hydrated at dev and vendored at release.
 **Action Required:** Keep `validate-ontology` wired as the release gate and out
 of routine push CI.
 
-[adr-0001]: 0001-align-adr-genre-to-structured-madr.md
-[adr-0003]: 0003-attested-delivery-release-pattern.md
+[adr-0001]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0001-align-adr-genre-to-structured-madr/
+[adr-0003]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0003-attested-delivery-release-pattern/
 [ontologies]: https://github.com/modeled-information-format/ontologies
