@@ -318,7 +318,7 @@ releases use the attested-delivery pattern with a fail-closed verify gate.
 **Action Required:** Keep `pin-check` green and the `gh attestation verify`
 gate fail-closed before every upload.
 
-[adr-0001]: 0001-align-adr-genre-to-structured-madr.md
-[adr-0002]: 0002-host-ontologies-in-a-separate-repo.md
+[adr-0001]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0001-align-adr-genre-to-structured-madr/
+[adr-0002]: https://modeled-information-format.github.io/mif-docs-plugin/adr/0002-host-ontologies-in-a-separate-repo/
 [runbook]: https://github.com/modeled-information-format/mif-docs-plugin/blob/main/docs/runbooks/cut-an-attested-release.md
 [attest]: https://github.com/actions/attest-build-provenance
