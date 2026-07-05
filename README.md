@@ -116,7 +116,7 @@ the artifact's attestation with the signer workflow pinned, as shown in the
 npm ci
 npm run hydrate-schema          # fetch canonical MIF schema -> schema/.cache
 npm run mif-validate -- path/to/doc.md --level 1
-npm run validate-plugin         # structural check of plugin.json, .mcp.json + every SKILL.md
+npm run validate-plugin         # structural check: plugin/marketplace/.mcp manifests + every SKILL.md and its evals
 npm run lint:md                 # markdownlint-cli2
 ```
 

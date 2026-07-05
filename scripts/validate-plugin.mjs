@@ -4,9 +4,10 @@
 // `claude plugin validate` does not exist in the Claude Code CLI (the plugin
 // subcommands are init/details/list/enable/disable/install). This script is the
 // honest, deterministic substitute the suite's acceptance check #1 names: it
-// validates plugin.json, marketplace.json, .mcp.json (when present), and every
-// skills/<name>/SKILL.md frontmatter against the documented Claude Code
-// manifest shape with ajv, and exits non-zero on any violation.
+// validates plugin.json, marketplace.json and .mcp.json (both when present),
+// and every skills/<name>/SKILL.md frontmatter plus its evals/evals.json
+// against the documented Claude Code manifest shape with ajv, and exits
+// non-zero on any violation.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -80,7 +81,7 @@ const MCP_SCHEMA = {
         properties: {
           command: { type: "string", minLength: 1 },
           args: { type: "array", items: { type: "string" } },
-          env: { type: "object" },
+          env: { type: "object", additionalProperties: { type: "string" } },
         },
         additionalProperties: true,
       },
@@ -161,7 +162,11 @@ if (existsSync(marketPath)) {
 // 3. .mcp.json (optional but validated when present)
 const mcpPath = join(ROOT, ".mcp.json");
 if (existsSync(mcpPath)) {
-  check(".mcp.json", MCP_SCHEMA, readJson(mcpPath));
+  try {
+    check(".mcp.json", MCP_SCHEMA, readJson(mcpPath));
+  } catch (e) {
+    errors.push(`.mcp.json: ${e.message}`);
+  }
 }
 
 // 4. every skills/<name>/SKILL.md
