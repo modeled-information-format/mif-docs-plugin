@@ -140,9 +140,9 @@ Level 1 decomposes mif-docs into four black boxes:
   regulated/compliance-report genres, four research/market-intelligence
   genres, and two business-communication genres — see
   [skills by purpose](../reference/skills-by-purpose/) for the full grouping)
-  plus 3 substrate skills (mif-frontmatter L1–L3, ears-acceptance-criteria,
-  mif-validate) and `doc-set-planner` (engine plus the diataxis, ai-spec,
-  kiro, and architecture recipes). Each genre ships `good-l1.md`, `good.md`,
+  plus 4 substrate skills (mif-frontmatter L1–L3, ears-acceptance-criteria,
+  mif-validate, mif-corpus) and `doc-set-planner` (engine plus the diataxis,
+  ai-spec, kiro, and architecture recipes). Each genre ships `good-l1.md`, `good.md`,
   `bad.md`, and `evals/evals.json`.
 - **`scripts/`** — the deterministic tooling: `mif-validate`, `mif-convert`
   (`emit-jsonld` | `emit-markdown` | `roundtrip`), `hydrate-schema`,

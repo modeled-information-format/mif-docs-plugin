@@ -67,6 +67,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   enhancement: six semantic MCP tools when the binary is on `PATH`, full plugin
   function without it. `validate-plugin` now checks the `.mcp.json` shape, and a
   how-to documents attested install and verification.
+- New `mif-corpus` substrate skill: semantic ingest, free-text search,
+  find-similar cross-link candidates, and corpus statistics over a gitignored
+  `.mif/vectors.db` store, backed by the optional mif-rs tools (mif-mcp MCP
+  server or mif-cli), with a corpus-layer reference page and an
+  ingest-and-search how-to.
 - Engine-convergence groundwork (ADR-0004): the node engine is authoritative;
   a non-required nightly `engine-parity` workflow compares it against a
   pinned, attestation-verified mif-rs `mif-cli` release over the CI-gated
@@ -74,6 +79,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   class, mif-rs#38; the remaining capability gaps mif-rs#39-#41 are tracked
   separately, not yet ledger entries) and a fail-closed
   stale/orphaned-expectation check.
+
+### Changed
+
+- `doc-set-planner` is now corpus-aware when the optional mif-rs tooling is
+  present: the Plan step searches the corpus per planned member and surfaces
+  existing-coverage decisions, and the Reconcile step offers find-similar
+  results as candidate `relationships[]` targets. Recipe decomposition, the
+  cross-link contract, and the deterministic `planner-check` gate are
+  unchanged with or without the corpus.
 
 ## [0.3.1] - 2026-07-01
 

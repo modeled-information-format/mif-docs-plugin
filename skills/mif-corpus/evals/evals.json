@@ -1,0 +1,84 @@
+{
+  "skill_name": "mif-corpus",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Ingest every markdown document under docs/ into the semantic corpus so we can search them, and tell me what you ingested.",
+      "expected_output": "Ingests each MIF doc via ingest_mif_document (or mif-cli ingest), skips the ADR documents under docs/adr/ (the docs carrying a top-level description: key) with the stated round-trip-drift reason, and reports the ingested count plus the skipped files.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "transcript.md",
+          "literal": "round-trip",
+          "description": "states the round-trip-drift reason for the ADR skip"
+        },
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "skip|Skip|SKIP",
+          "description": "reports that ADR documents were skipped rather than failing silently"
+        }
+      ],
+      "expectations": [
+        "Skips the ADR documents under docs/adr/ in the bulk ingest, identified by their top-level description: key or path (not by a type: adr value - the repo's ADRs carry type: semantic), and states the Rust round-trip-drift reason rather than letting them fail one by one",
+        "Warns that the first ingest downloads the embedding model (network, slower) before running a bulk pass",
+        "Reports ingest as fail-closed: a doc that fails validation or round-trip stores nothing, and any such failure is reported per-file, not hidden"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Which existing doc in this repo covers validating a document against the MIF schema? Search the corpus semantically.",
+      "expected_output": "Runs search_documents (or mif-cli search) with a natural-language query against .mif/vectors.db and presents the ranked (score, id) results, identifying the top match.",
+      "files": [],
+      "expectations": [
+        "Presents ranked results with their cosine scores and ids verbatim from the tool output, without inventing or reordering matches",
+        "Frames the result as a discovery candidate, not a validation verdict — conformance questions still go to mif-validate"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I just wrote docs/reference/new-page.md and ingested it. What should its relationships[] link to? Use the corpus.",
+      "expected_output": "Runs find_similar_documents (or mif-cli find-similar) with the document's urn:mif id and offers the top matches as candidate relationships[] targets for the author to accept.",
+      "files": [],
+      "expectations": [
+        "Uses the document's urn:mif:<id> (from frontmatter id) as the anchor and notes the anchor itself is excluded from results",
+        "Offers the matches as candidates the author accepts or rejects — does not silently write relationships[] into the doc as if similarity were authoritative"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Search the corpus for docs about release attestation.",
+      "expected_output": "Detects that neither an mif-mcp MCP server nor a mif-cli binary is available, states the corpus layer is unavailable, and points at the install route without fabricating results.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "unavailable|not installed|not available",
+          "description": "states the corpus layer is unavailable"
+        },
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "mif-rs|cargo install",
+          "description": "points at the install route"
+        }
+      ],
+      "expectations": [
+        "States plainly that the optional mif-rs tooling is not installed and that the rest of the plugin is unaffected",
+        "Points to the install route (attested release binaries from modeled-information-format/mif-rs, or cargo install) instead of substituting grep output presented as semantic search"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "How big is our semantic corpus right now, and where does it live?",
+      "expected_output": "Runs corpus_stats (or mif-cli corpus-stats) and reports the document count, embedding dimension, and the .mif/vectors.db path.",
+      "files": [],
+      "expectations": [
+        "Reports count, dim, and db path from the tool output verbatim",
+        "Notes the store is a gitignored local derived index, safe to delete and rebuild by re-ingesting"
+      ]
+    }
+  ]
+}

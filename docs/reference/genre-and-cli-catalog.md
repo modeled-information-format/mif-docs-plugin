@@ -61,7 +61,7 @@ entity:
   entity_type: reference-document
 extensions:
   x-genre-count: 37
-  x-substrate-count: 3
+  x-substrate-count: 4
   x-recipe-count: 4
 ---
 
@@ -116,7 +116,7 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `briefing` | One-page briefing / standup update | `episodic` | 3 |
 | `exec-summary` | 1-2 page BLUF decision-oriented executive summary | `semantic` | 3 |
 
-## Substrate skills (3) and the planner
+## Substrate skills (4) and the planner
 
 These do not author a finished genre artifact; they supply or check the MIF layer
 that every genre rides on, plus the multi-document engine.
@@ -126,6 +126,7 @@ that every genre rides on, plus the multi-document engine.
 | `mif-frontmatter` | Author MIF Level 1–3 frontmatter for any document, climbing L1→L3 as detail allows. |
 | `ears-acceptance-criteria` | Turn a requirement or driver into an EARS-notation acceptance criterion. |
 | `mif-validate` | Deterministically prove a document is MIF-conformant and convert between forms. |
+| `mif-corpus` | Semantically index and query MIF docs via the optional mif-rs tools; suggestion signal, never a gate. |
 | `doc-set-planner` | Plan a subject into a coordinated SET of documents, fan out to genres, reconcile the relationship graph. |
 
 ## Doc-set recipes (4)
