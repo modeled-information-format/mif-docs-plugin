@@ -67,6 +67,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   enhancement: six semantic MCP tools when the binary is on `PATH`, full plugin
   function without it. `validate-plugin` now checks the `.mcp.json` shape, and a
   how-to documents attested install and verification.
+- Engine-convergence groundwork (ADR-0004): the node engine is authoritative;
+  a non-required nightly `engine-parity` workflow compares it against a
+  pinned, attestation-verified mif-rs `mif-cli` release over the CI-gated
+  corpus, with a committed expected-disagreement ledger (currently one entry
+  class, mif-rs#38; the remaining capability gaps mif-rs#39-#41 are tracked
+  separately, not yet ledger entries) and a fail-closed
+  stale/orphaned-expectation check.
 
 ## [0.3.1] - 2026-07-01
 
