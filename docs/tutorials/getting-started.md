@@ -2,7 +2,7 @@
 id: tutorial-getting-started
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-07-05T19:00:00Z'
 namespace: tutorials/getting-started
 title: Get Started with mif-docs
 tags:
@@ -13,10 +13,14 @@ temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-30T00:00:00Z'
   ttl: P6M
-  recordedAt: '2026-06-30T10:00:00Z'
+  recordedAt: '2026-07-05T19:00:00Z'
 relationships:
   - type: relates-to
     target: urn:mif:how-to-validate-and-author
+  - type: relates-to
+    target: urn:mif:how-to-install-mif-mcp
+  - type: relates-to
+    target: urn:mif:reference-skill-mif-corpus
   - type: relates-to
     target: urn:mif:reference-genre-and-cli
   - type: relates-to
@@ -140,5 +144,8 @@ validator pass it, and confirmed the fail-closed guard accepts it. To turn this
 into a repeatable workflow — validating any document and converting it to
 JSON-LD — follow the how-to guide. To look up every genre, recipe, and script,
 consult the catalog reference. To understand *why* each document is both a human
-artifact and a machine unit, read the explanation. All three are recorded as
-typed `relates-to` edges in this tutorial's `relationships[]`.
+artifact and a machine unit, read the explanation. And when you want semantic
+search over the documents you produce — "which doc covers X?", cross-link
+candidates — install the optional mif-rs tools and meet the `mif-corpus`
+skill. Each next step is recorded as a typed `relates-to` edge in this
+tutorial's `relationships[]`.

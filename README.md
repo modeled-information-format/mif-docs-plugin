@@ -54,7 +54,8 @@ Action), organized in the Diataxis quadrants:
 
 - **Tutorial** — [Getting started](docs/tutorials/getting-started.md)
 - **How-to** — [Validate and author a document](docs/how-to/validate-and-author-a-document.md) ·
-  [Install the optional mif-mcp server](docs/how-to/install-the-optional-mif-mcp-server.md)
+  [Install the optional mif-rs tools](docs/how-to/install-the-optional-mif-mcp-server.md) ·
+  [Ingest and search a doc corpus](docs/how-to/ingest-and-search-a-doc-corpus.md)
 - **Reference** — [Genre & CLI catalog](docs/reference/genre-and-cli-catalog.md)
 - **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md)
 - **Architecture** — [arc42](docs/architecture/arc42.md) · [C4 model](docs/architecture/c4.md)
