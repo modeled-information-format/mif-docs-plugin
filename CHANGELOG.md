@@ -61,7 +61,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+### Added
+
+- New `mif-corpus` substrate skill: semantic ingest, free-text search,
+  find-similar cross-link candidates, and corpus statistics over a gitignored
+  `.mif/vectors.db` store, backed by the optional mif-rs tools (mif-mcp MCP
+  server or mif-cli), with a corpus-layer reference page and an
+  ingest-and-search how-to.
 
 ## [0.3.1] - 2026-07-01
 

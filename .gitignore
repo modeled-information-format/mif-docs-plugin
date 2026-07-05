@@ -7,3 +7,5 @@ dist/
 schema/.cache/
 # mif-docs ontology hydrated from ../ontologies repo; pulled into the build at release.
 ontologies/.cache/
+# local semantic vector store (mif-corpus skill); derived, never committed.
+.mif/

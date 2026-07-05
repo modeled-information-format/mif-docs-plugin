@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-06-30T11:00:00Z'
+modified: '2026-07-05T12:00:00Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -59,7 +59,7 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 41
+  x-skill-count: 42
   x-purpose-group-count: 13
 ---
 
@@ -68,7 +68,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 41 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 42 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -85,7 +85,7 @@ Each skill name links to its full reference doc.
 | Group | Skills | What the group is for |
 | --- | --- | --- |
 | Orchestrator | [`doc-set-planner`](../skills/doc-set-planner/) | Decompose a broad subject into a coordinated document set and reconcile the cross-document graph. |
-| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
+| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
 | Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
@@ -162,6 +162,21 @@ document to either output form.
   converting between Markdown and JSON-LD.
 - **Not this when:** authoring content; this is the gate, not a generator.
 - **MIF level / type:** validates at L1, L2, or L3.
+
+### `mif-corpus`
+
+Semantic discovery over the suite's MIF documents via the optional mif-rs
+tools: ingest docs into a gitignored local vector store, search them by
+meaning, surface find-similar candidates for cross-linking, and report corpus
+statistics.
+
+- **Authors:** ranked discovery candidates and ingest/stats reports — never a verdict.
+- **Reach for it when:** asking "which doc covers X?", hunting `relationships[]`
+  targets, or checking coverage before planning a doc set.
+- **Not this when:** proving conformance; that is `mif-validate`, and similarity
+  is a suggestion signal, never a gate.
+- **Requires:** the optional `mif-mcp` server or `mif-cli` binary; states
+  unavailability plainly when neither is installed.
 
 ## Diátaxis quadrants
 
