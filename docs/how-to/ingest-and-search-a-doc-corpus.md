@@ -75,18 +75,20 @@ Ingest each document; the store `.mif/vectors.db` (gitignored) is created on
 first use:
 
 ```bash
-find docs -name '*.md' | while read -r f; do
-  mif-cli ingest "$f" || echo "SKIPPED: $f"
+find docs -name '*.md' -not -path 'docs/adr/*' | while read -r f; do
+  mif-cli ingest "$f" || echo "FAILED: $f"
 done
 ```
 
 Each successful line reports `lint=ok validate=ok roundtrip=lossless` plus
 the stored id. Ingest is fail-closed — a doc that fails validation or the
-round-trip stores nothing and renders a problem+json envelope explaining why.
-Expect `type: adr` documents to fail for now (round-trip drift: the
-`description:` frontmatter key is dropped on re-serialization, tracked in the
-engine-convergence epic); skip them deliberately rather than treating those
-failures as new.
+round-trip stores nothing and renders a problem+json envelope explaining why,
+so treat any `FAILED` line as a real failure to investigate. The ADR
+documents under `docs/adr/` are excluded up front and deliberately: they
+carry a top-level `description:` frontmatter key, which currently drifts
+through the Rust round-trip (dropped on re-serialization, tracked in the
+engine-convergence epic). Excluding them by path keeps known drift out of
+the failure signal.
 
 ## Search by meaning
 

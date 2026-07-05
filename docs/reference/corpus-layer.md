@@ -98,8 +98,8 @@ about `0.55` to `0.78`.
 - **ADR exclusion** — documents carrying a top-level `description:`
   frontmatter key currently fail the Rust round-trip inside ingest (the key
   is dropped on re-serialization; tracked in the engine-convergence epic). In
-  this corpus those are the `type: adr` docs; bulk ingests skip them and say
-  so.
+  this corpus those are the ADR documents under `docs/adr/` (whose MIF `type`
+  is `semantic`); bulk ingests skip them by key or path and say so.
 - **Errors** — failures render as RFC 9457 `application/problem+json`
   envelopes carrying `suggested_fix` and `code_actions[]` with applicability
   markers; only `machine_applicable` fixes are safe to apply unreviewed.

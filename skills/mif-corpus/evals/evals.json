@@ -4,7 +4,7 @@
     {
       "id": 1,
       "prompt": "Ingest every markdown document under docs/ into the semantic corpus so we can search them, and tell me what you ingested.",
-      "expected_output": "Ingests each MIF doc via ingest_mif_document (or mif-cli ingest), skips type: adr documents with the stated round-trip-drift reason, and reports the ingested count plus the skipped ADRs.",
+      "expected_output": "Ingests each MIF doc via ingest_mif_document (or mif-cli ingest), skips the ADR documents under docs/adr/ (the docs carrying a top-level description: key) with the stated round-trip-drift reason, and reports the ingested count plus the skipped files.",
       "files": [],
       "deterministic_checks": [
         {
@@ -21,7 +21,7 @@
         }
       ],
       "expectations": [
-        "Skips type: adr documents in the bulk ingest and states why (Rust round-trip drift on documents carrying a literal description key), rather than letting them fail one by one",
+        "Skips the ADR documents under docs/adr/ in the bulk ingest, identified by their top-level description: key or path (not by a type: adr value - the repo's ADRs carry type: semantic), and states the Rust round-trip-drift reason rather than letting them fail one by one",
         "Warns that the first ingest downloads the embedding model (network, slower) before running a bulk pass",
         "Reports ingest as fail-closed: a doc that fails validation or round-trip stores nothing, and any such failure is reported per-file, not hidden"
       ]

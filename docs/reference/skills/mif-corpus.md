@@ -113,9 +113,11 @@ the suite depends on this skill's availability.
 - **Fail-closed ingest** — a document that fails schema validation or the
   lossless round-trip stores nothing; the failure renders as an RFC 9457
   problem envelope naming the cause.
-- **ADR exclusion** — `type: adr` documents currently fail the Rust
-  round-trip inside ingest and are skipped in bulk ingests, with the skip
-  stated (tracked in the engine-convergence epic).
+- **ADR exclusion** — documents carrying a top-level `description:` key
+  currently fail the Rust round-trip inside ingest; in this repo those are
+  the ADR documents under `docs/adr/` (MIF `type: semantic`), skipped in bulk
+  ingests by key or path with the skip stated (tracked in the
+  engine-convergence epic).
 - **First-run cost** — the first ingest or search downloads the embedding
   model once; subsequent runs are local.
 - **Consumed by the planner** — `doc-set-planner`'s corpus-aware update

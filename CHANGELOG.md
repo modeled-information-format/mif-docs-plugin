@@ -63,6 +63,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Registered the mif-rs `mif-mcp` server in `.mcp.json` as an optional
+  enhancement: six semantic MCP tools when the binary is on `PATH`, full plugin
+  function without it. `validate-plugin` now checks the `.mcp.json` shape, and a
+  how-to documents attested install and verification.
 - New `mif-corpus` substrate skill: semantic ingest, free-text search,
   find-similar cross-link candidates, and corpus statistics over a gitignored
   `.mif/vectors.db` store, backed by the optional mif-rs tools (mif-mcp MCP

@@ -54,15 +54,17 @@ are cosine similarity; on this suite's own corpus, useful matches typically
 land in the ~0.55-0.78 range. Treat results as **candidates for a human or a
 genre skill to act on** — never as a validation verdict.
 
-## Known exclusion: `type: adr` documents
+## Known exclusion: documents with a `description:` key (the ADRs)
 
 Documents carrying a top-level `description:` frontmatter key currently fail
 the Rust round-trip check inside ingest (the key is dropped by the canonical
 re-serialization; tracked upstream and in this repo's engine-convergence
-epic). In this suite's corpus those are exactly the ADRs, so skip `type: adr`
-files in bulk ingests and say that they were skipped and why. This mirrors
-the suite's existing rule that the adr genre is validated by the
-structured-madr Action, not `mif-validate`.
+epic). In this suite's corpus those are exactly the ADR documents under
+`docs/adr/` — note they carry MIF `type: semantic`, so identify the skip set
+by the `description:` key or the `docs/adr/` path, never by a `type: adr`
+frontmatter value. Skip them in bulk ingests and say that they were skipped
+and why. This sits alongside the suite's existing rule that the adr *genre*
+is validated by the structured-madr Action, not `mif-validate`.
 
 ## First-run cost
 
