@@ -53,7 +53,8 @@ MIF-conformant artifact validated by `mif-validate` (ADRs by the structured-madr
 Action), organized in the Diataxis quadrants:
 
 - **Tutorial** — [Getting started](docs/tutorials/getting-started.md)
-- **How-to** — [Validate and author a document](docs/how-to/validate-and-author-a-document.md)
+- **How-to** — [Validate and author a document](docs/how-to/validate-and-author-a-document.md) ·
+  [Install the optional mif-mcp server](docs/how-to/install-the-optional-mif-mcp-server.md)
 - **Reference** — [Genre & CLI catalog](docs/reference/genre-and-cli-catalog.md)
 - **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md)
 - **Architecture** — [arc42](docs/architecture/arc42.md) · [C4 model](docs/architecture/c4.md)
@@ -92,13 +93,30 @@ structured-MADR and validated by the structured-madr action, not `mif-validate`.
 The guard's behaviour is proven both ways (passes a conformant doc, blocks a
 non-MIF one) by `npm run test:hook`, which CI runs on every push.
 
+## Optional: semantic tools via mif-mcp
+
+The plugin registers the [mif-rs](https://github.com/modeled-information-format/mif-rs)
+`mif-mcp` server in `.mcp.json` as an **optional enhancement**. When the binary is
+on your `PATH`, six MCP tools become available: `validate_mif_document`,
+`resolve_ontology_reference`, `ingest_mif_document`, `search_documents`,
+`find_similar_documents`, and `corpus_stats` — Rust-native validation plus a
+local-embedding semantic index over your MIF docs, with RFC 9457 problem+json
+errors.
+
+When the binary is absent, nothing degrades: every gate, hook, and skill in this
+plugin runs on the Node engine alone. `hooks/mif-guard.mjs` and CI never depend
+on `mif-mcp`. Install it from the mif-rs attested release binaries — verifying
+the artifact's attestation with the signer workflow pinned, as shown in the
+[install how-to](docs/how-to/install-the-optional-mif-mcp-server.md) — or with
+`cargo install mif-mcp`.
+
 ## Quickstart
 
 ```bash
 npm ci
 npm run hydrate-schema          # fetch canonical MIF schema -> schema/.cache
 npm run mif-validate -- path/to/doc.md --level 1
-npm run validate-plugin         # structural check of plugin.json + every SKILL.md
+npm run validate-plugin         # structural check: plugin/marketplace/.mcp manifests + every SKILL.md and its evals
 npm run lint:md                 # markdownlint-cli2
 ```
 
