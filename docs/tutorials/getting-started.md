@@ -20,6 +20,8 @@ relationships:
   - type: relates-to
     target: urn:mif:how-to-install-mif-mcp
   - type: relates-to
+    target: urn:mif:reference-skill-mif-corpus
+  - type: relates-to
     target: urn:mif:reference-genre-and-cli
   - type: relates-to
     target: urn:mif:explanation-one-artifact-two-readers
