@@ -72,6 +72,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.mif/vectors.db` store, backed by the optional mif-rs tools (mif-mcp MCP
   server or mif-cli), with a corpus-layer reference page and an
   ingest-and-search how-to.
+- Engine-convergence groundwork (ADR-0004): the node engine is authoritative;
+  a non-required nightly `engine-parity` workflow compares it against a
+  pinned, attestation-verified mif-rs `mif-cli` release over the CI-gated
+  corpus, with a committed expected-disagreement ledger (currently one entry
+  class, mif-rs#38; the remaining capability gaps mif-rs#39-#41 are tracked
+  separately, not yet ledger entries) and a fail-closed
+  stale/orphaned-expectation check.
 
 ### Changed
 

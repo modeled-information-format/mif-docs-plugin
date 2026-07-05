@@ -157,6 +157,16 @@ Every script is fail-closed: any failure exits non-zero.
 | `validate-plugin.mjs` | `validate-plugin` | `0` `plugin.json`, `marketplace.json`, and every `SKILL.md` frontmatter valid; `1` any structural violation. |
 | `check-exemplars.mjs` | `check-exemplars` | `0` every genre's `good-l1.md` validates at L1 and `good.md` at its target level; `1` otherwise. |
 | `planner-check.mjs` | `planner-check [<recipe>]` | `0` recipe(s) decompose to real member skills and the cross-link graph is complete; `1` otherwise. |
+| `engine-parity.mjs` | `engine-parity <path-to-mif-cli> [--expected <json>]` | `0` node and Rust verdicts agree everywhere outside the expected-disagreement ledger; `1` unexpected disagreement, stale/orphaned ledger entry, or harness fault (missing/unparseable ledger, schema not hydrated, binary cannot run, gutted corpus); `2` usage error (missing binary path, wrong working directory). |
+
+### Which engine is authoritative
+
+The **node engine is authoritative** for every gate in this suite (ADR-0004):
+`mif-validate`, the CI validation jobs, and the fail-closed write guard all
+run `scripts/lib/projection.mjs`. The mif-rs Rust engine is compared against
+it by the non-required nightly `engine-parity` workflow; a disagreement is
+evidence for an upstream mif-rs issue, never a reason to change a document
+the node gates accept.
 
 ### Argument notes
 

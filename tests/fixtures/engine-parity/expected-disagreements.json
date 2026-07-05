@@ -1,0 +1,25 @@
+{
+  "comment": "Documents where the node and mif-rs engines are KNOWN to disagree, each tied to the upstream issue that will close the gap. engine-parity.mjs fails on any disagreement not listed here AND on any listed file whose engines now agree (a stale expectation: the upstream fix landed, prune the entry).",
+  "disagreements": [
+    {
+      "file": "docs/adr/0001-align-adr-genre-to-structured-madr.md",
+      "reason": "description frontmatter key dropped by mif-frontmatter jsonld_to_md; node round-trips it losslessly",
+      "upstream": "modeled-information-format/mif-rs#38"
+    },
+    {
+      "file": "docs/adr/0002-host-ontologies-in-a-separate-repo.md",
+      "reason": "description frontmatter key dropped by mif-frontmatter jsonld_to_md; node round-trips it losslessly",
+      "upstream": "modeled-information-format/mif-rs#38"
+    },
+    {
+      "file": "docs/adr/0003-attested-delivery-release-pattern.md",
+      "reason": "description frontmatter key dropped by mif-frontmatter jsonld_to_md; node round-trips it losslessly",
+      "upstream": "modeled-information-format/mif-rs#38"
+    },
+    {
+      "file": "tests/fixtures/engine-parity/drift-description.md",
+      "reason": "minimal committed reproduction of the description-key drift",
+      "upstream": "modeled-information-format/mif-rs#38"
+    }
+  ]
+}
