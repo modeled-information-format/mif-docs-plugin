@@ -61,7 +61,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-_No unreleased changes yet._
+### Added
+
+- Registered the mif-rs `mif-mcp` server in `.mcp.json` as an optional
+  enhancement: six semantic MCP tools when the binary is on `PATH`, full plugin
+  function without it. `validate-plugin` now checks the `.mcp.json` shape, and a
+  how-to documents attested install and verification.
 
 ## [0.3.1] - 2026-07-01
 
