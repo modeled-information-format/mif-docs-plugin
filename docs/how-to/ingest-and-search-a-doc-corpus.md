@@ -63,9 +63,10 @@ candidates, "which doc covers X?".
 ## Prerequisites
 
 - The optional mif-rs tooling: either the `mif-mcp` MCP server connected in
-  your session, or the `mif-cli` binary on `PATH`. Install from the attested
-  release binaries on `modeled-information-format/mif-rs` (verify with `gh
-  attestation verify` before trusting), or `cargo install mif-cli mif-mcp`.
+  your session, or the `mif-cli` binary on `PATH`. The
+  [install how-to](./install-the-optional-mif-mcp-server.md) covers both
+  routes — attested release binaries verified with `gh attestation verify`,
+  or `cargo install mif-cli mif-mcp`.
 - Network access for the first run only — the embedding model downloads into
   the local hf-hub cache once.
 
