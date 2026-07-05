@@ -16,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  attestations: read  # required by `gh attestation verify` against mif-rs's release
 
 env:
   # Pin the mif-rs release the Rust engine is compared at. Bump deliberately:

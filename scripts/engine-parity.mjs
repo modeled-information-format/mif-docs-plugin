@@ -39,10 +39,6 @@ const args = process.argv.slice(2);
 const expectedValueIndexes = new Set(
   args.flatMap((a, i) => (a === "--expected" ? [i + 1] : [])),
 );
-const expIdx = args.lastIndexOf("--expected");
-const expectedPath = expIdx >= 0 ? args[expIdx + 1] : "tests/fixtures/engine-parity/expected-disagreements.json";
-const mifCli = args.find((a, i) => !a.startsWith("--") && !expectedValueIndexes.has(i));
-
 function usageError(message) {
   console.error(`engine-parity: ${message}`);
   console.error("usage: engine-parity <path-to-mif-cli> [--expected <json>]");
@@ -52,6 +48,14 @@ function harnessFault(message) {
   console.error(`engine-parity: ${message}`);
   process.exit(1);
 }
+
+const expIdx = args.lastIndexOf("--expected");
+// A trailing --expected with no following token is a usage error, not a
+// silent undefined that would later throw a raw TypeError out of existsSync.
+if (expIdx >= 0 && expIdx === args.length - 1) usageError("--expected given with no value");
+const expectedPath = expIdx >= 0 ? args[expIdx + 1] : "tests/fixtures/engine-parity/expected-disagreements.json";
+const mifCli = args.find((a, i) => !a.startsWith("--") && !expectedValueIndexes.has(i));
+
 if (!mifCli || !existsSync(mifCli)) usageError("mif-cli binary path missing or not found");
 if (!existsSync("package.json") || !existsSync("docs")) usageError("run from the repo root");
 // A missing or unparseable ledger is a harness fault (exit 1), grouped with
