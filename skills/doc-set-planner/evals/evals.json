@@ -96,6 +96,67 @@
         "Identifies the dangling reference as a link-completeness failure specific to this recipe's cross-link contract",
         "Recommends a concrete fix (add the missing design section or correct the reference) rather than dismissing the mismatch"
       ]
+    },
+    {
+      "id": 7,
+      "prompt": "Plan the diataxis doc set for our webhook subsystem. We already have a semantic corpus over docs/ at .mif/vectors.db.",
+      "expected_output": "Loads the diataxis recipe, and before emitting the plan searches the corpus for each planned member's scope; any hit scoring around 0.55 or higher is surfaced in the plan as an existing-coverage decision (extend the found doc or create and cross-link it), with the score and urn:mif id shown.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "0\\.[0-9]{2}",
+          "description": "reports a cosine similarity score for at least one corpus hit"
+        },
+        {
+          "type": "file_contains",
+          "file": "transcript.md",
+          "literal": "urn:mif:",
+          "description": "names the found document by its urn:mif id"
+        },
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "(?i)extend",
+          "description": "surfaces the extend-or-create decision for a strong hit"
+        }
+      ],
+      "expectations": [
+        "Searches the corpus per planned member at the Plan step and reports the scores and ids it found, rather than planning blind when a corpus exists",
+        "Presents strong hits as an extend-or-create decision for the caller instead of silently dropping or silently reusing the existing doc",
+        "Keeps the recipe decomposition itself unchanged - discovery adds decisions to the plan, it never rewrites the member list on its own"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "Reconcile the relationships for the ai-spec set we just produced. The corpus tooling is not installed on this machine.",
+      "expected_output": "Wires the recipe's contracted cross-links (PRD realized-by feature-spec; feature-spec depends-on ai-architecture-doc), states that semantic find-similar candidates are unavailable because the optional mif-rs tooling is not installed, and confirms link-completeness via planner-check as usual.",
+      "files": [],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "transcript.md",
+          "literal": "realized-by",
+          "description": "wires the PRD realized-by feature-spec contract link"
+        },
+        {
+          "type": "file_contains",
+          "file": "transcript.md",
+          "literal": "depends-on",
+          "description": "wires the feature-spec depends-on ai-architecture-doc contract link"
+        },
+        {
+          "type": "regex_match",
+          "file": "transcript.md",
+          "pattern": "(?i)not installed|unavailable|not available",
+          "description": "states the corpus tooling is absent instead of fabricating candidates"
+        }
+      ],
+      "expectations": [
+        "Completes the reconcile step fully from the recipe contract alone - corpus absence changes nothing about the contracted graph or the planner-check gate",
+        "States plainly that the optional tooling is missing instead of fabricating similarity candidates or substituting grep for semantic search"
+      ]
     }
   ]
 }

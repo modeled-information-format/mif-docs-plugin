@@ -2,7 +2,7 @@
 id: reference-skill-doc-set-planner
 type: semantic
 created: '2026-06-30T12:00:00Z'
-modified: '2026-06-30T12:00:00Z'
+modified: '2026-07-05T12:00:00Z'
 namespace: reference/skills
 title: 'Skill reference: doc-set-planner'
 tags:
@@ -59,6 +59,8 @@ relationships:
     target: urn:mif:reference-skill-ears-acceptance-criteria
   - type: relates-to
     target: urn:mif:reference-skill-mif-validate
+  - type: relates-to
+    target: urn:mif:reference-skill-mif-corpus
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -123,14 +125,23 @@ instructions, and runs a three-phase flow.
   diataxis recipe to the four quadrant skills. Each member is authored over the
   shared [mif-frontmatter](../mif-frontmatter/) floor, with criteria shaped by
   [ears-acceptance-criteria](../ears-acceptance-criteria/) where the genre uses
-  them.
+  them. When a semantic corpus exists (the optional
+  [mif-corpus](../mif-corpus/) layer), the plan first searches it per member
+  and surfaces strong hits as existing-coverage decisions — extend the found
+  doc or create and cross-link it — with scores and ids shown.
 - **Reconcile.** Once the members exist, the planner resolves the cross-document
   `relationships[]` graph — declaring how each document references, supports, or
   derives from the others — so the set reads as one connected body of knowledge.
+  With a corpus available, find-similar results per member are offered as
+  *candidate* additional targets; candidates are accepted or rejected by the
+  author, never written silently, and the recipe's contract stays
+  authoritative.
 - **Link-completeness.** A `planner-check` gate asserts the graph is complete:
   every intended relationship is present and every target resolves, with no
   dangling references. Each member is then proven conformant by
-  [mif-validate](../mif-validate/).
+  [mif-validate](../mif-validate/). The gate is deliberately
+  corpus-independent: it checks the declared graph, never similarity, so
+  planner verdicts are byte-identical with or without the optional tooling.
 
 ## When it is beneficial
 
