@@ -73,6 +73,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   server or mif-cli), with a corpus-layer reference page and an
   ingest-and-search how-to.
 
+### Changed
+
+- `doc-set-planner` is now corpus-aware when the optional mif-rs tooling is
+  present: the Plan step searches the corpus per planned member and surfaces
+  existing-coverage decisions, and the Reconcile step offers find-similar
+  results as candidate `relationships[]` targets. Recipe decomposition, the
+  cross-link contract, and the deterministic `planner-check` gate are
+  unchanged with or without the corpus.
+
 ## [0.3.1] - 2026-07-01
 
 ### Changed
