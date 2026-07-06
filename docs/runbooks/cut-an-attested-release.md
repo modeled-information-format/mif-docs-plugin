@@ -2,7 +2,7 @@
 id: runbook-cut-attested-release
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-07-06T00:00:00Z'
 namespace: runbook/mif-docs-release
 title: 'mif-docs: Cut an Attested Release'
 tags:
@@ -166,7 +166,11 @@ gh run watch --repo modeled-information-format/mif-docs-plugin \
       --json databaseId -q '.[0].databaseId')"
 ```
 
-When it is green, the release has `mif-docs-plugin-v0.2.0.tar.gz` attached.
+When it is green, the release has `mif-docs-plugin-v0.2.0.tar.gz` attached. The
+same run also tags `mif-docs--v0.2.0` at this commit (read from `plugin.json`'s
+`name`/`version`) — that is the tag shape Claude Code's dependency resolver
+looks for when another plugin declares a semver range on `mif-docs` (e.g.
+`"version": "^0.2.0"`), rather than the bare `v0.2.0` tag above.
 
 ## 6. Verify the artifact from a workstation
 
@@ -182,6 +186,17 @@ gh attestation verify mif-docs-plugin-v0.2.0.tar.gz \
   --repo modeled-information-format/mif-docs-plugin \
   --signer-workflow modeled-information-format/mif-docs-plugin/.github/workflows/release.yml
 ```
+
+Also confirm the dependency-resolution alias tag landed:
+
+```bash
+git ls-remote --tags https://github.com/modeled-information-format/mif-docs-plugin.git \
+  | grep 'refs/tags/mif-docs--v0.2.0'
+```
+
+Expected result for the alias-tag check: a line containing
+`refs/tags/mif-docs--v0.2.0`. Empty output means the tagging step in
+`release.yml` failed or didn't run — check the run's logs.
 
 Expected result: `gh attestation verify` prints a success line confirming the
 provenance was issued by the `release.yml` signer workflow for this repo. A
