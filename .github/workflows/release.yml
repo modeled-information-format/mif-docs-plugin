@@ -143,8 +143,12 @@ jobs:
           APP_SLUG: ${{ steps.release_token.outputs.app-slug }}
         run: |
           set -euo pipefail
-          NAME="$(jq -r '.name' .claude-plugin/plugin.json)"
-          VERSION="$(jq -r '.version' .claude-plugin/plugin.json)"
+          NAME="$(jq -er '.name' .claude-plugin/plugin.json)"
+          VERSION="$(jq -er '.version' .claude-plugin/plugin.json)"
+          if [ "${GITHUB_REF_NAME}" != "v${VERSION}" ]; then
+            echo "::error::plugin.json version (${VERSION}) does not match the release tag (${GITHUB_REF_NAME}) — refusing to create a mismatched alias tag" >&2
+            exit 1
+          fi
           TAG="${NAME}--v${VERSION}"
           if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
             echo "Tag ${TAG} already exists on origin — skipping (idempotent re-run)."

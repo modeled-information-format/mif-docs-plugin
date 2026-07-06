@@ -190,7 +190,8 @@ gh attestation verify mif-docs-plugin-v0.2.0.tar.gz \
 Also confirm the dependency-resolution alias tag landed:
 
 ```bash
-git ls-remote --tags --repo modeled-information-format/mif-docs-plugin | grep mif-docs--v0.2.0
+git ls-remote --tags https://github.com/modeled-information-format/mif-docs-plugin.git \
+  | grep 'refs/tags/mif-docs--v0.2.0'
 ```
 
 Expected result for the alias-tag check: a line containing
