@@ -120,3 +120,42 @@ jobs:
           set -euo pipefail
           gh release upload "${GITHUB_REF_NAME}" \
             "${{ steps.build.outputs.artifact }}" --clobber
+
+      - name: Tag dependency-resolution alias ({name}--v{version})
+        # Claude Code resolves a plugin.json semver-range dependency (e.g.
+        # "version": "^0.3.1") via `git ls-remote --tags` on this repo, and
+        # only recognizes tags shaped {pluginName}--v{version} — NOT the bare
+        # vX.Y.Z tag `gh release create` cuts above. Without this alias tag,
+        # a consumer plugin declaring a semver range on mif-docs cannot
+        # resolve a version, even though the release itself is fine.
+        #
+        # Runs AFTER the artifact upload (not before) so that a failure here
+        # never blocks the actual release deliverable from being attached.
+        # Also idempotent: an annotated tag object embeds a tagger timestamp,
+        # so re-creating it on a re-run produces a different object SHA even
+        # for the same commit, and `git push` unconditionally rejects
+        # updating an existing tag ref — so a re-run (e.g. GitHub's "re-run
+        # failed jobs" after this step already succeeded once) skips instead
+        # of failing.
+        if: github.event_name == 'release'
+        env:
+          TOKEN: ${{ steps.release_token.outputs.token }}
+          APP_SLUG: ${{ steps.release_token.outputs.app-slug }}
+        run: |
+          set -euo pipefail
+          NAME="$(jq -r '.name' .claude-plugin/plugin.json)"
+          VERSION="$(jq -r '.version' .claude-plugin/plugin.json)"
+          TAG="${NAME}--v${VERSION}"
+          if git ls-remote --exit-code --tags origin "refs/tags/${TAG}" >/dev/null 2>&1; then
+            echo "Tag ${TAG} already exists on origin — skipping (idempotent re-run)."
+            exit 0
+          fi
+          git config user.name "${APP_SLUG}[bot]"
+          git config user.email "${APP_SLUG}[bot]@users.noreply.github.com"
+          git tag -a "${TAG}" -m "${NAME} ${VERSION}"
+          # actions/checkout persists its own read-only GITHUB_TOKEN as a
+          # http.extraheader; that must be cleared or it wins over the
+          # release App token's credentials embedded in the remote URL below.
+          git config --unset-all http.https://github.com/.extraheader || true
+          git remote set-url origin "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git push origin "refs/tags/${TAG}"
