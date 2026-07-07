@@ -31,7 +31,7 @@ jobs:
     permissions:
       contents: read
     uses: >-
-      modeled-information-format/.github/.github/workflows/reusable-actionlint.yml@789b6baf9a1451f406ff507aabb5c5be8a9d48a4
+      modeled-information-format/.github/.github/workflows/reusable-actionlint.yml@48c6ec9be4b8ba79b24b90395777a0343c0e3484
 
   # SCA: OSV-Scanner + dependency-review, as a thin caller of the org central
   # reusable (consume, never reinvent).
