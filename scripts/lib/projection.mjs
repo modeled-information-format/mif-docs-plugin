@@ -21,6 +21,18 @@ const CONTEXT_IRI = "https://mif-spec.dev/schema/context.jsonld";
 // Frontmatter keys that the projection transforms (everything else passes
 // through verbatim, in both directions).
 const ID_PREFIX = "urn:mif:";
+// The JSON-LD-native meta keys, stripped from both directions' passthrough
+// object so neither leaks a stale/foreign value through the trailing spread.
+const META_KEYS = ["@context", "@type", "@id", "conceptType"];
+
+function stripKeys(obj, keys) {
+  for (const k of keys) delete obj[k];
+}
+
+function stripIdPrefix(value) {
+  const s = String(value);
+  return s.startsWith(ID_PREFIX) ? s.slice(ID_PREFIX.length) : s;
+}
 
 // ---------------------------------------------------------------------------
 // markdown <-> {frontmatter, body}
@@ -47,17 +59,34 @@ export function serializeMarkdown(frontmatter, body) {
 // ---------------------------------------------------------------------------
 export function toJsonld({ frontmatter, body }) {
   const fm = { ...frontmatter };
-  const id = fm.id;
-  const type = fm.type;
+  // Two equally-canonical authoring conventions: the plain `id`/`type` alias
+  // pair, or the JSON-LD-native `@id`/`conceptType` keys used directly in
+  // frontmatter. `@type` is never the source for `type`: it is always the
+  // fixed literal "Concept", not the semantic subtype `conceptType` carries.
+  // If a document somehow carries both forms, they must agree -- silently
+  // preferring one over a conflicting other would lose data with no signal.
+  // Compare both sides bare (prefix stripped either way present) -- `id`
+  // authored already carrying `urn:mif:` must agree with an equally-prefixed
+  // `@id`, not get flagged as a conflict just because both happen to carry
+  // the same prefix explicitly.
+  if (fm.id !== undefined && fm["@id"] !== undefined && stripIdPrefix(fm.id) !== stripIdPrefix(fm["@id"])) {
+    throw new Error(`frontmatter has conflicting id ("${fm.id}") and @id ("${fm["@id"]}")`);
+  }
+  if (fm.type !== undefined && fm.conceptType !== undefined && fm.type !== fm.conceptType) {
+    throw new Error(`frontmatter has conflicting type ("${fm.type}") and conceptType ("${fm.conceptType}")`);
+  }
+  const id = fm.id ?? fm["@id"];
+  const type = fm.type ?? fm.conceptType;
   if (id === undefined) throw new Error("frontmatter missing required field: id");
   if (type === undefined) throw new Error("frontmatter missing required field: type");
   delete fm.id;
   delete fm.type;
+  stripKeys(fm, META_KEYS);
 
   const out = {
     "@context": CONTEXT_IRI,
     "@type": "Concept",
-    "@id": String(id).startsWith(ID_PREFIX) ? String(id) : ID_PREFIX + id,
+    "@id": ID_PREFIX + stripIdPrefix(id),
     conceptType: type,
     ...fm, // created + every other frontmatter field, verbatim
     content: normalizeBody(body),
@@ -73,10 +102,7 @@ export function toMarkdown(jsonld) {
   const atId = obj["@id"];
   const conceptType = obj.conceptType;
   const content = obj.content ?? "";
-  delete obj["@context"];
-  delete obj["@type"];
-  delete obj["@id"];
-  delete obj.conceptType;
+  stripKeys(obj, META_KEYS);
   delete obj.content;
 
   const id = typeof atId === "string" && atId.startsWith(ID_PREFIX)
