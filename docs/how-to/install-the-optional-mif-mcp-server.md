@@ -14,7 +14,7 @@ tags:
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-07-05T00:00:00Z'
-  recordedAt: '2026-07-05T19:00:00Z'
+  recordedAt: '2026-07-09T00:00:00Z'
   ttl: P1Y
 relationships:
   - type: relates-to
