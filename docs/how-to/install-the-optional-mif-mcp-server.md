@@ -2,7 +2,7 @@
 id: how-to-install-mif-mcp
 type: procedural
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-05T19:00:00Z'
+modified: '2026-07-09T00:00:00Z'
 namespace: how-to/tooling
 title: How to Install the Optional mif-rs Tools (mif-mcp and mif-cli)
 tags:
@@ -150,6 +150,17 @@ registration reconnects, then ask the session to list MCP tools. The six
 `mif-mcp` tools appear when the binary resolves. Failures from either tool
 render as RFC 9457 `application/problem+json` envelopes with `suggested_fix`
 hints.
+
+Or run the plugin's own advisory check, which reports the same PATH
+resolution and flags a version behind the latest mif-rs release without
+requiring a session restart:
+
+```bash
+npm run doctor
+```
+
+This never fails: it is a report, not a gate, since both binaries stay
+optional (ADR-0004).
 
 ## Result
 
