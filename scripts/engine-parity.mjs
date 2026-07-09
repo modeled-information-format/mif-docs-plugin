@@ -31,6 +31,7 @@ import { readFileSync, existsSync, mkdtempSync, rmSync, globSync } from "node:fs
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { loadValidator, toJsonld, parseMarkdown, roundTripFromMarkdown } from "./lib/projection.mjs";
+import { listGatedDocs } from "./lib/corpus.mjs";
 
 const args = process.argv.slice(2);
 // Every --expected occurrence's value index is excluded from positional
@@ -62,24 +63,15 @@ if (!existsSync("package.json") || !existsSync("docs")) usageError("run from the
 // the other setup problems below — not an invocation usage error (exit 2).
 if (!existsSync(expectedPath)) harnessFault(`expected-disagreements file not found: ${expectedPath}`);
 
-// The same corpus ci.yml gates with mif-validate (templates, docs trees, and
-// CHANGELOG.md), plus docs/reference/skills/ (see mif-docs-plugin#32) and
-// this suite's committed parity fixtures. skills/adr/templates are
-// structured-MADR (not gated by mif-validate) and stay out, matching ci.yml.
-const GLOBS = [
-  "skills/*/templates/good.md",
-  "docs/adr/*.md",
-  "docs/architecture/*.md",
-  "docs/runbooks/*.md",
-  "docs/reference/*.md",
-  "docs/reference/skills/*.md",
-  "docs/explanation/*.md",
-  "docs/tutorials/*.md",
-  "docs/how-to/*.md",
-  "CHANGELOG.md",
-  "tests/fixtures/engine-parity/*.md",
-];
-const corpus = GLOBS.flatMap((g) => globSync(g)).filter((f) => f !== "skills/adr/templates/good.md").sort();
+// The exact corpus ci.yml/release.yml gate with mif-validate -- scripts/lib/corpus.mjs
+// is the one shared definition (mif-docs-plugin#32/#34) -- plus this suite's
+// own committed parity fixtures, which are parity-only and not CI-gated.
+let corpus;
+try {
+  corpus = [...listGatedDocs(), ...globSync("tests/fixtures/engine-parity/*.md")].sort();
+} catch (e) {
+  harnessFault(`cannot resolve corpus: ${e.message}`);
+}
 
 // A gutted corpus means the globs or the checkout are wrong, not that parity
 // holds; refuse to declare PARITY OK over (near-)nothing.

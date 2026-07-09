@@ -12,7 +12,7 @@
     "hydrate-schema": "node scripts/hydrate-schema.mjs",
     "hydrate-ontology": "node scripts/hydrate-ontology.mjs",
     "validate-ontology": "node scripts/validate-ontology.mjs",
-    "test:hook": "node --test tests/mif-guard.test.mjs",
+    "test:hook": "node --test tests/*.test.mjs",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
   },
   "dependencies": {
