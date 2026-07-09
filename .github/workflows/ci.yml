@@ -69,37 +69,41 @@ jobs:
       # against the vendored ontology.
       - name: MIF-validate every shipped good.md template
         run: |
-          # The adr genre is fully aligned to structured-MADR (type: adr) and is
-          # validated by the structured-madr action in the adr-smadr job below,
-          # not by this suite's mif-validate (which keys on conceptType).
-          for f in skills/*/templates/good.md; do
-            [ -f "$f" ] || continue
-            [ "$f" = "skills/adr/templates/good.md" ] && continue
+          # scripts/list-gated-docs.mjs is the one shared corpus definition
+          # (scripts/lib/corpus.mjs), also consumed by release.yml and
+          # engine-parity.mjs, so this list cannot drift from theirs the way
+          # it once did (#32/#34). The adr genre is fully aligned to
+          # structured-MADR and is validated by the adr-smadr job below, not
+          # by mif-validate -- corpus.mjs already carves it out.
+          # A plain redirect (not a process substitution) so a nonzero exit
+          # from list-gated-docs.mjs fails this step under -eo pipefail,
+          # instead of the while loop silently iterating zero times.
+          node scripts/list-gated-docs.mjs --level 1 > /tmp/l1-files.txt
+          while IFS= read -r f; do
             echo "::group::mif-validate $f"
             node scripts/mif-validate.mjs "$f" --level 1
             echo "::endgroup::"
-          done
+          done < /tmp/l1-files.txt
       - name: MIF-validate the project's own docs (the suite documents itself)
         run: |
           # The suite documents itself: every doc under docs/ is a full MIF
           # artifact (the project ADRs are L3 MIF, not structured-MADR). Gate each
           # at the level it claims so its provenance/citations cannot rot.
-          l3() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L3 $f"; node scripts/mif-validate.mjs "$f" --level 3; echo "::endgroup::"; done; }
-          l2() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L2 $f"; node scripts/mif-validate.mjs "$f" --level 2; echo "::endgroup::"; done; }
-          # find (not a single-level glob) so a subdirectory under any L3 tree, like
-          # docs/reference/skills/, can never again go unvalidated by CI.
-          L3_DIRS=(docs/adr docs/architecture docs/runbooks docs/reference docs/explanation)
-          # set -e/pipefail don't observe a process substitution's exit code, and find
-          # skips a missing path while still emitting matches from the rest -- so a
-          # renamed/missing tree wouldn't otherwise be caught by a count-only guard.
-          # Assert each directory exists up front instead of trusting find's silence.
-          for d in "${L3_DIRS[@]}"; do
-            [ -d "$d" ] || { echo "::error::L3 doc directory missing: $d"; exit 1; }
-          done
-          mapfile -d '' -t l3_files < <(find "${L3_DIRS[@]}" -type f -name '*.md' -print0)
-          [ "${#l3_files[@]}" -gt 0 ] || { echo "::error::no L3 doc files found under ${L3_DIRS[*]} -- check paths"; exit 1; }
-          l3 "${l3_files[@]}"
-          l2 docs/tutorials/*.md docs/how-to/*.md CHANGELOG.md
+          # list-gated-docs.mjs fails closed (missing directory, empty result)
+          # so a drifted or renamed tree can't silently skip this gate; see the
+          # plain-redirect note in the template-validation step above.
+          node scripts/list-gated-docs.mjs --level 3 > /tmp/l3-files.txt
+          while IFS= read -r f; do
+            echo "::group::mif-validate L3 $f"
+            node scripts/mif-validate.mjs "$f" --level 3
+            echo "::endgroup::"
+          done < /tmp/l3-files.txt
+          node scripts/list-gated-docs.mjs --level 2 > /tmp/l2-files.txt
+          while IFS= read -r f; do
+            echo "::group::mif-validate L2 $f"
+            node scripts/mif-validate.mjs "$f" --level 2
+            echo "::endgroup::"
+          done < /tmp/l2-files.txt
       - name: Enforce the L1-floor + highest-level exemplar climb
         run: node scripts/check-exemplars.mjs
       - name: Doc-set planner recipes are link-complete

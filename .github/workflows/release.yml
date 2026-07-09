@@ -52,11 +52,13 @@ jobs:
           npm ci
           npm run validate-plugin
           npm run hydrate-schema
-          for f in skills/*/templates/good.md; do
-            [ -f "$f" ] || continue
-            [ "$f" = "skills/adr/templates/good.md" ] && continue
+          # scripts/list-gated-docs.mjs is the one shared corpus definition
+          # (scripts/lib/corpus.mjs), also consumed by ci.yml and
+          # engine-parity.mjs, so this list cannot drift from theirs (#32/#34).
+          node scripts/list-gated-docs.mjs --level 1 > /tmp/l1-files.txt
+          while IFS= read -r f; do
             node scripts/mif-validate.mjs "$f" --level 1
-          done
+          done < /tmp/l1-files.txt
           node scripts/check-exemplars.mjs
           node scripts/planner-check.mjs
           npm run test:hook
