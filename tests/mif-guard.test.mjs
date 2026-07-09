@@ -23,6 +23,14 @@ test('allows a conformant MIF L1 document (no false block)', () => {
   assert.equal(r.status, 0, `expected allow, got exit ${r.status}: ${r.stderr}`);
 });
 
+test('allows a conformant MIF L1 document using canonical @id/@type/conceptType frontmatter keys', () => {
+  // Regression for #49: a document authored with the JSON-LD-native key
+  // style directly in frontmatter (@id/@type/conceptType) is exactly as
+  // conformant as the bare id/type alias convention and must not be blocked.
+  const r = runGuard(join(root, 'tests/fixtures/good-l1-jsonld-keys.md'));
+  assert.equal(r.status, 0, `expected allow, got exit ${r.status}: ${r.stderr}`);
+});
+
 test('blocks a non-MIF genre document (legacy diataxis_type, no L1 floor)', () => {
   const r = runGuard(join(root, 'tests/fixtures/lightweight-non-mif.md'));
   assert.equal(r.status, 2, 'a non-conformant genre doc must be blocked fail-closed');
