@@ -86,7 +86,15 @@ jobs:
           # at the level it claims so its provenance/citations cannot rot.
           l3() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L3 $f"; node scripts/mif-validate.mjs "$f" --level 3; echo "::endgroup::"; done; }
           l2() { for f in "$@"; do [ -f "$f" ] || continue; echo "::group::mif-validate L2 $f"; node scripts/mif-validate.mjs "$f" --level 2; echo "::endgroup::"; done; }
-          l3 docs/adr/*.md docs/architecture/*.md docs/runbooks/*.md docs/reference/*.md docs/explanation/*.md
+          # find (not a single-level glob) so a subdirectory under any L3 tree, like
+          # docs/reference/skills/, can never again go unvalidated by CI.
+          mapfile -d '' -t l3_files < <(find docs/adr docs/architecture docs/runbooks docs/reference docs/explanation -type f -name '*.md' -print0)
+          # set -e/pipefail don't observe a process substitution's exit code. find
+          # skips a missing path and still emits matches from the rest, so this only
+          # catches the total-loss case (all five trees empty/gone at once) — but
+          # that case would otherwise exit 0 having validated nothing; fail loudly.
+          [ "${#l3_files[@]}" -gt 0 ] || { echo "::error::no L3 doc files found under docs/{adr,architecture,runbooks,reference,explanation} — check paths"; exit 1; }
+          l3 "${l3_files[@]}"
           l2 docs/tutorials/*.md docs/how-to/*.md CHANGELOG.md
       - name: Enforce the L1-floor + highest-level exemplar climb
         run: node scripts/check-exemplars.mjs
