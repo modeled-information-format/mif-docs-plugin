@@ -17,7 +17,12 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-import { MIF_IDENTITY_SIGNAL_KEYS } from '../scripts/lib/projection.mjs';
+// Deliberately imported from the tiny dependency-free module, NOT from
+// projection.mjs directly: this hook fires on EVERY Write/Edit tool call,
+// even ones that early-exit before ever needing this list's value, so it
+// must not drag in projection.mjs's heavier transitive dependencies (ajv,
+// ajv-formats, js-yaml) just to read two strings (issue #50 review).
+import { MIF_IDENTITY_SIGNAL_KEYS } from '../scripts/lib/mif-identity-signal-keys.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = resolve(here, '..');

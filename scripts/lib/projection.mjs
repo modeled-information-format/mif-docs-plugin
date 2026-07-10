@@ -13,6 +13,7 @@ import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
 import addFormats from "ajv-formats";
 import { load as yamlLoad, dump as yamlDump } from "js-yaml";
+import { MIF_IDENTITY_SIGNAL_KEYS } from "./mif-identity-signal-keys.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = join(HERE, "..", "..");
@@ -24,16 +25,12 @@ const ID_PREFIX = "urn:mif:";
 // The JSON-LD-native meta keys, stripped from both directions' passthrough
 // object so neither leaks a stale/foreign value through the trailing spread.
 const META_KEYS = ["@context", "@type", "@id", "conceptType"];
-// The subset of toJsonld()'s recognized identity/type keys that unambiguously
-// signal a canonical MIF-native document regardless of their VALUE -- unlike
-// bare `id`/`type` (also recognized below, via `fm.id ?? fm["@id"]` /
-// `fm.type ?? fm.conceptType`), which plenty of non-MIF documentation
-// conventions also carry for unrelated purposes, so their mere presence can't
-// safely signal "this is MIF". hooks/mif-guard.mjs derives its pre-write
-// genre-signal detection from this list (issue #50) so a future authoring
-// convention added here updates the guard by construction, not by
-// separately-maintained discipline.
-export const MIF_IDENTITY_SIGNAL_KEYS = ["@id", "conceptType"];
+// Re-exported from mif-identity-signal-keys.mjs (not defined here) so that
+// hooks/mif-guard.mjs can import the list without pulling in this module's
+// heavier dependencies (ajv, ajv-formats, js-yaml) on every hook invocation
+// (issue #50 review) -- this export preserves projection.mjs's own public API
+// for any existing consumer that imports it from here.
+export { MIF_IDENTITY_SIGNAL_KEYS };
 
 function stripKeys(obj, keys) {
   for (const k of keys) delete obj[k];
