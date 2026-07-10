@@ -61,6 +61,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.3.2] - 2026-07-10
+
 ### Added
 
 - Registered the mif-rs `mif-mcp` server in `.mcp.json` as an optional
@@ -93,6 +95,32 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   download-verify-install walkthrough as `mif-mcp`, the getting-started
   tutorial points at the semantic layer as a next step, and the corpus how-to
   links the install guide from its prerequisites.
+
+### Fixed
+
+- `mif-validate`'s `toJsonld()` projection only recognized the bare `id`/`type`
+  frontmatter alias pair, rejecting documents authored with the equally
+  canonical JSON-LD-native `@id`/`conceptType` keys directly in frontmatter.
+  `mif-guard.mjs`'s genre-signal regex already accepted these documents, so
+  the guard blocked them with a misleading "frontmatter missing required
+  field: id" instead of validating them — this affected every document
+  produced by a consumer's own native MIF pipeline (rather than a mif-docs
+  genre template) that used `@id`/`conceptType` directly, most visibly the
+  research-harness's own canonical Level-3 reports. `toJsonld()` now falls
+  back to `conceptType`, never `@type`, for the semantic subtype (`@type` is
+  always the fixed literal `Concept`); both keys present and disagreeing is
+  now a fail-closed error rather than a silent last-write-wins pick. (#49,
+  #51)
+- `mif-guard.mjs`'s genre-signal regex and `projection.mjs`'s key-recognition
+  logic were two independently-maintained lists that could silently drift: a
+  future authoring-convention key added to one had no structural guarantee of
+  reaching the other. `projection.mjs` now exports
+  `MIF_IDENTITY_SIGNAL_KEYS` (`@id`, `conceptType`) from a small,
+  dependency-free module, and `mif-guard.mjs` imports and derives its
+  bare-key detection regex from it, combined with its own genre-specific keys
+  (`diataxis_type`, `x-ontology`, `ontology`). A structural regression test
+  asserts the guard's source actually imports and uses the shared list rather
+  than a hardcoded copy. (#50, #54)
 
 ## [0.3.1] - 2026-07-01
 
