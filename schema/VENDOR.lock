@@ -1,7 +1,7 @@
 {
   "source": "https://mif-spec.dev/schema",
   "channel": "latest",
-  "resolvedVersion": "1.0.0",
+  "resolvedVersion": "1.2.2",
   "files": [
     "mif.schema.json",
     "citation.schema.json",
@@ -9,5 +9,5 @@
     "definitions/entity-reference.schema.json",
     "ontology/ontology.schema.json"
   ],
-  "hydratedAt": "2026-06-30T06:06:52.724Z"
+  "hydratedAt": "2026-07-10T07:08:05.329Z"
 }
