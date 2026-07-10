@@ -203,11 +203,11 @@ quadrantChart
   flexible deployment, and mature managed execution.
 - **Challengers**: AWS API Gateway — strong execution and reliability, but
   narrower vision (no monetization, single-cloud-scoped).
-- **Visionaries**: none placed this cycle — no included vendor combined high
-  vision with materially lower execution maturity.
-- **Niche Players**: Tyk, Gravitee — meaningful vision on specific axes
+- **Visionaries**: Tyk, Gravitee — meaningful vision on specific axes
   (GraphQL federation; event-native streaming) with smaller execution scale
   than the Leaders.
+- **Niche Players**: none placed this cycle — no included vendor combined
+  lower vision with lower execution maturity.
 
 ## Context & Market Overview
 
@@ -215,8 +215,9 @@ The API gateway market continues to bifurcate between REST-first incumbents
 extending into full lifecycle management (Kong, Apigee) and cloud-native
 managed offerings tied to a single hyperscaler (AWS API Gateway). Event-native
 and streaming-API support (Gravitee) and GraphQL federation (Tyk) are emerging
-differentiators rather than table-stakes, which is why no vendor in this
-inclusion set currently lands in Visionaries.
+differentiators rather than table-stakes, which is why both vendors land in
+Visionaries — meaningful vision on those specific axes without yet matching
+the incumbents' execution scale.
 
 ## Methodology
 
