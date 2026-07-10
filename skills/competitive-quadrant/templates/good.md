@@ -189,9 +189,9 @@ quadrantChart
     x-axis Low Completeness of Vision --> High Completeness of Vision
     y-axis Low Ability to Execute --> High Ability to Execute
     quadrant-1 Leaders
-    quadrant-2 Visionaries
+    quadrant-2 Challengers
     quadrant-3 Niche Players
-    quadrant-4 Challengers
+    quadrant-4 Visionaries
     Kong: [0.78, 0.80]
     Apigee: [0.72, 0.75]
     AWS API Gateway: [0.45, 0.82]
