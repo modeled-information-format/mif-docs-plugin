@@ -17,6 +17,7 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
+import { MIF_IDENTITY_SIGNAL_KEYS } from '../scripts/lib/projection.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = resolve(here, '..');
@@ -68,9 +69,20 @@ const front = fm ? fm[1] : '';
 // a conformant ADR.
 if (/(^|\n)type[ \t]*:[ \t]*adr\b/.test(front)) allow();
 
+// Genre-specific keys the guard treats as MIF signals in their own right,
+// beyond the canonical identity keys projection.mjs owns (imported above as
+// MIF_IDENTITY_SIGNAL_KEYS; issue #50) -- these are guard-local heuristics
+// (a legacy Diátaxis marker, ontology binding keys) unrelated to toJsonld()'s
+// actual id/type parsing, so they stay defined here rather than shared.
+const GUARD_GENRE_KEYS = ['diataxis_type', 'x-ontology', 'ontology'];
+const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const bareKeyPattern = [...GUARD_GENRE_KEYS, ...MIF_IDENTITY_SIGNAL_KEYS]
+  .map(escapeRegExp)
+  .join('|');
+
 const genreSignal =
   !!fm &&
-  (/(^|\n)(diataxis_type|x-ontology|conceptType|ontology)[ \t]*:/.test(front) ||
+  (new RegExp(`(^|\\n)(${bareKeyPattern})[ \\t]*:`).test(front) ||
     /(^|\n)type[ \t]*:[ \t]*(semantic|episodic|procedural|tutorial|how-to|reference|explanation|runbook|playbook|changelog|decision-record)\b/.test(
       front,
     ));
