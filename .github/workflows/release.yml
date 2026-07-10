@@ -136,7 +136,14 @@ jobs:
         # Also idempotent: an explicit `gh api git/ref/tags/<TAG>` existence
         # check runs before any write, so a re-run (e.g. GitHub's "re-run
         # failed jobs" after this step already succeeded once) skips instead
-        # of failing or creating a duplicate tag object.
+        # of failing. This does not make a duplicate tag OBJECT impossible in
+        # every case: if the ref-creation call below fails after the
+        # tag-object call already succeeded, that object is orphaned, and a
+        # subsequent re-run's existence check (which checks the ref, not the
+        # object) will not see it and will create a second tag object. The
+        # ref this step ultimately creates always points at a valid object
+        # either way, so this only costs an unreferenced object, not a
+        # correctness problem for consumers resolving the tag.
         if: github.event_name == 'release'
         env:
           GH_TOKEN: ${{ steps.release_token.outputs.token }}
@@ -150,9 +157,22 @@ jobs:
             exit 1
           fi
           TAG="${NAME}--v${VERSION}"
-          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>&1; then
+          # Fail closed on anything other than a genuine "tag does not exist"
+          # (404): a transient network/auth error must not be silently read as
+          # "missing" and fall through into tag creation with a confusing
+          # downstream failure.
+          EXISTENCE_ERR="$(mktemp)"
+          if gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${TAG}" >/dev/null 2>"${EXISTENCE_ERR}"; then
             echo "Tag ${TAG} already exists on origin — skipping (idempotent re-run)."
+            rm -f "${EXISTENCE_ERR}"
             exit 0
+          elif grep -q "HTTP 404" "${EXISTENCE_ERR}"; then
+            rm -f "${EXISTENCE_ERR}"
+          else
+            echo "::error::could not determine whether tag ${TAG} exists (not a 404):" >&2
+            cat "${EXISTENCE_ERR}" >&2
+            rm -f "${EXISTENCE_ERR}"
+            exit 1
           fi
           # Created via the REST API (git object + ref), not `git push`, so this
           # step never depends on rewriting the checkout's remote credentials.
