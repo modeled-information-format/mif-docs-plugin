@@ -77,9 +77,15 @@ test('genre-signal detection derives from projection.mjs, not a separately-maint
     /import\s*\{\s*MIF_IDENTITY_SIGNAL_KEYS\s*\}\s*from\s*['"]\.\.\/scripts\/lib\/projection\.mjs['"]/,
     'hooks/mif-guard.mjs must import MIF_IDENTITY_SIGNAL_KEYS from projection.mjs, not hardcode its own copy',
   );
+  // A plain /MIF_IDENTITY_SIGNAL_KEYS/ match here would be satisfied by the
+  // import line alone (checked above) and could never fail independently of
+  // it -- e.g. the import could sit dead/unused while the regex construction
+  // below reverts to a separately hardcoded copy, silently reintroducing #50's
+  // exact drift bug, and this assertion would still pass. Anchor to the actual
+  // spread-usage site instead, so a regression to a hardcoded copy is caught.
   assert.match(
     guardSource,
-    /MIF_IDENTITY_SIGNAL_KEYS/,
-    'the imported list must actually be used, not just imported and ignored',
+    /\.\.\.MIF_IDENTITY_SIGNAL_KEYS/,
+    'the imported list must actually be spread into the regex construction, not just imported and ignored',
   );
 });
