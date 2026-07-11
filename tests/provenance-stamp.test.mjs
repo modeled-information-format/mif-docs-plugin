@@ -406,3 +406,46 @@ test("stamp witnesses its own rewrite: the ledger's newest hash matches the stam
     rmSync(base, { recursive: true, force: true });
   }
 });
+
+test("equal-timestamp touches select deterministically: the later ledger line wins", () => {
+  // Regression (Copilot): the sort comparator violated the contract (never
+  // returned 0), making equal-ts selection engine-dependent.
+  const { base, file, ledger } = fixture();
+  try {
+    const sameTs = {
+      v: 1,
+      event: "file_touch",
+      sessionId: SESSION,
+      ts: "2026-07-11T09:05:00.000Z",
+      tool: "mif-provenance",
+      via: "stamp",
+      filePath: file,
+      model: "claude-test-later",
+    };
+    writeFileSync(ledger, readFileSync(ledger, "utf8") + JSON.stringify(sameTs) + "\n");
+    const a = deriveExpected({ lines: readLedger(ledger), sessionId: SESSION, filePath: file });
+    const b = deriveExpected({ lines: readLedger(ledger), sessionId: SESSION, filePath: file });
+    assert.equal(a.fields.agent, "claude-code/claude-test-later");
+    assert.deepEqual(a, b);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("stamp forces '@type': Provenance over a foreign existing value", () => {
+  // Regression (Copilot): spread order let an existing block's @type survive.
+  const doc = L2_DOC.replace(
+    "temporal:",
+    "provenance:\n  '@type': prov:SomethingElse\n  sourceType: agent_inferred\ntemporal:",
+  );
+  const { base, file, ledger } = fixture({ doc });
+  try {
+    const res = stampFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    assert.equal(res.stamped, true, JSON.stringify(res));
+    const text = readFileSync(file, "utf8");
+    assert.match(text, /'@type': Provenance/);
+    assert.doesNotMatch(text, /prov:SomethingElse/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});

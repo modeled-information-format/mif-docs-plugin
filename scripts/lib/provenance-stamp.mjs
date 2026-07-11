@@ -67,7 +67,13 @@ export function deriveExpected({ lines, sessionId, filePath }) {
   const start = sessionStartOf(lines, sessionId);
   // ISO-8601 strings order lexicographically; the LATEST touch's facts win
   // (mid-session /model switches are real), falling back to the session line.
-  const latestTouch = [...touches].sort((a, b) => (a.ts < b.ts ? -1 : 1)).at(-1);
+  // The comparator honors the sort contract (returns 0 on equal ts) so the
+  // sort stays stable: equal-timestamp touches keep ledger order and the
+  // LATER LINE wins — exactly what the stamp self-witness (which reuses the
+  // witnessed touch's ts) relies on.
+  const latestTouch = [...touches]
+    .sort((a, b) => (a.ts < b.ts ? -1 : a.ts > b.ts ? 1 : 0))
+    .at(-1);
   const model = strOrNull(latestTouch.model) ?? strOrNull(start?.model);
   const toolVersion = strOrNull(latestTouch.toolVersion) ?? strOrNull(start?.toolVersion);
 
@@ -170,7 +176,9 @@ function buildStampedText(text, expected) {
     fm.provenance && typeof fm.provenance === "object" && !Array.isArray(fm.provenance)
       ? fm.provenance
       : {};
-  const provenance = { "@type": "Provenance", ...existing, ...expected.fields };
+  // "@type" sits after ...existing so a foreign existing value can never
+  // override the stamped block's type.
+  const provenance = { ...existing, "@type": "Provenance", ...expected.fields };
   // Owned fields the ledger did not witness are removed, never carried over
   // as unwitnessed assertions inside a witnessed block.
   for (const f of OWNED_FIELDS) {
