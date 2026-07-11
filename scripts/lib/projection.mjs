@@ -163,13 +163,22 @@ function splitDoc(d) {
 // ---------------------------------------------------------------------------
 // schema loading (from the hydrated cache) + level overlays
 // ---------------------------------------------------------------------------
+function schemaNotHydrated(detail) {
+  const err = new Error(`schema not hydrated — run \`npm run hydrate-schema\` first (${detail})`);
+  err.code = "SCHEMA_NOT_HYDRATED";
+  return err;
+}
+
 export function loadValidator() {
   const lockPath = join(ROOT, "schema", "VENDOR.lock");
   if (!existsSync(lockPath)) {
-    throw new Error("schema not hydrated — run `npm run hydrate-schema` first");
+    throw schemaNotHydrated(`missing ${lockPath}`);
   }
   const lock = JSON.parse(readFileSync(lockPath, "utf8"));
   const dir = join(ROOT, "schema", ".cache", lock.resolvedVersion);
+  if (!existsSync(dir)) {
+    throw schemaNotHydrated(`missing ${dir}`);
+  }
   const mif = JSON.parse(readFileSync(join(dir, "mif.schema.json"), "utf8"));
 
   const ajv = new Ajv2020({ allErrors: true, strict: false });
