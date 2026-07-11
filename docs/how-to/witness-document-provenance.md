@@ -55,8 +55,7 @@ entity:
   name: How to Witness Your Documents' Provenance
   entity_type: how-to-guide
 extensions:
-  x-genre-conceptType: procedural
-  x-target-level: 2
+  x-diataxis-quadrant: how-to
 ---
 
 # How to Witness Your Documents' Provenance
