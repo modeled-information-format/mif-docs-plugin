@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-11T20:00:00Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -59,6 +59,10 @@ relationships:
     target: urn:mif:reference-skill-mif-validate
   - type: relates-to
     target: urn:mif:reference-provenance-ledger
+  - type: relates-to
+    target: urn:mif:how-to-witness-document-provenance
+  - type: relates-to
+    target: urn:mif:explanation-witnessed-provenance
   - type: derived-from
     target: urn:mif:adr-0005-provenance-consent
 ontology:
@@ -77,6 +81,11 @@ extensions:
 ---
 
 # Skill reference: `mif-provenance`
+
+> New to this? Start with [the how-to
+> guide](../../how-to/witness-document-provenance/) for the walk-through, or
+> [the explanation](../../explanation/witnessed-provenance/) for the reasoning
+> behind it. This page is the deep reference for drilling into specifics.
 
 The `mif-provenance` skill is the suite's **witnessed-provenance helper** — the
 fifth authoring helper. It stamps hook-observed session facts into a MIF

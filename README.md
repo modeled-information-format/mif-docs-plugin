@@ -43,7 +43,7 @@ gh attestation verify mif-docs-plugin-v0.1.0.tar.gz \
 | Layer | Skills |
 | --- | --- |
 | **Genre skills** | `diataxis-tutorial`, `diataxis-how-to`, `diataxis-reference`, `diataxis-explanation`, `arc42-arch-doc`, `c4-model-diagram`, `google-design-doc`, `engineering`, `adr`, `rust-rfc`, `python-pep`, `changelog`, `sre-runbook`, `playbook`, `prd`, `feature-spec`, `ai-architecture-doc`, `kiro-requirements`, `kiro-design`, `kiro-tasks`, `academic`, `systematic-review`, `computing-paper`, `humanities-mla`, `humanities-chicago`, `clinical-submission`, `nist-sp`, `regulatory-disclosure`, `compliance-audit`, `security-pentest`, `legal-memo`, `market-research-report`, `sustainability-report`, `trend-analysis`, `competitive-quadrant`, `briefing`, `exec-summary` |
-| **Shared substrate** | `mif-frontmatter` (L1–L3 authoring), `ears-acceptance-criteria`, `mif-validate` (deterministic canonical-schema gate), `mif-corpus` (optional semantic index over MIF docs via the mif-rs tools) |
+| **Shared substrate** | `mif-frontmatter` (L1–L3 authoring), `ears-acceptance-criteria`, `mif-validate` (deterministic canonical-schema gate), `mif-corpus` (optional semantic index over MIF docs via the mif-rs tools), `mif-provenance` (witnessed, hook-observed provenance stamping and verification) |
 | **Orchestration** | `doc-set-planner` (engine) + the `diataxis` / `ai-spec` / `kiro` / `architecture` recipes |
 
 ## Documentation
@@ -55,9 +55,11 @@ Action), organized in the Diataxis quadrants:
 - **Tutorial** — [Getting started](docs/tutorials/getting-started.md)
 - **How-to** — [Validate and author a document](docs/how-to/validate-and-author-a-document.md) ·
   [Install the optional mif-rs tools](docs/how-to/install-the-optional-mif-mcp-server.md) ·
-  [Ingest and search a doc corpus](docs/how-to/ingest-and-search-a-doc-corpus.md)
+  [Ingest and search a doc corpus](docs/how-to/ingest-and-search-a-doc-corpus.md) ·
+  [Witness your documents' provenance](docs/how-to/witness-document-provenance.md)
 - **Reference** — [Genre & CLI catalog](docs/reference/genre-and-cli-catalog.md)
-- **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md)
+- **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md) ·
+  [Understanding witnessed provenance](docs/explanation/witnessed-provenance.md)
 - **Architecture** — [arc42](docs/architecture/arc42.md) · [C4 model](docs/architecture/c4.md)
 - **Decisions** — [Architecture Decision Records](docs/adr/)
 - **Runbooks** — [Cut an attested release](docs/runbooks/cut-an-attested-release.md) ·

@@ -189,7 +189,10 @@ whatever block is present — only `mif-provenance` proves the named session
 actually touched the document. Trust ceiling: `user_stated` (a local,
 unsigned ledger), stated plainly on every stamp; `confidence` is never
 written. Opt-in, fail-closed consent under the `mifProvenance` settings key,
-where an explicit disable at any scope wins ([ADR-0005](../../adr/0005-provenance-consent-in-settings-hierarchy/)).
+where an explicit disable at any scope wins
+([ADR-0005](../../adr/0005-provenance-consent-in-settings-hierarchy/)). New to
+this? [Witness your documents' provenance](../../how-to/witness-document-provenance/)
+is the user-facing walk-through.
 
 - **Authors:** a witnessed `provenance` block, or a deterministic match/drift verdict — never prose.
 - **Reach for it when:** a document authored in a capture-enabled session

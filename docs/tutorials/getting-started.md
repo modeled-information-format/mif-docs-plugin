@@ -2,7 +2,7 @@
 id: tutorial-getting-started
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-05T19:00:00Z'
+modified: '2026-07-11T20:00:00Z'
 namespace: tutorials/getting-started
 title: Get Started with mif-docs
 tags:
@@ -21,6 +21,8 @@ relationships:
     target: urn:mif:how-to-install-mif-mcp
   - type: relates-to
     target: urn:mif:reference-skill-mif-corpus
+  - type: relates-to
+    target: urn:mif:how-to-witness-document-provenance
   - type: relates-to
     target: urn:mif:reference-genre-and-cli
   - type: relates-to
@@ -147,5 +149,7 @@ consult the catalog reference. To understand *why* each document is both a human
 artifact and a machine unit, read the explanation. And when you want semantic
 search over the documents you produce — "which doc covers X?", cross-link
 candidates — install the optional mif-rs tools and meet the `mif-corpus`
-skill. Each next step is recorded as a typed `relates-to` edge in this
-tutorial's `relationships[]`.
+skill. When you want to know that a document's `provenance` block reflects
+what actually happened rather than what the model claims, see [Witness your
+documents' provenance](../how-to/witness-document-provenance/). Each next step
+is recorded as a typed `relates-to` edge in this tutorial's `relationships[]`.
