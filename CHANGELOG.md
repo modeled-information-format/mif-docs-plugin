@@ -65,7 +65,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- `loadValidator()` let a raw `ENOENT` bubble out when `schema/.cache/<version>/mif.schema.json`
+- `loadValidator()` (#88) let a raw `ENOENT` bubble out when `schema/.cache/<version>/mif.schema.json`
   was never hydrated locally (a freshly installed plugin instance, or a
   partial/interrupted hydrate that left the directory but not the file),
   which `mif-validate.mjs` folded into the same failures list as a genuine
