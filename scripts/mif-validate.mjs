@@ -48,6 +48,15 @@ try {
     }
   }
 } catch (e) {
+  // A schema that was never hydrated locally is an environment/tooling gap,
+  // not a document-conformance failure — report and exit distinctly so a
+  // caller (e.g. the fail-closed guard) doesn't tell the model to fix
+  // frontmatter when the actual fix is `npm run hydrate-schema`.
+  if (e.code === "SCHEMA_NOT_HYDRATED") {
+    console.log(`mif-validate ${file}`);
+    console.error(`  ERROR: cannot validate — ${e.message}`);
+    process.exit(3);
+  }
   failures.push(`schema: ${e.message}`);
 }
 

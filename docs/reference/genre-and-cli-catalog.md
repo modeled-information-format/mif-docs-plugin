@@ -150,7 +150,7 @@ Every script is fail-closed: any failure exits non-zero.
 
 | Script | Invocation | Exit behavior |
 | --- | --- | --- |
-| `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file). |
+| `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file); `3` schema cache not hydrated locally (environment gap, not a document failure — run `npm run hydrate-schema`). |
 | `mif-convert.mjs` | `mif-convert <emit-jsonld\|emit-markdown\|roundtrip> <file> [--no-check]` | `0` success; `1` schema check / non-lossless round-trip; `2` usage error. |
 | `hydrate-schema.mjs` | `hydrate-schema [latest\|<version>]` | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
 | `hydrate-ontology.mjs` | `hydrate-ontology` | `0` ontology cached from published URI / ontologies repo / local sibling checkout; `1` unresolved. |

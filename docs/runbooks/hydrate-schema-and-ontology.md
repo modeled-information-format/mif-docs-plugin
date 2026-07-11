@@ -143,6 +143,17 @@ online** so the artifact vendors a current schema — a release built on a stale
 fallback cache may attest the wrong schema version. If you see the fallback
 warning during release prep, stop and restore network before continuing.
 
+This fallback works because a failed `hydrate-schema` never rewrites
+`schema/VENDOR.lock` — it stays pointed at whatever version was last
+successfully hydrated, whose cache is still on disk. `mif-validate` itself
+never triggers a hydrate or warns; it just reads whatever `VENDOR.lock`
+already points to. That means a plugin instance that has **never** been
+hydrated at all (a fresh install, before `npm run hydrate-schema` has ever
+run on this machine) has no last-known-good copy to fall back to — there
+is nothing to be stale relative to. `mif-validate` reports that case as a
+distinct, non-fallback error (exit `3`) telling you to hydrate for the
+first time, rather than a schema-resolution warning.
+
 ## 7. Verification
 
 Prove the refreshed ontology is internally consistent and the caches resolve.

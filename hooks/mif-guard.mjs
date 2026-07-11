@@ -94,6 +94,19 @@ try {
 
 if (res.status === 0) allow();
 
+// mif-validate exits 3 specifically when the schema cache itself was never
+// hydrated locally — an environment/tooling gap, not a document-conformance
+// problem. Give the actual remedy instead of telling the model to fix
+// frontmatter that may already be conformant.
+if (res.status === 3) {
+  block(
+    `MIF fail-closed guard could not validate ${file}: the plugin's schema cache is not ` +
+      `hydrated.\n\n${(res.stderr || res.stdout || '').trim()}\n\n` +
+      `Run \`npm run hydrate-schema\` in the mif-docs plugin's install directory ` +
+      `(${pluginRoot}), then retry the write.`,
+  );
+}
+
 const detail = (res.stderr || res.stdout || 'mif-validate reported a failure').trim();
 block(
   `MIF fail-closed guard: ${file} is NOT MIF-conformant and was blocked.\n\n` +
@@ -101,5 +114,7 @@ block(
     `This document was produced by a mif-docs genre and must validate against the canonical ` +
     `schema. Fix its frontmatter to pass \`mif-validate --level 1\` (mirror the genre's ` +
     `templates/good.md: the L1 floor is id + type[semantic|episodic|procedural] + created). ` +
-    `If the error is about missing tooling, run \`npm ci\` in the mif-docs plugin first.`,
+    `If mif-validate itself failed to run rather than reporting a real conformance issue ` +
+    `(e.g. a missing dependency), run \`npm ci\` in the mif-docs plugin and retry — this is ` +
+    `templates/good.md: the L1 floor is id + type[semantic|episodic|procedural] + created).`,
 );
