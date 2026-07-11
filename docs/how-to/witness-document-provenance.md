@@ -65,23 +65,18 @@ Turn on witnessed provenance, watch it appear in a document you write, and know
 what to do when a document's provenance looks wrong. This guide walks the whole
 journey in order — start to finish, the way you'll actually live it.
 
-## What "witnessed" means, in one sentence
-
-Normally, a document's `provenance` block is the model's own claim about who
-wrote it — nothing checks whether that claim is true. Turn this feature on, and
-the plugin's own hooks quietly keep a private log of what you actually did in
-each session; when you stamp a document, it copies facts from that log instead
-of asking the model to describe itself. If a document was never in that log,
-stamping refuses.
+Turning this on means the plugin's own hooks quietly keep a private log of what
+you actually did in each session; stamping copies facts from that log instead
+of asking the model to describe itself. For the full reasoning behind why that
+matters, see [Understanding witnessed
+provenance](../../explanation/witnessed-provenance/) — this guide is the steps.
 
 ## Step 1 — Decide whether you want this on
 
 Provenance capture is **off by default**, everywhere, for everyone. Nothing is
 recorded about you until you explicitly turn it on, and once you turn it off —
 from anywhere — that's final; no other setting can turn it back on behind your
-back. See [Understanding witnessed
-provenance](../explanation/witnessed-provenance/) if you want the full reasoning
-before deciding.
+back.
 
 If you're ready, add this to a settings file:
 
@@ -149,11 +144,8 @@ provenance:
 ```
 
 Every one of those lines is something the plugin actually observed — which
-model wrote it, which session it happened in — not something the model was
-asked to say about itself. Compare that to a document authored the ordinary
-way, with `mif-frontmatter`: its `provenance` block might look similar, but it
-was written from the model's own account of what happened, with nothing behind
-it to check.
+model wrote it, which session it happened in — never something the model was
+merely asked to say about itself.
 
 If you chose `stamp: "auto"`, that block appeared on its own. If you chose
 `"ask"`, keep reading.
@@ -195,7 +187,7 @@ You'll get one of two answers, and each one tells you what to do next:
 
 If you want a bird's-eye view instead of checking one file at a time — how much
 of a whole project is witnessed versus merely claimed — see [the coverage
-report](../reference/skills/mif-provenance/) in the reference docs.
+report](../../reference/skills/mif-provenance/) in the reference docs.
 
 ## Step 6 — Turn it off, from anywhere
 
@@ -208,4 +200,4 @@ own personal "off." This is deliberate: your no is always the final word.
 
 If you want the full reasoning behind why witnessed provenance works this way —
 the trust ceiling, the privacy guarantees, and the situations this is actually
-built for — read [Understanding witnessed provenance](../explanation/witnessed-provenance/).
+built for — read [Understanding witnessed provenance](../../explanation/witnessed-provenance/).

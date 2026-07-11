@@ -83,8 +83,8 @@ extensions:
 # Skill reference: `mif-provenance`
 
 > New to this? Start with [the how-to
-> guide](../../how-to/witness-document-provenance/) for the walk-through, or
-> [the explanation](../../explanation/witnessed-provenance/) for the reasoning
+> guide](../../../how-to/witness-document-provenance/) for the walk-through, or
+> [the explanation](../../../explanation/witnessed-provenance/) for the reasoning
 > behind it. This page is the deep reference for drilling into specifics.
 
 The `mif-provenance` skill is the suite's **witnessed-provenance helper** — the

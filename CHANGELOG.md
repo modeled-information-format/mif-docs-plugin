@@ -66,19 +66,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Added
 
 - **`mif-provenance`**, the fifth authoring helper: witnessed provenance —
-  frontmatter that records who actually touched a document, built entirely
-  from a private, hook-observed session log rather than from what the model
-  claims about itself. Off by default everywhere; an explicit refusal at any
-  settings scope always wins, and a broken configuration can only ever
-  disable, never enable. Ships as three capture hooks
-  (`hooks/provenance-{session-start,post-tool-use,session-end}.mjs`) writing
-  an append-only, never-committed local ledger, plus the `stamp` and `verify`
-  verbs (`scripts/mif-provenance.mjs`): `stamp` writes only witnessed fields
-  and a fixed `trustLevel: user_stated` ceiling (never a `confidence` value),
-  declining any document the ledger didn't actually witness; `verify`
-  deterministically reports match or drift against the ledger and never
-  restamps. A witnessed-vs-asserted coverage report
-  (`scripts/provenance-corpus-check.mjs`) runs idempotently in CI.
+  frontmatter built from a private, hook-observed session log rather than
+  from what the model claims about itself. Off by default; an explicit
+  refusal at any settings scope always wins, and a broken configuration can
+  only ever disable, never enable.
+- Three capture hooks (`hooks/provenance-{session-start,post-tool-use,
+  session-end}.mjs`) writing an append-only, never-committed local ledger.
+- The `stamp` and `verify` verbs (`scripts/mif-provenance.mjs`): `stamp`
+  writes only witnessed fields with a fixed `trustLevel: user_stated`
+  ceiling (never `confidence`), declining any document the ledger didn't
+  witness; `verify` deterministically reports match or drift and never
+  restamps.
+- A witnessed-vs-asserted coverage report
+  (`scripts/provenance-corpus-check.mjs`) that runs idempotently in CI.
 - Two new user-facing docs: a how-to walking the full journey — opt in, watch
   witnessed provenance appear, approve a stamp, check a document you don't
   trust — and an explanation of why a witness beats a claim, what the honest
