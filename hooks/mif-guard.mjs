@@ -113,5 +113,8 @@ block(
     `${detail}\n\n` +
     `This document was produced by a mif-docs genre and must validate against the canonical ` +
     `schema. Fix its frontmatter to pass \`mif-validate --level 1\` (mirror the genre's ` +
+    `templates/good.md: the L1 floor is id + type[semantic|episodic|procedural] + created). ` +
+    `If mif-validate itself failed to run rather than reporting a real conformance issue ` +
+    `(e.g. a missing dependency), run \`npm ci\` in the mif-docs plugin and retry — this is ` +
     `templates/good.md: the L1 floor is id + type[semantic|episodic|procedural] + created).`,
 );

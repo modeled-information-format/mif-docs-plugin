@@ -176,10 +176,14 @@ export function loadValidator() {
   }
   const lock = JSON.parse(readFileSync(lockPath, "utf8"));
   const dir = join(ROOT, "schema", ".cache", lock.resolvedVersion);
-  if (!existsSync(dir)) {
-    throw schemaNotHydrated(`missing ${dir}`);
+  const schemaPath = join(dir, "mif.schema.json");
+  // A partial/interrupted hydrate can leave the directory present but the
+  // schema file itself missing — check the file, not just its parent, so
+  // that case still gets the coded error rather than a raw ENOENT.
+  if (!existsSync(schemaPath)) {
+    throw schemaNotHydrated(`missing ${schemaPath}`);
   }
-  const mif = JSON.parse(readFileSync(join(dir, "mif.schema.json"), "utf8"));
+  const mif = JSON.parse(readFileSync(schemaPath, "utf8"));
 
   const ajv = new Ajv2020({ allErrors: true, strict: false });
   addFormats(ajv);
