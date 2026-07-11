@@ -61,6 +61,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.4.1] - 2026-07-11
+
+### Fixed
+
+- `loadValidator()` let a raw `ENOENT` bubble out when `schema/.cache/<version>/mif.schema.json`
+  was never hydrated locally (a freshly installed plugin instance, or a
+  partial/interrupted hydrate that left the directory but not the file),
+  which `mif-validate.mjs` folded into the same failures list as a genuine
+  schema-conformance violation. The fail-closed guard then told the model
+  to fix its frontmatter, with a fallback suggestion of `npm ci` that does
+  not fix a missing hydrated cache, leaving no way to self-serve past the
+  block. `mif-validate` now exits `3` for this specific case (documented in
+  the CLI exit-code reference table), and `hooks/mif-guard.mjs` gives the
+  actual remedy (`npm run hydrate-schema`) while still keeping a general
+  `npm ci` fallback hint for unrelated tooling failures.
+
 ## [0.4.0] - 2026-07-11
 
 ### Added
