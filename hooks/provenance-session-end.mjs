@@ -13,9 +13,9 @@ import {
   appendLedgerLine,
   findGitDir,
   gitFacts,
+  strOrNull as str,
+  SESSION_ENV_VAR,
 } from "../scripts/lib/provenance-ledger.mjs";
-
-const str = (v) => (typeof v === "string" && v !== "" ? v : null);
 
 try {
   const payload = JSON.parse(readFileSync(0, "utf8"));
@@ -26,7 +26,7 @@ try {
     if (gitDir) {
       appendLedgerLine(gitDir, {
         event: "session_end",
-        sessionId: str(payload?.session_id) ?? str(process.env.CLAUDE_CODE_SESSION_ID),
+        sessionId: str(payload?.session_id) ?? str(process.env[SESSION_ENV_VAR]),
         ts: new Date().toISOString(),
         reason: str(payload?.reason),
         permissionMode: str(payload?.permission_mode),

@@ -28,7 +28,8 @@ import { resolve } from "node:path";
 import { load as yamlLoad } from "js-yaml";
 
 import { listGatedDocs } from "./lib/corpus.mjs";
-import { ACTIVITY_URN_PREFIX } from "./lib/provenance-ledger.mjs";
+import { ACTIVITY_URN_PREFIX, readLedger } from "./lib/provenance-ledger.mjs";
+import { splitFrontmatter } from "./lib/mif-genre-signal.mjs";
 
 const args = process.argv.slice(2);
 let dir;
@@ -56,11 +57,11 @@ function provenanceOf(file) {
   } catch {
     return null;
   }
-  const m = text.match(/^---\n([\s\S]*?)\n---/);
-  if (!m) return null;
+  const split = splitFrontmatter(text);
+  if (!split) return null;
   let fm;
   try {
-    fm = yamlLoad(m[1]);
+    fm = yamlLoad(split.fmText);
   } catch {
     return null;
   }
@@ -74,10 +75,13 @@ function isMarked(prov) {
 }
 
 // verify (against a ledger) only when asked for one; loaded lazily so the
-// default CI run keeps zero heavy imports beyond js-yaml.
+// default CI run keeps zero heavy imports beyond js-yaml. The ledger is read
+// and parsed ONCE for the whole corpus, not once per marked file.
 let verifyFileFn = null;
+let ledgerLines = null;
 if (ledgerFile) {
   ({ verifyFile: verifyFileFn } = await import("./lib/provenance-stamp.mjs"));
+  ledgerLines = readLedger(ledgerFile);
 }
 
 const rows = [];
@@ -89,7 +93,7 @@ for (const file of files) {
     if (isMarked(prov)) {
       if (verifyFileFn) {
         const sessionId = prov.wasGeneratedBy["@id"].slice(ACTIVITY_URN_PREFIX.length);
-        const v = verifyFileFn({ filePath: resolve(file), ledgerFile, sessionId });
+        const v = verifyFileFn({ filePath: resolve(file), ledgerFile, sessionId, lines: ledgerLines });
         status = v.verdict === "match" ? "witnessed" : "asserted";
       } else {
         status = "witnessed";

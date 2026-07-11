@@ -8,13 +8,48 @@
 // every qualifying tool call, so it must not pull in ajv/js-yaml the way the
 // projection module does (same discipline as hooks/mif-guard.mjs).
 
-import { appendFileSync, closeSync, mkdirSync, openSync, readFileSync, readSync, statSync } from "node:fs";
+import {
+  appendFileSync,
+  closeSync,
+  mkdirSync,
+  openSync,
+  readFileSync,
+  readSync,
+  realpathSync,
+  statSync,
+} from "node:fs";
 import { createHash } from "node:crypto";
 import { hostname, release, userInfo } from "node:os";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 
-export const LEDGER_VERSION = 1;
+const LEDGER_VERSION = 1;
 export const ACTIVITY_URN_PREFIX = "urn:mif:activity:claude-code-session:";
+
+// The ONE environment variable name for the ambient session id — the same
+// name on both sides of the ledger (capture hooks and CLI verbs), because
+// two spellings of the same fact is how a documented fallback silently never
+// fires (review finding on the first draft).
+export const SESSION_ENV_VAR = "CLAUDE_CODE_SESSION_ID";
+
+// Payload-field sanitizer shared by every ledger writer and the stamp
+// derivation: a witnessed value is a non-empty string; everything else is
+// null, never a guess.
+export function strOrNull(v) {
+  return typeof v === "string" && v !== "" ? v : null;
+}
+
+// Canonical form used everywhere a recorded path meets a queried path:
+// resolve to absolute, then flatten symlink aliases when the file exists
+// (macOS /tmp vs /private/tmp is the classic). A deleted file falls back to
+// the resolved form — both sides degrade identically.
+export function canonicalPath(p) {
+  const abs = resolve(p);
+  try {
+    return realpathSync.native ? realpathSync.native(abs) : realpathSync(abs);
+  } catch {
+    return abs;
+  }
+}
 
 // ---------------------------------------------------------------------------
 // witnessed session facts beyond the payload
@@ -141,34 +176,50 @@ export function fileFacts(filePath) {
 // assistant line carries message.model), and only optionally present in the
 // SessionStart payload. This is a bounded TAIL-SCAN for that one field — the
 // last window of the file, newest line wins — never a parse of conversation
-// content. Fail-open null on any error.
-export function modelFromTranscript(transcriptPath, maxBytes = 256 * 1024) {
+// content. The hook path calls this on every captured write, so it scans a
+// small window first (assistant lines land every turn, so the last few KB
+// nearly always hit) and pays the larger window only on a miss. Fail-open
+// null on any error.
+const TRANSCRIPT_WINDOWS = [16 * 1024, 256 * 1024];
+
+export function modelFromTranscript(transcriptPath, maxBytes) {
   if (typeof transcriptPath !== "string" || !transcriptPath) return null;
-  let text;
+  const windows = maxBytes ? [maxBytes] : TRANSCRIPT_WINDOWS;
+  let size;
   try {
-    const size = statSync(transcriptPath).size;
-    const start = Math.max(0, size - maxBytes);
-    const buf = Buffer.alloc(size - start);
-    const fd = openSync(transcriptPath, "r");
-    try {
-      readSync(fd, buf, 0, buf.length, start);
-    } finally {
-      closeSync(fd);
-    }
-    text = buf.toString("utf8");
+    size = statSync(transcriptPath).size;
   } catch {
     return null;
   }
-  const lines = text.split("\n");
-  for (let i = lines.length - 1; i >= 0; i--) {
-    const line = lines[i];
-    if (!line.includes('"model"')) continue;
+  let scanned = -1;
+  for (const window of windows) {
+    const start = Math.max(0, size - window);
+    if (size - start === scanned) break; // whole file already scanned
+    scanned = size - start;
+    let text;
     try {
-      const model = JSON.parse(line)?.message?.model;
-      // Skip synthetic placeholders (e.g. "<synthetic>" on error turns).
-      if (typeof model === "string" && model && !model.startsWith("<")) return model;
+      const buf = Buffer.alloc(size - start);
+      const fd = openSync(transcriptPath, "r");
+      try {
+        readSync(fd, buf, 0, buf.length, start);
+      } finally {
+        closeSync(fd);
+      }
+      text = buf.toString("utf8");
     } catch {
-      // torn first line of the window, or a foreign line — keep scanning
+      return null;
+    }
+    const lines = text.split("\n");
+    for (let i = lines.length - 1; i >= 0; i--) {
+      const line = lines[i];
+      if (!line.includes('"model"')) continue;
+      try {
+        const model = JSON.parse(line)?.message?.model;
+        // Skip synthetic placeholders (e.g. "<synthetic>" on error turns).
+        if (typeof model === "string" && model && !model.startsWith("<")) return model;
+      } catch {
+        // torn first line of the window, or a foreign line — keep scanning
+      }
     }
   }
   return null;
@@ -214,10 +265,13 @@ export function ledgerPath(gitDir) {
 
 // Append one event line. Throws on failure — callers on the hook path catch
 // and fail open; the skill verbs surface the error.
-export function appendLedgerLine(gitDir, event) {
-  const file = ledgerPath(gitDir);
+export function appendToLedgerFile(file, event) {
   mkdirSync(dirname(file), { recursive: true });
   appendFileSync(file, JSON.stringify({ v: LEDGER_VERSION, ...event }) + "\n");
+}
+
+export function appendLedgerLine(gitDir, event) {
+  appendToLedgerFile(ledgerPath(gitDir), event);
 }
 
 // Read every parseable line. Unparseable lines (a torn concurrent append, a
@@ -248,13 +302,15 @@ export function activityUrn(sessionId) {
 }
 
 // All file_touch events for one document, optionally scoped to one session.
+// Both sides of the comparison go through canonicalPath so a recorded alias
+// (relative form, /tmp symlink) still matches the queried path.
 export function touchesOf(lines, filePath, sessionId) {
-  const target = resolve(filePath);
+  const target = canonicalPath(filePath);
   return lines.filter(
     (l) =>
       l.event === "file_touch" &&
       typeof l.filePath === "string" &&
-      resolve(l.filePath) === target &&
+      canonicalPath(l.filePath) === target &&
       (sessionId === undefined || l.sessionId === sessionId),
   );
 }

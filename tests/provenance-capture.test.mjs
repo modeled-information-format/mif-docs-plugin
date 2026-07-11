@@ -15,6 +15,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   rmSync,
   writeFileSync,
 } from "node:fs";
@@ -63,6 +64,8 @@ function fixture({ settings, withGit = true } = {}) {
 function runHook(hook, payload, { home, env = {} } = {}) {
   const spawnEnv = { ...process.env, HOME: home };
   delete spawnEnv.CI; // assertions differ under CI; tests opt in via env
+  delete spawnEnv.CLAUDE_CONFIG_DIR; // the real machine's config dir must not hijack fixtures
+  delete spawnEnv.CLAUDE_CODE_SESSION_ID; // ambient session id must not leak into fixtures
   Object.assign(spawnEnv, env);
   return spawnSync("node", [hook], {
     input: JSON.stringify(payload),
@@ -241,7 +244,8 @@ test("PostToolUse appends a file_touch for the written file when enabled", () =>
     const lines = ledgerLines(project);
     assert.equal(lines.length, 1);
     assert.equal(lines[0].event, "file_touch");
-    assert.equal(lines[0].filePath, doc);
+    // Recorded paths are canonical (symlink aliases like macOS /var -> /private/var flattened).
+    assert.equal(lines[0].filePath, realpathSync(doc));
     assert.equal(lines[0].via, "Write");
     assert.equal(lines[0].sessionId, "s-abc");
     assert.equal(lines[0].promptId, "p-2");
@@ -272,10 +276,80 @@ test("session_end appends the terminal line when enabled", () => {
 test("no-repo: enabled but outside any git repository -> exit 0, nothing written", () => {
   const { base, home, project } = fixture({ settings: ENABLED, withGit: false });
   try {
-    const r = runHook(HOOKS.start, { session_id: "s-abc", cwd: project }, { home });
-    assert.equal(r.status, 0, r.stderr);
-    assert.equal(r.stdout + r.stderr, "");
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, "# notes\n");
+    for (const [hook, payload] of [
+      [HOOKS.start, { session_id: "s-abc", cwd: project }],
+      [HOOKS.post, { session_id: "s-abc", cwd: project, tool_name: "Write", tool_input: { file_path: doc } }],
+      [HOOKS.end, { session_id: "s-abc", cwd: project }],
+    ]) {
+      const r = runHook(hook, payload, { home });
+      assert.equal(r.status, 0, r.stderr);
+      assert.equal(r.stdout + r.stderr, "");
+    }
     assert.ok(!existsSync(join(project, ".git")), "no store may be invented outside a repo");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("a touch is witnessed in the FILE's repository ledger, not the session cwd's", () => {
+  // Regression: the first draft resolved the ledger from the session cwd, so
+  // a session parked in one directory writing into a sibling repo recorded
+  // the touch where stamp/verify would never look.
+  const { base, home, project } = fixture({ settings: ENABLED, withGit: false });
+  try {
+    const repo = join(base, "sibling-repo");
+    mkdirSync(join(repo, ".git"), { recursive: true });
+    const doc = join(repo, "doc.md");
+    writeFileSync(doc, "# in the sibling repo\n");
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-abc", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const ledger = join(repo, ".git", "ai-provenance", "session.jsonl");
+    assert.ok(existsSync(ledger), "the witness lives where the lookup happens: the file's repo");
+    const line = JSON.parse(readFileSync(ledger, "utf8").trim());
+    assert.equal(line.event, "file_touch");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("a relative payload file_path is normalized against the payload cwd at capture", () => {
+  const { base, home, project } = fixture({ settings: ENABLED });
+  try {
+    writeFileSync(join(project, "notes.md"), "# notes\n");
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-abc", cwd: project, tool_name: "Write", tool_input: { file_path: "notes.md" } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const line = ledgerLines(project)[0];
+    assert.ok(line.filePath.endsWith("/notes.md"), line.filePath);
+    assert.ok(line.filePath.startsWith("/"), "recorded paths are absolute and canonical");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('CI="false" is not a CI environment: stamp "ask" still asks', () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "ask" } },
+  });
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-ask", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home, env: { CI: "false" } },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /mif-provenance\.mjs stamp/, "the explicit not-CI spelling keeps ask interactive");
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
@@ -353,7 +427,7 @@ test('stamp "ask" degrades to "off" where no interactive surface exists (CI)', (
   }
 });
 
-test('stamp "auto": stamps a witnessed MIF document without blocking the write', () => {
+test('stamp "auto": stamps a witnessed MIF document without blocking the write', async () => {
   const { base, home, project } = fixture({
     settings: { mifProvenance: { capture: true, stamp: "auto" } },
   });
@@ -371,6 +445,13 @@ test('stamp "auto": stamps a witnessed MIF document without blocking the write',
     assert.match(stamped, /urn:mif:activity:claude-code-session:s-auto/);
     assert.match(stamped, /trustLevel: user_stated/);
     assert.doesNotMatch(stamped, /confidence/);
+    // The stamp witnesses its own rewrite: the newest ledger hash matches disk.
+    const lines = ledgerLines(project);
+    const last = lines.at(-1);
+    assert.equal(last.via, "stamp");
+    const { createHash } = await import("node:crypto");
+    const diskHash = "sha256:" + createHash("sha256").update(readFileSync(doc)).digest("hex");
+    assert.equal(last.contentHash, diskHash, "the ledger's newest hash matches the stamped bytes");
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

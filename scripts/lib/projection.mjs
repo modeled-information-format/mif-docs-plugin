@@ -56,8 +56,13 @@ function normalizeBody(s) {
   return String(s).replace(/^\r?\n+/, "").replace(/\s+$/, "");
 }
 
+// The canonical YAML dump options. Exported so provenance stamping can
+// splice subtrees that are byte-identical to what a full canonical
+// serialization would produce — one definition, not a synced literal.
+export const YAML_DUMP_OPTIONS = Object.freeze({ lineWidth: -1, noRefs: true, sortKeys: false });
+
 export function serializeMarkdown(frontmatter, body) {
-  const fm = yamlDump(frontmatter, { lineWidth: -1, noRefs: true, sortKeys: false });
+  const fm = yamlDump(frontmatter, YAML_DUMP_OPTIONS);
   return `---\n${fm}---\n\n${normalizeBody(body)}\n`;
 }
 

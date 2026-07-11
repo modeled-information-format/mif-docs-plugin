@@ -143,7 +143,8 @@ discipline `mif-validate` established for schema conformance.
 
 ## Session selection
 
-`--session <id>` wins; `$CLAUDE_SESSION_ID` is next; otherwise the verbs use
+`--session <id>` wins; `$CLAUDE_CODE_SESSION_ID` (the same variable the
+capture hooks record from) is next; otherwise the verbs use
 the ledger's own evidence — but only when **exactly one** session ever touched
 the file. Several witnessing sessions is an error demanding `--session`, never
 a guess. Selection can only ever land on a session the ledger witnessed

@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-07-11T12:00:00Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -116,7 +116,7 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `briefing` | One-page briefing / standup update | `episodic` | 3 |
 | `exec-summary` | 1-2 page BLUF decision-oriented executive summary | `semantic` | 3 |
 
-## Substrate skills (4) and the planner
+## Substrate skills (5) and the planner
 
 These do not author a finished genre artifact; they supply or check the MIF layer
 that every genre rides on, plus the multi-document engine.
@@ -127,6 +127,7 @@ that every genre rides on, plus the multi-document engine.
 | `ears-acceptance-criteria` | Turn a requirement or driver into an EARS-notation acceptance criterion. |
 | `mif-validate` | Deterministically prove a document is MIF-conformant and convert between forms. |
 | `mif-corpus` | Semantically index and query MIF docs via the optional mif-rs tools; suggestion signal, never a gate. |
+| `mif-provenance` | Stamp hook-witnessed provenance into frontmatter and verify blocks against the session ledger; witnessed, never asserted. |
 | `doc-set-planner` | Plan a subject into a coordinated SET of documents, fan out to genres, reconcile the relationship graph. |
 
 ## Doc-set recipes (4)
@@ -157,6 +158,8 @@ Every script is fail-closed: any failure exits non-zero.
 | `validate-plugin.mjs` | `validate-plugin` | `0` `plugin.json`, `marketplace.json`, and every `SKILL.md` frontmatter valid; `1` any structural violation. |
 | `check-exemplars.mjs` | `check-exemplars` | `0` every genre's `good-l1.md` validates at L1 and `good.md` at its target level; `1` otherwise. |
 | `planner-check.mjs` | `planner-check [<recipe>]` | `0` recipe(s) decompose to real member skills and the cross-link graph is complete; `1` otherwise. |
+| `mif-provenance.mjs` | `mif-provenance <stamp\|verify> <file> [--session <id>] [--ledger <path>]` | `0` stamped / verify match; `1` verify drift (including unwitnessed); `2` usage/environment error (unknown verb, no repo and no `--ledger`, ambiguous session); `3` stamp declined (unwitnessed, not conformant, would regress the document's MIF level). |
+| `provenance-corpus-check.mjs` | `provenance-corpus-check [--dir <path>] [--ledger <path>]` | `0` report emitted (byte-idempotent over identical inputs — never gates on coverage); `1` empty corpus; `2` usage error. |
 | `engine-parity.mjs` | `engine-parity <path-to-mif-cli> [--expected <json>]` | `0` node and Rust verdicts agree everywhere outside the expected-disagreement ledger; `1` unexpected disagreement, stale/orphaned ledger entry, or harness fault (missing/unparseable ledger, schema not hydrated, binary cannot run, gutted corpus); `2` usage error (missing binary path, wrong working directory). |
 
 ### Which engine is authoritative

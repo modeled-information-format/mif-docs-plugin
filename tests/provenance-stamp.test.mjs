@@ -12,6 +12,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { createHash } from "node:crypto";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -28,6 +29,15 @@ import { loadValidator } from "../scripts/lib/projection.mjs";
 
 const root = join(new URL("..", import.meta.url).pathname);
 const CLI = join(root, "scripts", "mif-provenance.mjs");
+
+// CLI spawns must not inherit this machine's ambient session id or config
+// dir — fixtures control both.
+function cliEnv(extra = {}) {
+  const env = { ...process.env };
+  delete env.CLAUDE_CODE_SESSION_ID;
+  delete env.CLAUDE_CONFIG_DIR;
+  return Object.assign(env, extra);
+}
 
 // An L2-conformant document (namespace + modified + temporal on top of the
 // L1 floor) with no provenance block — the common pre-stamp state.
@@ -260,23 +270,23 @@ test("CLI: exit codes 0 (stamp/match), 1 (drift), 3 (declined); unambiguous sess
   const { base, file, ledger } = fixture();
   try {
     // Only one session ever touched the file, so --session may be omitted.
-    const stamp = spawnSync("node", [CLI, "stamp", file, "--ledger", ledger], { encoding: "utf8" });
+    const stamp = spawnSync("node", [CLI, "stamp", file, "--ledger", ledger], { encoding: "utf8", env: cliEnv() });
     assert.equal(stamp.status, 0, stamp.stderr);
     assert.match(stamp.stdout, /STAMPED/);
 
-    const match = spawnSync("node", [CLI, "verify", file, "--ledger", ledger], { encoding: "utf8" });
+    const match = spawnSync("node", [CLI, "verify", file, "--ledger", ledger], { encoding: "utf8", env: cliEnv() });
     assert.equal(match.status, 0, match.stderr);
     assert.match(match.stdout, /deterministic verdict/);
 
     writeFileSync(file, readFileSync(file, "utf8").replace("user_stated", "verified"));
-    const drift = spawnSync("node", [CLI, "verify", file, "--ledger", ledger], { encoding: "utf8" });
+    const drift = spawnSync("node", [CLI, "verify", file, "--ledger", ledger], { encoding: "utf8", env: cliEnv() });
     assert.equal(drift.status, 1);
     assert.match(drift.stderr, /trustLevel/);
 
     const declined = spawnSync(
       "node",
       [CLI, "stamp", file, "--ledger", ledger, "--session", "s-nobody"],
-      { encoding: "utf8" },
+      { encoding: "utf8", env: cliEnv() },
     );
     assert.equal(declined.status, 3);
     assert.match(declined.stderr, /DECLINED \(unwitnessed\)/);
@@ -328,6 +338,70 @@ test("deriveExpected ignores torn ledger lines and foreign sessions", () => {
       "2026-07-11T09:05:00.000Z",
       "a foreign session's later touch must not move this session's modified",
     );
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("CLI honors $CLAUDE_CODE_SESSION_ID — the same variable the hooks record from", () => {
+  // Regression: the first draft read $CLAUDE_SESSION_ID here while the hooks
+  // recorded from $CLAUDE_CODE_SESSION_ID, so the ambient fallback never fired.
+  const { base, file, ledger } = fixture();
+  try {
+    const r = spawnSync("node", [CLI, "stamp", file, "--ledger", ledger], {
+      encoding: "utf8",
+      env: cliEnv({ CLAUDE_CODE_SESSION_ID: SESSION }),
+    });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /session:\s+s-stamp-1/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("a CRLF document is stampable (frontmatter split is shared with the projection layer)", () => {
+  // Regression: the first draft's LF-only regex declared CRLF documents
+  // conformant (via parseMarkdown) yet unstampable in the same call.
+  const { base, file, ledger } = fixture({ doc: L2_DOC.replaceAll("\n", "\r\n") });
+  try {
+    const res = stampFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    assert.equal(res.stamped, true, JSON.stringify(res));
+    assert.match(readFileSync(file, "utf8"), /trustLevel: user_stated/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("verify compares structurally: wasGeneratedBy key order is formatting, not drift", () => {
+  const { base, file, ledger } = fixture();
+  try {
+    stampFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    const reordered = readFileSync(file, "utf8").replace(
+      /  wasGeneratedBy:\n    '@id': (.*)\n    '@type': (.*)\n/,
+      "  wasGeneratedBy:\n    '@type': $2\n    '@id': $1\n",
+    );
+    assert.notEqual(reordered, readFileSync(file, "utf8"), "the fixture reorder must apply");
+    writeFileSync(file, reordered);
+    const res = verifyFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    assert.equal(res.verdict, "match", JSON.stringify(res.diffs));
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("stamp witnesses its own rewrite: the ledger's newest hash matches the stamped bytes", () => {
+  const { base, file, ledger } = fixture();
+  try {
+    stampFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    const lines = readLedger(ledger);
+    const last = lines.at(-1);
+    assert.equal(last.via, "stamp");
+    assert.equal(last.ts, "2026-07-11T09:05:00.000Z", "reuses the witnessed touch time (idempotency)");
+    const diskHash = "sha256:" + createHash("sha256").update(readFileSync(file)).digest("hex");
+    assert.equal(last.contentHash, diskHash);
+    // and a second stamp appends nothing further
+    stampFile({ filePath: file, ledgerFile: ledger, sessionId: SESSION });
+    assert.equal(readLedger(ledger).length, lines.length);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

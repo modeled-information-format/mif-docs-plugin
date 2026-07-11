@@ -10,29 +10,42 @@
 // modifies only the `provenance` block and the `modified` timestamp — by
 // splicing exactly those lines of the raw frontmatter text, so every other
 // byte of the file survives verbatim. Idempotent: identical ledger facts
-// produce identical bytes.
+// produce identical bytes. The write is atomic (temp file + rename in the
+// same directory), so a concurrently-running reader — the parallel mif-guard
+// hook validating the same just-written file — sees either the pre-stamp or
+// the post-stamp bytes, both conformant, never a torn file. And the stamp
+// witnesses its own rewrite: a `via: "stamp"` file_touch line records the
+// post-stamp content hash, so the ledger's newest hash for a document always
+// matches the bytes on disk.
 //
 // verify re-derives the expected block from the same ledger and reports
-// match or drift per owned field. It never restamps. No model is in either
-// path (the mif-validate precedent): identical document + ledger + config
-// yield identical output.
+// match or drift per owned field (structurally — key order is formatting,
+// not fact). It never restamps. No model is in either path (the mif-validate
+// precedent): identical document + ledger + config yield identical output.
 
-import { readFileSync, writeFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { readFileSync, renameSync, unlinkSync, writeFileSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 import { dump as yamlDump, load as yamlLoad } from "js-yaml";
 
 import {
   activityUrn,
+  appendToLedgerFile,
+  canonicalPath,
+  fileFacts,
   readLedger,
   sessionStartOf,
+  strOrNull,
   touchesOf,
 } from "./provenance-ledger.mjs";
+import { splitFrontmatter } from "./mif-genre-signal.mjs";
 import {
   checkLevel,
+  deepEqual,
   loadValidator,
   parseMarkdown,
   roundTripFromMarkdown,
   toJsonld,
+  YAML_DUMP_OPTIONS,
 } from "./projection.mjs";
 
 // Fixed trust policy: the ledger is a local, unsigned witness, so the ceiling
@@ -42,24 +55,21 @@ export const STAMP_TRUST_LEVEL = "user_stated";
 
 // The provenance fields this helper OWNS (writes on stamp, compares on
 // verify). Everything else in an existing block is preserved untouched.
-export const OWNED_FIELDS = ["agent", "agentVersion", "wasGeneratedBy", "trustLevel"];
+const OWNED_FIELDS = ["agent", "agentVersion", "wasGeneratedBy", "trustLevel"];
 
 // ---------------------------------------------------------------------------
 // policy: ledger facts -> expected owned-field values
 // ---------------------------------------------------------------------------
 export function deriveExpected({ lines, sessionId, filePath }) {
-  const touches = touchesOf(lines, filePath, sessionId).filter(
-    (t) => typeof t.ts === "string" && t.ts,
-  );
+  const touches = touchesOf(lines, filePath, sessionId).filter((t) => strOrNull(t.ts));
   if (!sessionId || touches.length === 0) return { witnessed: false };
 
   const start = sessionStartOf(lines, sessionId);
-  const isStr = (v) => typeof v === "string" && v !== "";
-  // ISO-8601 strings order lexicographically; the LATEST touch's model wins
+  // ISO-8601 strings order lexicographically; the LATEST touch's facts win
   // (mid-session /model switches are real), falling back to the session line.
   const latestTouch = [...touches].sort((a, b) => (a.ts < b.ts ? -1 : 1)).at(-1);
-  const model = [latestTouch?.model, start?.model].find(isStr) ?? null;
-  const toolVersion = isStr(start?.toolVersion) ? start.toolVersion : null;
+  const model = strOrNull(latestTouch.model) ?? strOrNull(start?.model);
+  const toolVersion = strOrNull(latestTouch.toolVersion) ?? strOrNull(start?.toolVersion);
 
   const fields = {
     // The witnessing surface is the claude-code hook set; the model qualifies
@@ -72,21 +82,17 @@ export function deriveExpected({ lines, sessionId, filePath }) {
   // unwitnessed field is omitted rather than invented.
   if (toolVersion) fields.agentVersion = toolVersion;
 
-  // ISO-8601 strings order lexicographically, so max() is the latest touch.
-  const modified = touches.map((t) => t.ts).sort().at(-1);
-  return { witnessed: true, fields, modified };
+  return { witnessed: true, fields, modified: latestTouch.ts, model, toolVersion };
 }
 
 // ---------------------------------------------------------------------------
 // surgical frontmatter splicing
 // ---------------------------------------------------------------------------
-const FM_RE = /^---\n([\s\S]*?)\n---(\r?\n?[\s\S]*)$/;
-
 function dumpTopLevel(key, value) {
-  // Same dump options as projection.mjs's serializeMarkdown, so a stamped
-  // block is byte-identical to what a full canonical serialization would
-  // produce for the same subtree.
-  return yamlDump({ [key]: value }, { lineWidth: -1, noRefs: true, sortKeys: false });
+  // The canonical dump options (projection.mjs), so a stamped block is
+  // byte-identical to what a full canonical serialization would produce for
+  // the same subtree.
+  return yamlDump({ [key]: value }, YAML_DUMP_OPTIONS);
 }
 
 // Replace (or append) one top-level YAML key's block inside raw frontmatter
@@ -111,9 +117,30 @@ function spliceTopLevelKey(fmText, key, dumpedBlock) {
   return [...lines.slice(0, start), ...block, ...lines.slice(end)].join("\n");
 }
 
+// ---------------------------------------------------------------------------
+// validation plumbing (memoized: the auto-stamp hook and batch callers must
+// not pay an ajv schema compile per file)
+// ---------------------------------------------------------------------------
+let cachedValidate = null;
+function getValidator() {
+  if (!cachedValidate) cachedValidate = loadValidator().validate;
+  return cachedValidate;
+}
+
+function satisfiesLevel(text, level, validate) {
+  let rt;
+  try {
+    rt = roundTripFromMarkdown(text);
+  } catch {
+    return false;
+  }
+  if (!rt.lossless || !validate(rt.jsonld1)) return false;
+  return checkLevel(rt.jsonld1, level).length === 0;
+}
+
 // The highest MIF level (3..1) the document satisfies, or 0 if it is not
 // schema-valid / round-trip-lossless at all.
-export function highestSatisfiedLevel(text, validate) {
+export function highestSatisfiedLevel(text, validate = getValidator()) {
   let rt;
   try {
     rt = roundTripFromMarkdown(text);
@@ -128,9 +155,9 @@ export function highestSatisfiedLevel(text, validate) {
 }
 
 function buildStampedText(text, expected) {
-  const m = text.match(FM_RE);
-  if (!m) return { error: "no YAML frontmatter block" };
-  const [, fmText, rest] = m;
+  const split = splitFrontmatter(text);
+  if (!split) return { error: "no YAML frontmatter block" };
+  const { fmText, rest } = split;
 
   let fm;
   try {
@@ -161,10 +188,11 @@ function buildStampedText(text, expected) {
 // Returns one of:
 //   { stamped: true,  changed: boolean, fields, modified }
 //   { stamped: false, reason: "unwitnessed" | "not-conformant" | ..., detail? }
-export function stampFile({ filePath, ledgerFile, sessionId }) {
-  const target = resolve(filePath);
-  const lines = readLedger(ledgerFile);
-  const expected = deriveExpected({ lines, sessionId, filePath: target });
+// `lines` may carry a pre-read ledger to avoid re-parsing (batch callers).
+export function stampFile({ filePath, ledgerFile, sessionId, lines }) {
+  const target = canonicalPath(filePath);
+  const ledgerLines = lines ?? readLedger(ledgerFile);
+  const expected = deriveExpected({ lines: ledgerLines, sessionId, filePath: target });
   if (!expected.witnessed) {
     return {
       stamped: false,
@@ -180,7 +208,7 @@ export function stampFile({ filePath, ledgerFile, sessionId }) {
     return { stamped: false, reason: "unreadable", detail: e.message };
   }
 
-  const { validate } = loadValidator();
+  const validate = getValidator();
   const before = highestSatisfiedLevel(original, validate);
   if (before === 0) {
     return {
@@ -193,18 +221,54 @@ export function stampFile({ filePath, ledgerFile, sessionId }) {
   const built = buildStampedText(original, expected);
   if (built.error) return { stamped: false, reason: "unstampable", detail: built.error };
 
-  const after = highestSatisfiedLevel(built.text, validate);
-  if (after < before) {
-    // Never trade conformance for provenance: leave the file untouched.
+  // Never trade conformance for provenance: the stamped text must still
+  // satisfy the level the document already held.
+  if (!satisfiesLevel(built.text, before, validate)) {
     return {
       stamped: false,
       reason: "would-regress",
-      detail: `stamping would drop the document from MIF L${before} to L${after}`,
+      detail: `stamping would drop the document below MIF L${before}`,
     };
   }
 
   const changed = built.text !== original;
-  if (changed) writeFileSync(target, built.text);
+  if (changed) {
+    // Atomic replace: a concurrent reader (the parallel mif-guard hook) sees
+    // whole pre-stamp or whole post-stamp bytes, never a torn file.
+    const tmp = join(dirname(target), `.${basename(target)}.mif-provenance-tmp`);
+    writeFileSync(tmp, built.text);
+    try {
+      renameSync(tmp, target);
+    } catch (e) {
+      try {
+        unlinkSync(tmp);
+      } catch {
+        // leave nothing behind on the failure path if we can help it
+      }
+      return { stamped: false, reason: "unwritable", detail: e.message };
+    }
+    // Witness our own rewrite, so the ledger's newest hash for this document
+    // matches the on-disk bytes. ts reuses the witnessed touch time the
+    // stamp derived `modified` from — wall clock here would make re-stamps
+    // derive a new `modified` and break byte idempotency.
+    if (ledgerFile) {
+      try {
+        appendToLedgerFile(ledgerFile, {
+          event: "file_touch",
+          sessionId,
+          ts: expected.modified,
+          tool: "mif-provenance",
+          via: "stamp",
+          filePath: target,
+          model: expected.model,
+          toolVersion: expected.toolVersion,
+          ...fileFacts(target),
+        });
+      } catch {
+        // the stamp itself succeeded; a failed self-witness must not undo it
+      }
+    }
+  }
   return { stamped: true, changed, fields: expected.fields, modified: expected.modified };
 }
 
@@ -213,10 +277,11 @@ export function stampFile({ filePath, ledgerFile, sessionId }) {
 // ---------------------------------------------------------------------------
 // Returns { verdict: "match" | "drift" | "unwitnessed", diffs: [...] } where
 // each diff is { field, expected, actual }. Never writes anything.
-export function verifyFile({ filePath, ledgerFile, sessionId }) {
-  const target = resolve(filePath);
-  const lines = readLedger(ledgerFile);
-  const expected = deriveExpected({ lines, sessionId, filePath: target });
+// `lines` may carry a pre-read ledger to avoid re-parsing (batch callers).
+export function verifyFile({ filePath, ledgerFile, sessionId, lines }) {
+  const target = canonicalPath(filePath);
+  const ledgerLines = lines ?? readLedger(ledgerFile);
+  const expected = deriveExpected({ lines: ledgerLines, sessionId, filePath: target });
   if (!expected.witnessed) {
     return {
       verdict: "unwitnessed",
@@ -229,7 +294,10 @@ export function verifyFile({ filePath, ledgerFile, sessionId }) {
   try {
     doc = parseMarkdown(readFileSync(target, "utf8"));
   } catch (e) {
-    return { verdict: "drift", diffs: [{ field: "(document)", expected: "parseable MIF markdown", actual: e.message }] };
+    return {
+      verdict: "drift",
+      diffs: [{ field: "(document)", expected: "parseable MIF markdown", actual: e.message }],
+    };
   }
   const jsonld = toJsonld(doc);
   const actualProv =
@@ -237,10 +305,11 @@ export function verifyFile({ filePath, ledgerFile, sessionId }) {
 
   const diffs = [];
   for (const field of OWNED_FIELDS) {
-    const want = expected.fields[field];
-    const got = actualProv[field];
-    if (JSON.stringify(want ?? null) !== JSON.stringify(got ?? null)) {
-      diffs.push({ field, expected: want ?? null, actual: got ?? null });
+    const want = expected.fields[field] ?? null;
+    const got = actualProv[field] ?? null;
+    // Structural comparison: key order is YAML formatting, not a fact.
+    if (!deepEqual(want, got)) {
+      diffs.push({ field, expected: want, actual: got });
     }
   }
   return { verdict: diffs.length === 0 ? "match" : "drift", diffs };

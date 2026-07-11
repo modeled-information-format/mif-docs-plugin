@@ -24,11 +24,11 @@ import {
   findGitDir,
   gitFacts,
   modelFromTranscript,
+  strOrNull as str,
   sysFacts,
   toolVersionFrom,
+  SESSION_ENV_VAR,
 } from "../scripts/lib/provenance-ledger.mjs";
-
-const str = (v) => (typeof v === "string" && v !== "" ? v : null);
 
 try {
   const payload = JSON.parse(readFileSync(0, "utf8"));
@@ -40,7 +40,7 @@ try {
       const transcriptPath = str(payload?.transcript_path);
       appendLedgerLine(gitDir, {
         event: "session_start",
-        sessionId: str(payload?.session_id) ?? str(process.env.CLAUDE_CODE_SESSION_ID),
+        sessionId: str(payload?.session_id) ?? str(process.env[SESSION_ENV_VAR]),
         ts: new Date().toISOString(),
         tool: "claude-code",
         toolVersion: toolVersionFrom(),

@@ -81,6 +81,13 @@ consider both consumer families**, not just the verbs in this repository.
   worktree-private git dir a linked worktree's `.git` file names), so the
   ledger is **never committed and never leaves the machine**. Two worktrees
   of one repository therefore keep separate ledgers.
+- **Which repository:** a `file_touch` lands in the touched FILE's own
+  repository ledger — the same place `stamp`/`verify` later look — while
+  `session_start`/`session_end` land in the session cwd's repository. A
+  session parked in one repo writing into a sibling repo therefore witnesses
+  the touch where the lookup happens (which is why `file_touch` carries its
+  own `toolVersion` and `model`: the touched repo's ledger may never see a
+  `session_start`).
 - Outside a git repository, capture disables; no alternative store is
   invented.
 - **Append-only** semantics: writers add whole lines and never rewrite or
@@ -159,9 +166,10 @@ Appended by the PostToolUse hook for `Write`, `Edit`, and `MultiEdit`.
 | Field | Type | Meaning |
 | --- | --- | --- |
 | `tool` | string | Always `claude-code`. |
-| `via` | string | The tool that touched the file (`Write`, `Edit`, `MultiEdit`). |
-| `filePath` | string | The touched file's path exactly as the payload carried it. |
+| `via` | string | `Write`/`Edit`/`MultiEdit`, or `stamp` (see below). |
+| `filePath` | string | The touched file's canonical absolute path (resolved against the payload cwd, symlink aliases flattened). |
 | `model` | string or null | The transcript's newest model at touch time. |
+| `toolVersion` | string or null | The CLI version, per touch (see "Which repository" above). |
 | `promptId` | string or null | Which prompt the touch happened under. |
 | `permissionMode`, `effort` | string or null | As at session start, per touch. |
 | `agentId`, `agentType` | string or null | The touching subagent, when one. |
@@ -172,6 +180,12 @@ Appended by the PostToolUse hook for `Write`, `Edit`, and `MultiEdit`.
 The `contentHash` is the strongest witness in the ledger: a consumer can
 prove whether today's file is still byte-identical to what the session
 wrote. The ledger stores the hash, **never the content**.
+
+A successful `stamp` that changes bytes appends its own `file_touch` with
+`tool: "mif-provenance"`, `via: "stamp"`, and the post-stamp content hash —
+so the newest recorded hash for a document always matches the bytes on disk
+even on the auto-stamp path. Its `ts` reuses the witnessed touch time the
+stamp derived `modified` from, keeping re-stamps byte-idempotent.
 
 ### `session_end`
 

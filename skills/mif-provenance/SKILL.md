@@ -44,7 +44,9 @@ Everything here is opt-in and fail-closed (ADR-0005): capture and stamping
 are off by default, configured under the `mifProvenance` settings key
 (`capture`: true/false, `stamp`: `"auto"`/`"ask"`/`"off"`), and an explicit
 disable at ANY settings scope defeats an enable at every other scope. A
-malformed settings file disables rather than enables. With `stamp: "ask"`,
+malformed settings file disables rather than enables. Stamping is defined
+over the capture ledger, so `stamp` without `capture: true` resolves to
+`"off"`. With `stamp: "ask"`,
 the hook only surfaces the exact command — run it solely on the user's
 explicit approval; in CI/headless, `"ask"` behaves as `"off"`.
 
@@ -55,7 +57,7 @@ node scripts/mif-provenance.mjs stamp  <file> [--session <id>] [--ledger <path>]
 node scripts/mif-provenance.mjs verify <file> [--session <id>] [--ledger <path>]
 ```
 
-Session selection: `--session`, else `$CLAUDE_SESSION_ID`, else — only when
+Session selection: `--session`, else `$CLAUDE_CODE_SESSION_ID`, else — only when
 exactly one session ever touched the file — that session. Several witnessing
 sessions is an error demanding `--session`, never a guess. Exit codes: `0`
 stamped/match, `1` verify drift (including unwitnessed), `2` usage error,

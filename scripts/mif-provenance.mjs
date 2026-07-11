@@ -5,7 +5,8 @@
 //   mif-provenance stamp  <file> [--session <id>] [--ledger <path>]
 //   mif-provenance verify <file> [--session <id>] [--ledger <path>]
 //
-// Session selection: --session, else $CLAUDE_SESSION_ID, else — only when the
+// Session selection: --session, else $CLAUDE_CODE_SESSION_ID (the same
+// variable name the capture hooks record from), else — only when the
 // ledger shows EXACTLY ONE session ever touched the file — that session.
 // Ambiguity (several witnessing sessions) is an error demanding --session,
 // never a guess: selection can only ever land on a session the ledger
@@ -21,6 +22,7 @@ import {
   ledgerPath,
   readLedger,
   sessionsTouching,
+  SESSION_ENV_VAR,
 } from "./lib/provenance-ledger.mjs";
 import { stampFile, verifyFile } from "./lib/provenance-stamp.mjs";
 
@@ -53,9 +55,11 @@ if (!ledger) {
   ledger = ledgerPath(gitDir);
 }
 
-if (!session && process.env.CLAUDE_SESSION_ID) session = process.env.CLAUDE_SESSION_ID;
+// One ledger read serves session inference and the verb itself.
+const ledgerLines = readLedger(ledger);
+if (!session && process.env[SESSION_ENV_VAR]) session = process.env[SESSION_ENV_VAR];
 if (!session) {
-  const witnesses = sessionsTouching(readLedger(ledger), target);
+  const witnesses = sessionsTouching(ledgerLines, target);
   if (witnesses.length === 1) {
     session = witnesses[0];
   } else if (witnesses.length > 1) {
@@ -68,7 +72,7 @@ if (!session) {
 }
 
 if (verb === "stamp") {
-  const res = stampFile({ filePath: target, ledgerFile: ledger, sessionId: session });
+  const res = stampFile({ filePath: target, ledgerFile: ledger, sessionId: session, lines: ledgerLines });
   if (!res.stamped) {
     console.error(`DECLINED (${res.reason}): ${res.detail}`);
     process.exit(3);
@@ -83,7 +87,7 @@ if (verb === "stamp") {
   process.exit(0);
 }
 
-const res = verifyFile({ filePath: target, ledgerFile: ledger, sessionId: session });
+const res = verifyFile({ filePath: target, ledgerFile: ledger, sessionId: session, lines: ledgerLines });
 if (res.verdict === "match") {
   console.log(`MATCH: ${target} provenance is exactly what the ledger witnesses (deterministic verdict — no model in the path)`);
   process.exit(0);

@@ -127,10 +127,11 @@ it off, and the reverse).
 ### Option 1: One namespaced key in Claude Code's settings hierarchy, with a refusal-wins carve-out
 
 **Description**: A single `mifProvenance` key (`capture`: bool, `stamp`:
-`auto`/`ask`/`off`, both defaulting to off) read from
-`~/.claude/settings.local.json`, `.claude/settings.json`, and
-`.claude/settings.local.json`, following Claude Code's own precedence for
-non-refusal values only. The carve-out: an explicit `capture: false` or
+`auto`/`ask`/`off`, both defaulting to off) read from the user scope
+(`settings.json` and `settings.local.json` under `$CLAUDE_CONFIG_DIR`,
+defaulting to `~/.claude/`) and the project scope (`.claude/settings.json`
+and `.claude/settings.local.json`), following Claude Code's own precedence
+for non-refusal values only. The carve-out: an explicit `capture: false` or
 `stamp: "off"` at ANY scope defeats enablement at every other scope. Any
 parse error or wrong-shaped value resolves the affected scope to explicit
 refusal. The plugin-local settings file pattern
@@ -150,7 +151,7 @@ hosts where the settings hierarchy is unavailable.
 
 - Diverges from vanilla settings-precedence intuition (a project-local
   enable does NOT beat a user disable); must be documented plainly.
-- Three file reads on every hook invocation (measured: well under the 50 ms
+- Four file reads on every hook invocation (measured: well under the 50 ms
   disabled-path budget).
 
 **Risk Assessment**:

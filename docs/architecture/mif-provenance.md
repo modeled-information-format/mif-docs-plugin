@@ -116,6 +116,10 @@ Four components, one external store:
 | Corpus Check | `scripts/provenance-corpus-check.mjs` | Witnessed-vs-asserted coverage by agent and model; byte-idempotent; wired into CI with a run-twice-and-diff gate. |
 | Session Ledger (store) | `<git-dir>/ai-provenance/session.jsonl` | Append-only JSONL contract ([reference](../reference/provenance-ledger.md)); never committed, never leaves the machine. |
 
+A `file_touch` is appended to the touched FILE's repository ledger (where
+`stamp`/`verify` later look), while session lines land in the session cwd's
+repository — a session in one repo routinely writes into a sibling repo.
+
 Data flow: settings files → **Resolver** → (gate) → **Hooks** → ledger →
 **skill verbs** → document frontmatter → **Corpus Check** → coverage report.
 The PostToolUse hook additionally hosts the mediated stamp path (`auto`/
