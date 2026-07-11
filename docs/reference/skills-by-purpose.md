@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-05T12:00:00Z'
+modified: '2026-07-11T12:00:00Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -59,7 +59,7 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 42
+  x-skill-count: 43
   x-purpose-group-count: 13
 ---
 
@@ -68,7 +68,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 42 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 43 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -85,7 +85,7 @@ Each skill name links to its full reference doc.
 | Group | Skills | What the group is for |
 | --- | --- | --- |
 | Orchestrator | [`doc-set-planner`](../skills/doc-set-planner/) | Decompose a broad subject into a coordinated document set and reconcile the cross-document graph. |
-| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
+| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
 | Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
@@ -177,6 +177,28 @@ statistics.
   is a suggestion signal, never a gate.
 - **Requires:** the optional `mif-mcp` server or `mif-cli` binary; states
   unavailability plainly when neither is installed.
+
+### `mif-provenance`
+
+Witnessed provenance: stamps hook-observed session facts (`agent`,
+`agentVersion`, the session activity URN) into a document's `provenance`
+block from the capture ledger, and verifies an existing block against that
+ledger. The distinction from its siblings is the witness: `mif-frontmatter`
+*asserts* provenance from drafting context and `mif-validate` *shape-checks*
+whatever block is present — only `mif-provenance` proves the named session
+actually touched the document. Trust ceiling: `user_stated` (a local,
+unsigned ledger), stated plainly on every stamp; `confidence` is never
+written. Opt-in, fail-closed consent under the `mifProvenance` settings key,
+where an explicit disable at any scope wins ([ADR-0005](../../adr/0005-provenance-consent-in-settings-hierarchy/)).
+
+- **Authors:** a witnessed `provenance` block, or a deterministic match/drift verdict — never prose.
+- **Reach for it when:** a document authored in a capture-enabled session
+  should carry witnessed rather than asserted provenance, or a block needs
+  drift-checking against the ledger.
+- **Not this when:** authoring the rest of the frontmatter (`mif-frontmatter`)
+  or proving schema/level conformance (`mif-validate`).
+- **Requires:** capture enabled (`mifProvenance.capture: true`) so the session
+  ledger exists; declines any document the ledger did not witness.
 
 ## Diátaxis quadrants
 

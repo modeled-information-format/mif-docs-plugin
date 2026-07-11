@@ -17,12 +17,18 @@ import { readFileSync } from 'node:fs';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
-// Deliberately imported from the tiny dependency-free module, NOT from
-// projection.mjs directly: this hook fires on EVERY Write/Edit tool call,
-// even ones that early-exit before ever needing this list's value, so it
-// must not drag in projection.mjs's heavier transitive dependencies (ajv,
-// ajv-formats, js-yaml) just to read two strings (issue #50 review).
-import { MIF_IDENTITY_SIGNAL_KEYS } from '../scripts/lib/mif-identity-signal-keys.mjs';
+// Deliberately imported from the tiny dependency-free genre-signal module,
+// NOT from projection.mjs: this hook fires on EVERY Write/Edit tool call,
+// even ones that early-exit, so it must not drag in projection.mjs's heavier
+// transitive dependencies (ajv, ajv-formats, js-yaml) to answer a regex
+// question (issue #50 review). The predicate itself is shared with the
+// provenance capture hook so the two can never drift on what counts as a
+// genre document.
+import {
+  hasGenreSignal,
+  isAdrCarveout,
+  splitFrontmatter,
+} from '../scripts/lib/mif-genre-signal.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = resolve(here, '..');
@@ -59,39 +65,17 @@ try {
 
 // 3. Guard only genre documents (those that should be MIF).
 //
-// The genre signal must be a TOP-LEVEL frontmatter key (column 0). A real MIF
-// document always declares its conceptType as a top-level `type:` (the L1 floor),
-// and its `ontology:`/`diataxis_type:` markers are top-level too. Anchoring to the
-// line start prevents a NESTED key from false-triggering the guard — e.g. an
-// auto-memory file carries `metadata:\n  type: reference`, whose indented `type:`
-// is not a MIF conceptType and must not be guarded.
-const fm = content.match(/^---\n([\s\S]*?)\n---/);
-const front = fm ? fm[1] : '';
+// Detection lives in scripts/lib/mif-genre-signal.mjs, shared with the
+// provenance capture hook: the genre signal must be a TOP-LEVEL frontmatter
+// key (a nested `metadata:\n  type: reference` must not trigger — the
+// auto-memory regression), and the structured-MADR `type: adr` genre is
+// carved out exactly as CI does (validated by the structured-madr action,
+// not mif-validate).
+const split = splitFrontmatter(content);
+const front = split ? split.fmText : '';
 
-// The `adr` genre is intentionally structured-MADR (`type: adr`) and is
-// validated by the structured-madr action, NOT by mif-validate (which keys on
-// conceptType). Skip it here exactly as CI does, so the guard never false-blocks
-// a conformant ADR.
-if (/(^|\n)type[ \t]*:[ \t]*adr\b/.test(front)) allow();
-
-// Genre-specific keys the guard treats as MIF signals in their own right,
-// beyond the canonical identity keys projection.mjs owns (imported above as
-// MIF_IDENTITY_SIGNAL_KEYS; issue #50) -- these are guard-local heuristics
-// (a legacy Diátaxis marker, ontology binding keys) unrelated to toJsonld()'s
-// actual id/type parsing, so they stay defined here rather than shared.
-const GUARD_GENRE_KEYS = ['diataxis_type', 'x-ontology', 'ontology'];
-const escapeRegExp = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-const bareKeyPattern = [...GUARD_GENRE_KEYS, ...MIF_IDENTITY_SIGNAL_KEYS]
-  .map(escapeRegExp)
-  .join('|');
-
-const genreSignal =
-  !!fm &&
-  (new RegExp(`(^|\\n)(${bareKeyPattern})[ \\t]*:`).test(front) ||
-    /(^|\n)type[ \t]*:[ \t]*(semantic|episodic|procedural|tutorial|how-to|reference|explanation|runbook|playbook|changelog|decision-record)\b/.test(
-      front,
-    ));
-if (!genreSignal) allow();
+if (isAdrCarveout(front)) allow();
+if (!split || !hasGenreSignal(front)) allow();
 
 // 4. Validate, fail closed.
 let res;

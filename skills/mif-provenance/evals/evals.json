@@ -1,0 +1,97 @@
+{
+  "skill_name": "mif-provenance",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "The capture ledger at ledger.jsonl witnessed session s-eval-1 touching note.md. Stamp witnessed provenance into note.md from that ledger and save the full command output to stamp-report.md.",
+      "expected_output": "Runs `node scripts/mif-provenance.mjs stamp note.md --session s-eval-1 --ledger ledger.jsonl`, gets exit 0 with a STAMPED verdict, and saves the output to stamp-report.md. The document's provenance block now carries the witnessed agent, the session activity URN, and trustLevel user_stated, with no confidence field.",
+      "files": [
+        "note.md",
+        "ledger.jsonl"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_contains",
+          "file": "stamp-report.md",
+          "literal": "STAMPED",
+          "description": "Report shows the stamp succeeded"
+        },
+        {
+          "type": "file_contains",
+          "file": "note.md",
+          "literal": "urn:mif:activity:claude-code-session:s-eval-1",
+          "description": "The document carries the witnessing session's activity URN"
+        },
+        {
+          "type": "file_contains",
+          "file": "note.md",
+          "literal": "trustLevel: user_stated",
+          "description": "trustLevel comes from the fixed policy ceiling"
+        },
+        {
+          "type": "file_not_contains",
+          "file": "note.md",
+          "literal": "confidence",
+          "description": "confidence is never written"
+        }
+      ],
+      "expectations": [
+        "States the trust ceiling plainly: the ledger is a local unsigned witness, so trustLevel is user_stated and can never be verified",
+        "Does not hand-edit the provenance block or invent fields the ledger did not witness; the script is the only writer"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Check whether report.md's provenance block still matches what the session ledger at ledger.jsonl witnessed, and save the verdict output to verify-report.md. Do not change report.md.",
+      "expected_output": "Runs `node scripts/mif-provenance.mjs verify report.md --ledger ledger.jsonl`, captures the MATCH or DRIFT verdict to verify-report.md, and leaves report.md byte-identical. Reports that the verdict is deterministic — no model is in the path.",
+      "files": [
+        "report.md",
+        "ledger.jsonl"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "regex_match",
+          "file": "verify-report.md",
+          "pattern": "MATCH|DRIFT",
+          "description": "The saved output carries the verify verdict"
+        }
+      ],
+      "expectations": [
+        "Treats the script's verdict as final without re-litigating it by manual inspection, and explains the verdict is deterministic with no model in the path",
+        "Does not restamp or otherwise modify report.md on drift — reconciliation is a separate, explicit stamp the user must ask for"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Stamp provenance into draft.md using session s-not-here (the ledger at ledger.jsonl has no record of that session touching the file), and tell me what happened.",
+      "expected_output": "Runs the stamp, gets exit 3 with a DECLINED (unwitnessed) message, leaves draft.md unchanged, and explains that stamping provenance naming a session the ledger never witnessed touching the document is exactly what the helper refuses to do.",
+      "files": [
+        "draft.md",
+        "ledger.jsonl"
+      ],
+      "deterministic_checks": [
+        {
+          "type": "file_not_contains",
+          "file": "draft.md",
+          "literal": "s-not-here",
+          "description": "The unwitnessed session id must not appear in the document"
+        }
+      ],
+      "expectations": [
+        "Reports the decline as correct behavior, not an error to work around — it does not retry with a different session id or hand-write the provenance block",
+        "Explains the witnessed-vs-asserted distinction: the ledger is the witness, and no witness means no stamp"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Provenance capture sounds useful — turn it on for this project so documents get stamped automatically.",
+      "expected_output": "Explains the consent model before or while acting: capture and stamp are off by default, configured under the mifProvenance key in .claude/settings.json ({\"mifProvenance\": {\"capture\": true, \"stamp\": \"auto\"}}), an explicit disable at any settings scope wins over every enable, and a malformed settings file disables rather than enables. Notes the trust ceiling (user_stated, unsigned local ledger).",
+      "files": [],
+      "expectations": [
+        "Writes the mifProvenance key into the project's .claude/settings.json (or shows exactly that edit) rather than inventing a different config surface",
+        "States that refusal wins across scopes and that config errors fail closed to disabled",
+        "Mentions the ledger lives under .git/ai-provenance/ and never leaves the machine or gets committed"
+      ]
+    }
+  ]
+}

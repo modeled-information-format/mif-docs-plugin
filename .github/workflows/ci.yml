@@ -108,6 +108,16 @@ jobs:
         run: node scripts/check-exemplars.mjs
       - name: Doc-set planner recipes are link-complete
         run: node scripts/planner-check.mjs
+      - name: Witnessed-vs-asserted provenance coverage (idempotent at the telemetry boundary)
+        run: |
+          # The report itself never gates; what IS gated is its idempotency
+          # contract (Story #67): two runs over identical inputs must emit
+          # byte-identical output, so the diff fails the build on any
+          # nondeterminism (a timestamp, an environment echo, unstable order).
+          node scripts/provenance-corpus-check.mjs > /tmp/provenance-coverage-1.txt
+          node scripts/provenance-corpus-check.mjs > /tmp/provenance-coverage-2.txt
+          diff /tmp/provenance-coverage-1.txt /tmp/provenance-coverage-2.txt
+          cat /tmp/provenance-coverage-1.txt
       - name: Fail-closed MIF guard hook blocks non-MIF genre output
         run: npm run test:hook
       - name: Markdown lint
