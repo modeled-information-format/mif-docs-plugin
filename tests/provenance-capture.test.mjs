@@ -380,7 +380,7 @@ test("error-open: a malformed payload exits 0 silently", () => {
       assert.equal(r.status, 0, `${hook} must fail open on a bad payload`);
     }
   } finally {
-    rmSync(join(home, ".."), { recursive: true, force: true });
+    rmSync(base, { recursive: true, force: true });
   }
 });
 
