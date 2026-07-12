@@ -2,7 +2,7 @@
 id: how-to-witness-document-provenance
 type: procedural
 created: '2026-07-11T20:00:00Z'
-modified: '2026-07-12T00:07:16.468Z'
+modified: '2026-07-12T15:41:31.586Z'
 namespace: how-to/provenance
 title: How to Witness Your Documents' Provenance
 tags:
@@ -37,7 +37,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
+    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
@@ -77,6 +77,12 @@ Provenance capture is **off by default**, everywhere, for everyone. Nothing is
 recorded about you until you explicitly turn it on, and once you turn it off —
 from anywhere — that's final; no other setting can turn it back on behind your
 back.
+
+One scope note before you start: capture only works inside a **Claude Code**
+session today — it's built entirely on Claude Code's own hook events, with no
+equivalent for other coding agents or tools yet. See [the limitations
+section](../../explanation/witnessed-provenance/) if you work across more
+than one tool.
 
 If you're ready, add this to a settings file:
 

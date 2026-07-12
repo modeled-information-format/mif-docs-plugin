@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-12T00:58:30.615Z'
+modified: '2026-07-12T15:46:27.731Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -25,7 +25,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
+    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
@@ -105,6 +105,27 @@ never the source of the facts describing it.
 | MIF `conceptType` | `substrate` |
 | Target MIF level | 1 (operates on documents at any level, preserving it) |
 | Primary source | The capture hooks' [session ledger](../provenance-ledger.md) |
+
+## The helper versus the hooks
+
+This skill (`stamp`/`verify`/`status`) is the piece you invoke. The capture
+hooks (`hooks/provenance-session-start.mjs`,
+`hooks/provenance-post-tool-use.mjs`, `hooks/provenance-session-end.mjs`) are
+the piece that runs silently in the background and is never invoked
+directly — they only build the ledger this skill reads. The skill never observes a
+session itself; it only turns what the hooks already recorded into a
+document's `provenance` block, or checks a block against it.
+
+## Scope: Claude Code only, for now
+
+Capture is implemented entirely on Claude Code's own plugin hook events
+(`SessionStart`, `PostToolUse`, `SessionEnd` — see `hooks/hooks.json`), so
+witnessed provenance is only available for sessions run through Claude Code
+today. The [ledger contract](../provenance-ledger.md) itself is a generic,
+append-only "session touched file" log with no Claude-Code-specific
+assumption in its shape; extending capture to another coding agent or tool
+would mean that tool appending to the same kind of ledger, which is real,
+unstarted work, not something this design rejects.
 
 ## The trust ceiling, stated plainly
 
