@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-12T15:41:21.235Z'
+modified: '2026-07-12T15:46:27.731Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -111,8 +111,8 @@ never the source of the facts describing it.
 This skill (`stamp`/`verify`/`status`) is the piece you invoke. The capture
 hooks (`hooks/provenance-session-start.mjs`,
 `hooks/provenance-post-tool-use.mjs`, `hooks/provenance-session-end.mjs`) are
-the piece that runs silently in the background and never invoked directly —
-they only build the ledger this skill reads. The skill never observes a
+the piece that runs silently in the background and is never invoked
+directly — they only build the ledger this skill reads. The skill never observes a
 session itself; it only turns what the hooks already recorded into a
 document's `provenance` block, or checks a block against it.
 
