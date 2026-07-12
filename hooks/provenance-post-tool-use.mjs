@@ -80,9 +80,15 @@ async function main() {
   // strong signal hook wiring is incomplete for this session (issue #90) —
   // e.g. a mid-session plugin update or capture-enable that wired SOME
   // hooks but not all. This never changes the fail-open behavior below,
-  // it only decides whether to say something.
-  const priorLines = readLedger(ledgerPath(gitDir));
-  const sessionStartMissing = !!sessionId && !sessionStartOf(priorLines, sessionId);
+  // it only decides whether to say something. The warning can only ever
+  // surface downstream when stamping is enabled (the "off" early-return
+  // below never reaches it), so skip this extra full-ledger read entirely
+  // on the capture-only path — that's the path this file's header promises
+  // stays as light as mif-guard's.
+  const sessionStartMissing =
+    cfg.stamp !== "off" &&
+    !!sessionId &&
+    !sessionStartOf(readLedger(ledgerPath(gitDir)), sessionId);
 
   // One read serves the hash, the size, and the genre check.
   let contentBuf = null;
