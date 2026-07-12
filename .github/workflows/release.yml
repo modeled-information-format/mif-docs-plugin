@@ -199,3 +199,35 @@ jobs:
           gh api "repos/${GITHUB_REPOSITORY}/git/refs" \
             -f ref="refs/tags/${TAG}" \
             -f sha="${TAG_SHA}"
+
+  # Notify the org's catalog-updater hub the moment a release publishes, rather
+  # than waiting for its next scheduled (Monday) cron run. client_payload.repo
+  # names the MARKETPLACE repo to re-check (claude-code-plugins, the known
+  # public catalog that pins mif-docs) — not this repo; see
+  # modeled-information-format/.github's plugin-catalog-update-hub.yml, whose
+  # `plugin-released` repository_dispatch this fires.
+  notify-catalog-hub:
+    needs: attest-release
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Mint a token scoped to the org .github repo
+        id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.CATALOG_CLIENT_APP_ID }}
+          private-key: ${{ secrets.CATALOG_CLIENT_APP_PRIVATE_KEY }}
+          owner: ${{ github.repository_owner }}
+          repositories: .github
+
+      - name: Trigger the catalog-updater hub
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -euo pipefail
+          gh api --method POST \
+            "repos/${{ github.repository_owner }}/.github/dispatches" \
+            -f event_type=plugin-released \
+            -f 'client_payload[repo]=modeled-information-format/claude-code-plugins'
