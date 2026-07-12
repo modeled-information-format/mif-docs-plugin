@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-12T01:07:20.081Z'
+modified: '2026-07-12T02:10:53.905Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,7 +27,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
+    '@id': urn:mif:activity:claude-code-session:0baec4b0-123e-4559-a4cb-5342f36006c2
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
@@ -61,6 +61,16 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- The mediated auto-stamp path in the `PostToolUse` hook (#108) no longer
+  silently swallows a stamp decline (`unwitnessed`, `not-conformant`,
+  `would-regress`, `unwritable`) or a thrown error — both now surface via
+  `additionalContext`, the same fail-loud-never-fail-closed posture the #90
+  `session_start`-missing warning already established. Previously a decline
+  or error inside `stamp === "auto"` was indistinguishable, from inside the
+  session, from capture being broken outright.
 
 ## [0.4.2] - 2026-07-12
 
