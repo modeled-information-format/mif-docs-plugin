@@ -2,7 +2,7 @@
 id: reference-skill-mif-validate
 type: semantic
 created: '2026-06-30T12:00:00Z'
-modified: '2026-06-30T12:00:00Z'
+modified: '2026-07-12T02:37:45.074Z'
 namespace: reference/skills
 title: 'Skill reference: mif-validate'
 tags:
@@ -19,19 +19,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:0baec4b0-123e-4559-a4cb-5342f36006c2
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:mif-validate
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: specification
@@ -124,7 +125,10 @@ validator scripts the suite runs in its gates.
   schema with Ajv; any structural or enum violation fails the verdict — as the
   fail-closed guard does when an author writes a non-conformant block.
 - **Level floor.** The skill confirms the document carries every field its
-  claimed level demands, refusing an L3 claim that lacks a provenance graph.
+  claimed level demands: **L1** requires `id`, `type`, and `created`; **L2**
+  additionally requires `namespace`, `modified`, and `temporal`; **L3**
+  additionally requires `provenance` and `temporal.validFrom` — refusing, for
+  example, an L3 claim that lacks a provenance graph.
 - **Round-trip proof.** It runs the lossless Markdown ↔ JSON-LD conversion and
   rejects any document whose round-trip is not exact, which constrains authors to
   the constructs proven to round-trip.

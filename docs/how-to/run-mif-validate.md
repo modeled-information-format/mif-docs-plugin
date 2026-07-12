@@ -2,7 +2,7 @@
 id: how-to-run-mif-validate
 type: procedural
 created: '2026-06-30T12:00:00Z'
-modified: '2026-06-30T12:00:00Z'
+modified: '2026-07-12T02:38:15.311Z'
 namespace: how-to/validate
 title: How to run mif-validate and convert a document
 tags:
@@ -22,6 +22,8 @@ relationships:
     target: urn:mif:reference-skill-mif-validate
   - type: relates-to
     target: urn:mif:reference-skills-by-purpose
+  - type: relates-to
+    target: urn:mif:explanation-one-artifact-two-readers
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -30,19 +32,20 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:0baec4b0-123e-4559-a4cb-5342f36006c2
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://mif-spec.dev
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: documentation
@@ -71,10 +74,10 @@ extensions:
 # How to run mif-validate and convert a document
 
 This guide runs the deterministic `mif-validate` gate on a document and converts it
-between Markdown and JSON-LD. The verdict carries no language model — it is the
-canonical schema plus a lossless round-trip, so identical input yields an identical
-answer every time. For the full description of the skill, see the
-[mif-validate reference](../../reference/skills/mif-validate/).
+between Markdown and JSON-LD. For the full description of the skill, see the
+[mif-validate reference](../../reference/skills/mif-validate/); for why the
+projection is deterministic, see
+[One Artifact, Two Readers](../../explanation/one-artifact-two-readers/).
 
 ## Step 1 — Validate at a level
 
@@ -84,11 +87,10 @@ Pick the MIF level the document targets and run the validator:
 node scripts/mif-validate.mjs your-doc.md --level 1
 ```
 
-The level overlay layers required fields on top of the canonical schema: L1 is the
-floor (`id` + `type` + `created`); **L2** additionally requires `namespace`,
-`modified`, and `temporal`; **L3** additionally requires `provenance` and
-`temporal.validFrom`. A `RESULT: VALID at MIF L<n>` line means the document is
-schema-conformant and its round-trip is lossless.
+A `RESULT: VALID at MIF L<n>` line means the document is schema-conformant and
+its round-trip is lossless. See the
+[mif-validate reference](../../reference/skills/mif-validate/) for exactly which
+fields each level requires.
 
 ## Step 2 — Read the failure when it fails
 
@@ -108,9 +110,7 @@ node scripts/mif-convert.mjs emit-jsonld your-doc.md
 
 ## Step 4 — Confirm the round-trip is lossless
 
-The round-trip is the heart of the "one artifact, two readers" guarantee: the
-Markdown a person reads and the JSON-LD a parser resolves must carry the same
-information both ways. Check it explicitly:
+Check it explicitly:
 
 ```bash
 node scripts/mif-convert.mjs roundtrip your-doc.md
@@ -123,6 +123,7 @@ either direction.
 
 If you are validating a fragment whose round-trip you do not need, pass
 `--no-roundtrip` to `mif-validate` to check schema and level alone. Prefer the full
-check for any document you ship — losslessness is what makes the two readers
-equivalent. To author a document from scratch and then validate it, follow the
+check for any document you ship (see
+[One Artifact, Two Readers](../../explanation/one-artifact-two-readers/) for
+why). To author a document from scratch and then validate it, follow the
 [validate-and-author how-to](../validate-and-author-a-document/).
