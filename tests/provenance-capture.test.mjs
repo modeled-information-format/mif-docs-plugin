@@ -630,7 +630,7 @@ test('stamp "auto": warns via additionalContext when stampFile declines (issue #
     const r = runHook(
       HOOKS.post,
       { session_id: "s-declined", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
-      { home },
+      { home, env: { CLAUDE_PLUGIN_ROOT: "/fake/plugin/root" } },
     );
     assert.equal(r.status, 0, r.stderr);
     assert.match(r.stdout, /hookSpecificOutput/);
@@ -638,7 +638,13 @@ test('stamp "auto": warns via additionalContext when stampFile declines (issue #
     assert.match(parsed.hookSpecificOutput.additionalContext, /stamp mode is "auto"/);
     assert.match(parsed.hookSpecificOutput.additionalContext, /declined/);
     assert.match(parsed.hookSpecificOutput.additionalContext, /not-conformant/);
-    assert.match(parsed.hookSpecificOutput.additionalContext, /mif-provenance\.mjs verify/);
+    // The suggested command must be runnable from the user's project cwd,
+    // not the plugin root — so it needs the CLAUDE_PLUGIN_ROOT prefix, same
+    // as the "ask" branch already does (review finding on #109).
+    assert.match(
+      parsed.hookSpecificOutput.additionalContext,
+      /\/fake\/plugin\/root\/scripts\/mif-provenance\.mjs verify/,
+    );
     // The decline never blocks or mutates the write.
     assert.equal(readFileSync(doc, "utf8"), "---\ntype: semantic\n---\n\nNo id, no created.\n");
   } finally {

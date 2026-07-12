@@ -172,6 +172,7 @@ async function main() {
   // already established for hook-wiring gaps; this closes the matching gap
   // for stamp-call failures that occur even when wiring is fully correct.
   let declineWarning = null;
+  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT ?? ".";
   try {
     const { stampFile } = await import("../scripts/lib/provenance-stamp.mjs");
     const result = stampFile({ filePath, ledgerFile: ledgerPath(gitDir), sessionId });
@@ -179,14 +180,15 @@ async function main() {
       declineWarning =
         `mif-provenance: stamp mode is "auto" but stamping ${filePath} was declined ` +
         `(${result.reason}${result.detail ? `: ${result.detail}` : ""}). The document keeps ` +
-        `whatever provenance it already had; run \`node scripts/mif-provenance.mjs verify "${filePath}" ` +
-        `--session ${sessionId}\` to see the drift, or \`stamp\` in place of \`verify\` to retry.`;
+        `whatever provenance it already had; run \`node ${pluginRoot}/scripts/mif-provenance.mjs verify ` +
+        `"${filePath}" --session ${sessionId}\` to see the details, or \`stamp\` in place of \`verify\` to retry.`;
     }
   } catch (e) {
     declineWarning =
       `mif-provenance: stamp mode is "auto" but stamping ${filePath} threw (${e?.message ?? e}). ` +
       `The document keeps whatever provenance it already had; run ` +
-      `\`node scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}\` to retry and see the error directly.`;
+      `\`node ${pluginRoot}/scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}\` ` +
+      `to retry and see the error directly.`;
   }
 
   const message = [wiringWarning, declineWarning].filter(Boolean).join("\n\n");
