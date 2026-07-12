@@ -9,7 +9,7 @@ tags:
   - mif-docs
   - provenance
   - design-rationale
-modified: '2026-07-11T20:00:00Z'
+modified: '2026-07-12T15:40:52.878Z'
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-07-11T00:00:00Z'
@@ -19,17 +19,18 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin/issues/63
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: specification
@@ -100,6 +101,27 @@ for witnessed provenance when you need to actually stand behind who touched a
 document — a compliance trail, a dispute about authorship, or simply wanting
 receipts.
 
+## Two moving parts: the hooks and the helper
+
+"Witnessed provenance" is really two separate pieces working together, and
+it helps to keep them apart:
+
+- **The capture hooks** run silently in the background the whole time
+  capture is on. You never invoke them — `SessionStart` opens a session
+  line, every `Write`/`Edit`/`MultiEdit` appends a touch, `SessionEnd` closes
+  it out. Their whole job is building the ledger; they never touch a
+  document's frontmatter themselves.
+- **The `mif-provenance` skill — the helper** — is the thing you (or your
+  assistant) actually invoke: `stamp` to write a witnessed block into one
+  document, `verify` to check one against the ledger, `status` to ask
+  whether capture is even active right now. The helper never watches
+  anything itself; it only reads what the hooks already recorded.
+
+Put plainly: the hooks are the always-on witness, and the helper is how you
+put that witness's testimony to use. Neither works without the other — a
+helper with no ledger has nothing to stamp from, and a ledger nobody reads
+never becomes a provenance block.
+
 ## How honest the "trust" really is
 
 It would be easy to oversell this. The witnessing log lives only on your own
@@ -164,6 +186,22 @@ you configure anything:
 - **Attribution across a team.** When several people (and their assistants)
   work in the same repository, witnessed provenance gives each document an
   independently-recorded author, not just a name someone typed in.
+
+## Limitations, today
+
+Capture is built entirely on Claude Code's own plugin hook events —
+`SessionStart`, `PostToolUse`, `SessionEnd`. That means witnessed provenance
+only works inside a Claude Code session, right now. If you (or a teammate)
+write MIF documents from a different coding agent or tool, nothing observes
+those sessions, and any document they touch stays unwitnessed no matter how
+you configure `mifProvenance`.
+
+That's a limit of what's been built so far, not a limit of the idea. Nothing
+about the session ledger's own format assumes Claude Code specifically — it
+is a plain, append-only log of "this session touched this file." Extending
+capture to other tools would mean teaching each one to append to that same
+kind of ledger, which is a real but unstarted piece of work, not something
+the design rules out.
 
 ## Where to go next
 
