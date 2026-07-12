@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T23:56:58.865Z'
+modified: '2026-07-12T00:58:30.615Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -159,11 +159,20 @@ inside the session, without touching any document: the resolved
 the session ledger has a `session_start` line for the current session id.
 Enabling capture mid-session, or updating this plugin mid-session, is not
 guaranteed to wire hooks into an already-running session's dispatch (issue
-[#90](https://github.com/modeled-information-format/mif-docs-plugin/issues/90)),
-and both `provenance-config.mjs` (fail-closed) and the capture hooks
-themselves (fail-open) are deliberately silent either way — `status` is the
-one surface built to say so plainly. A missing `session_start` line means:
-restart the Claude Code session, don't keep authoring and hoping.
+[#90](https://github.com/modeled-information-format/mif-docs-plugin/issues/90),
+confirmed by direct repro: Claude Code snapshots the set of hook commands per
+matcher at session/plugin-load time and does not re-read `hooks.json` for
+that set on later dispatches), and both `provenance-config.mjs` (fail-closed)
+and the capture hooks themselves (fail-open) are deliberately silent either
+way — `status` is the one surface built to say so plainly. A missing
+`session_start` line means: restart the Claude Code session, don't keep
+authoring and hoping.
+
+`status` also hashes this plugin's own `hooks.json` at every `session_start`
+and compares it against the *current* on-disk copy. A mismatch means this
+plugin was updated after this session started — the running session may
+still be dispatching the stale hook set it loaded at start — same fix,
+restart the session.
 
 ## Session selection
 

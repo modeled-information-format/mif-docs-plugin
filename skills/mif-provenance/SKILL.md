@@ -36,10 +36,17 @@ model being described is never the source of the facts describing it.
   whether the session ledger has a `session_start` line for the current
   session. Enabling capture mid-session, or updating this plugin mid-session,
   is not guaranteed to wire hooks into an already-running session's dispatch
-  (issue #90); `status` is the fail-loud check for exactly that gap, since the
-  capture hooks themselves are deliberately silent on both success and
-  failure. If it reports no session_start line, the fix is to restart the
-  Claude Code session, not to keep authoring and hoping.
+  (issue #90, confirmed by direct repro: Claude Code snapshots the set of hook
+  commands per matcher at session/plugin-load time and does not re-read
+  `hooks.json` for that set on later dispatches); `status` is the fail-loud
+  check for exactly that gap, since the capture hooks themselves are
+  deliberately silent on both success and failure. If it reports no
+  session_start line, the fix is to restart the Claude Code session, not to
+  keep authoring and hoping. Beyond that, `status` also hashes this plugin's
+  own `hooks.json` at every `session_start` and compares it against the
+  *current* on-disk copy: if they differ, this plugin was updated after this
+  session started and the running session may still be dispatching the stale
+  hook set — same fix, restart the session.
 
 ## Trust ceiling — say this plainly when reporting results
 

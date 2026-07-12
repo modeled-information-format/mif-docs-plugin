@@ -172,6 +172,22 @@ export function fileFacts(filePath) {
   }
 }
 
+// A hash of this plugin's own hooks.json, recorded at session_start and
+// re-derived on demand by the `status` verb: Claude Code snapshots the set of
+// hook commands registered per matcher at session/plugin-load time and does
+// not re-read hooks.json for that set on later dispatches (confirmed by
+// direct repro, issue #90) — so a hash drift between session_start and now is
+// the signal that this plugin was updated mid-session and a restart is
+// needed before any newly added or changed hook actually runs. Null on any
+// read failure — never a guess.
+export function hooksManifestHash(hooksJsonPath) {
+  try {
+    return `sha256:${createHash("sha256").update(readFileSync(hooksJsonPath)).digest("hex")}`;
+  } catch {
+    return null;
+  }
+}
+
 // The model id is authoritative in the vendor's own transcript (each
 // assistant line carries message.model), and only optionally present in the
 // SessionStart payload. This is a bounded TAIL-SCAN for that one field — the
