@@ -23,19 +23,26 @@
 // structurally impossible.
 //
 // Exit codes: 0 stamped/match (status: healthy); 1 verify drift (status:
-// capture is on but this session's hooks have not witnessed anything yet);
-// 2 usage/environment error; 3 stamp declined (unwitnessed, non-conformant,
-// would-regress).
+// capture is on but this session's hooks have not witnessed anything yet, or
+// this plugin's hooks.json has changed since this session's session_start —
+// confirmed by direct repro (issue #90) to mean the running session may still
+// be dispatching a stale hook set); 2 usage/environment error; 3 stamp
+// declined (unwitnessed, non-conformant, would-regress).
 
-import { resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   findGitDir,
+  hooksManifestHash,
   ledgerPath,
   readLedger,
   sessionsTouching,
   sessionStartOf,
   SESSION_ENV_VAR,
 } from "./lib/provenance-ledger.mjs";
+
+// Siblings within this plugin: scripts/mif-provenance.mjs -> ../hooks/hooks.json.
+const HOOKS_JSON_PATH = join(dirname(fileURLToPath(import.meta.url)), "..", "hooks", "hooks.json");
 import { stampFile, verifyFile } from "./lib/provenance-stamp.mjs";
 import { resolveProvenanceConfig } from "./lib/provenance-config.mjs";
 
@@ -92,6 +99,15 @@ if (verb === "status") {
   console.log(`ledger file:           ${ledger}`);
   if (start) {
     console.log(`session_start witnessed at: ${start.ts ?? "(no timestamp field)"}`);
+    const currentHooksHash = hooksManifestHash(HOOKS_JSON_PATH);
+    if (start.hooksHash && currentHooksHash && start.hooksHash !== currentHooksHash) {
+      console.log(
+        "this plugin's hooks.json has changed since this session started - the running " +
+          "session may still be dispatching the hook set it loaded at start. Restart your " +
+          "Claude Code session to pick up the change.",
+      );
+      process.exit(1);
+    }
     console.log("hooks are wired and witnessing this session.");
     process.exit(0);
   }

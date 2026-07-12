@@ -17,18 +17,26 @@
 // are never recorded); host facts; and the repository's branch/HEAD.
 
 import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { resolveProvenanceConfig } from "../scripts/lib/provenance-config.mjs";
 import {
   appendLedgerLine,
   envFacts,
   findGitDir,
   gitFacts,
+  hooksManifestHash,
   modelFromTranscript,
   strOrNull as str,
   sysFacts,
   toolVersionFrom,
   SESSION_ENV_VAR,
 } from "../scripts/lib/provenance-ledger.mjs";
+
+// This file's own directory is always where this plugin's hooks.json lives —
+// resolved from import.meta.url rather than $CLAUDE_PLUGIN_ROOT so it works
+// identically whether invoked as a registered hook or run by hand.
+const HOOKS_JSON_PATH = join(dirname(fileURLToPath(import.meta.url)), "hooks.json");
 
 try {
   const payload = JSON.parse(readFileSync(0, "utf8"));
@@ -57,6 +65,7 @@ try {
         env: envFacts(),
         sys: sysFacts(),
         git: gitFacts(gitDir),
+        hooksHash: hooksManifestHash(HOOKS_JSON_PATH),
       });
     }
   }

@@ -19,6 +19,7 @@ import {
   rmSync,
   writeFileSync,
 } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { performance } from "node:perf_hooks";
@@ -215,6 +216,13 @@ test("session_start appends witnessed session facts when enabled", () => {
     assert.equal(l.sys.platform, process.platform, "host facts are witnessed");
     assert.ok(l.sys.nodeVersion.startsWith("v"));
     assert.match(l.ts, /^\d{4}-\d{2}-\d{2}T/);
+    const realHooksJson = readFileSync(join(root, "hooks", "hooks.json"));
+    assert.equal(
+      l.hooksHash,
+      `sha256:${createHash("sha256").update(realHooksJson).digest("hex")}`,
+      "issue #90: session_start hashes this plugin's OWN hooks.json so a later " +
+        "mid-session change to it can be detected as drift",
+    );
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

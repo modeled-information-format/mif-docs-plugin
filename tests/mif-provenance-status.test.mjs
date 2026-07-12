@@ -11,13 +11,21 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = join(root, "scripts", "mif-provenance.mjs");
+
+// The status verb resolves this plugin's hooks.json relative to its own
+// script location (not $CLAUDE_PLUGIN_ROOT), so every test here hashes the
+// SAME real, committed file the CLI itself will hash.
+const REAL_HOOKS_HASH = `sha256:${createHash("sha256")
+  .update(readFileSync(join(root, "hooks", "hooks.json")))
+  .digest("hex")}`;
 
 function fixture({ captureSetting, ledgerLines } = {}) {
   const base = mkdtempSync(join(tmpdir(), "prov-status-"));
@@ -91,6 +99,60 @@ test("status: capture on with a session_start for a DIFFERENT session still exit
     const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
     assert.equal(r.status, 1, r.stderr);
     assert.match(r.stdout, /no session_start line found/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: hooksHash matching the real hooks.json exits 0 with no drift message", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    ledgerLines: [
+      { v: 1, event: "session_start", sessionId: "s1", ts: "2026-01-01T00:00:00Z", hooksHash: REAL_HOOKS_HASH },
+    ],
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /hooks are wired and witnessing this session/);
+    assert.doesNotMatch(r.stdout, /changed since this session started/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: hooksHash differing from the real hooks.json (issue #90) exits 1 with the restart-to-pick-up-changes message", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    ledgerLines: [
+      {
+        v: 1,
+        event: "session_start",
+        sessionId: "s1",
+        ts: "2026-01-01T00:00:00Z",
+        hooksHash: "sha256:0000000000000000000000000000000000000000000000000000000000000",
+      },
+    ],
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 1, r.stderr);
+    assert.match(r.stdout, /this plugin's hooks\.json has changed since this session started/);
+    assert.match(r.stdout, /[Rr]estart your Claude Code session/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: a session_start line with no hooksHash field (pre-#104 ledger) skips the drift check gracefully", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    ledgerLines: [{ v: 1, event: "session_start", sessionId: "s1", ts: "2026-01-01T00:00:00Z" }],
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /hooks are wired and witnessing this session/);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
