@@ -1,7 +1,7 @@
 ---
 name: mif-provenance
-description: Stamp witnessed provenance into a MIF document's frontmatter from the hook-observed session ledger, or verify an existing provenance block against it — hook-observed facts only (agent, agentVersion, session activity URN), never model-asserted. Use after authoring a MIF document in a session with capture enabled, to make its provenance witnessed rather than asserted; use verify to detect drift between a document's provenance block and what the ledger actually observed. Anti-trigger; for writing the rest of the frontmatter use mif-frontmatter (asserted provenance from drafting context), and for schema/level/round-trip conformance use mif-validate.
-argument-hint: "stamp|verify <path to the document> [--session <id>] [--ledger <path>]"
+description: Stamp witnessed provenance into a MIF document's frontmatter from the hook-observed session ledger, verify an existing provenance block against it, or check whether capture is actually active for the current session — hook-observed facts only (agent, agentVersion, session activity URN), never model-asserted. Use after authoring a MIF document in a session with capture enabled, to make its provenance witnessed rather than asserted; use verify to detect drift between a document's provenance block and what the ledger actually observed; use status when you just enabled capture or updated this plugin and want to confirm hooks are actually wired before trusting anything gets stamped. Anti-trigger; for writing the rest of the frontmatter use mif-frontmatter (asserted provenance from drafting context), and for schema/level/round-trip conformance use mif-validate.
+argument-hint: "stamp|verify <path to the document> [--session <id>] [--ledger <path>] | status [--session <id>] [--ledger <path>]"
 ---
 
 # mif-provenance
@@ -30,6 +30,16 @@ model being described is never the source of the facts describing it.
   reconciliation is an explicit `stamp`. No LLM judgment is in the path
   (the `mif-validate` precedent): identical document + ledger + config yield
   an identical verdict.
+- **`status`** — answers "is capture actually active for THIS session right
+  now," from inside the session, without touching any document. Reports the
+  resolved `mifProvenance.capture`/`stamp` config, and — when capture is on —
+  whether the session ledger has a `session_start` line for the current
+  session. Enabling capture mid-session, or updating this plugin mid-session,
+  is not guaranteed to wire hooks into an already-running session's dispatch
+  (issue #90); `status` is the fail-loud check for exactly that gap, since the
+  capture hooks themselves are deliberately silent on both success and
+  failure. If it reports no session_start line, the fix is to restart the
+  Claude Code session, not to keep authoring and hoping.
 
 ## Trust ceiling — say this plainly when reporting results
 
@@ -55,13 +65,16 @@ explicit approval; in CI/headless, `"ask"` behaves as `"off"`.
 ```bash
 node scripts/mif-provenance.mjs stamp  <file> [--session <id>] [--ledger <path>]
 node scripts/mif-provenance.mjs verify <file> [--session <id>] [--ledger <path>]
+node scripts/mif-provenance.mjs status [--session <id>] [--ledger <path>]
 ```
 
 Session selection: `--session`, else `$CLAUDE_CODE_SESSION_ID`, else — only when
-exactly one session ever touched the file — that session. Several witnessing
-sessions is an error demanding `--session`, never a guess. Exit codes: `0`
-stamped/match, `1` verify drift (including unwitnessed), `2` usage error,
-`3` stamp declined.
+exactly one session ever touched the file — that session (`status` has no file
+to infer from, so it needs `--session` or the environment variable). Several
+witnessing sessions is an error demanding `--session`, never a guess. Exit
+codes: `0` stamped/match/status-healthy, `1` verify drift (including
+unwitnessed) or status found no session_start yet, `2` usage error, `3` stamp
+declined.
 
 ## Failure postures (deliberately asymmetric)
 

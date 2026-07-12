@@ -2,7 +2,7 @@
 id: how-to-witness-document-provenance
 type: procedural
 created: '2026-07-11T20:00:00Z'
-modified: '2026-07-11T20:00:00Z'
+modified: '2026-07-12T00:07:16.468Z'
 namespace: how-to/provenance
 title: How to Witness Your Documents' Provenance
 tags:
@@ -31,19 +31,20 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://diataxis.fr/how-to-guides/
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: documentation
@@ -87,6 +88,19 @@ If you're ready, add this to a settings file:
   }
 }
 ```
+
+**Restart your Claude Code session after adding this.** Hooks only take
+effect reliably for sessions started after the setting exists — turning
+capture on mid-session is not guaranteed to wire the capture hooks into an
+already-running session's dispatch (tracked as
+[issue #90](https://github.com/modeled-information-format/mif-docs-plugin/issues/90)),
+and both the config resolver and the hooks themselves are deliberately silent
+either way, so nothing in the session tells you it didn't take. The same
+caveat applies after any `/plugin` update that changes this plugin's
+`hooks/hooks.json`. If you want to check whether hooks are actually wired for
+your current session without restarting first, run `node
+scripts/mif-provenance.mjs status` — see [the mif-provenance
+reference](../reference/skills/mif-provenance/) for what it reports.
 
 **Where you put it decides who it affects:**
 

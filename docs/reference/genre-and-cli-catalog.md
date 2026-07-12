@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-11T23:57:22.616Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -17,19 +17,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: tool
@@ -158,7 +159,7 @@ Every script is fail-closed: any failure exits non-zero.
 | `validate-plugin.mjs` | `validate-plugin` | `0` `plugin.json`, `marketplace.json`, and every `SKILL.md` frontmatter valid; `1` any structural violation. |
 | `check-exemplars.mjs` | `check-exemplars` | `0` every genre's `good-l1.md` validates at L1 and `good.md` at its target level; `1` otherwise. |
 | `planner-check.mjs` | `planner-check [<recipe>]` | `0` recipe(s) decompose to real member skills and the cross-link graph is complete; `1` otherwise. |
-| `mif-provenance.mjs` | `mif-provenance <stamp\|verify> <file> [--session <id>] [--ledger <path>]` | `0` stamped / verify match; `1` verify drift (including unwitnessed); `2` usage/environment error (unknown verb, no repo and no `--ledger`, ambiguous session); `3` stamp declined (unwitnessed, not conformant, would regress the document's MIF level). |
+| `mif-provenance.mjs` | `mif-provenance <stamp\|verify> <file> [--session <id>] [--ledger <path>]` \| `mif-provenance status [--session <id>] [--ledger <path>]` | `0` stamped / verify match / status healthy; `1` verify drift (including unwitnessed) or status found no `session_start` line for this session yet; `2` usage/environment error (unknown verb, no repo and no `--ledger`, ambiguous session, no session id available); `3` stamp declined (unwitnessed, not conformant, would regress the document's MIF level). |
 | `provenance-corpus-check.mjs` | `provenance-corpus-check [--dir <path>] [--ledger <path>]` | `0` report emitted (byte-idempotent over identical inputs — never gates on coverage); `1` empty corpus; `2` usage error. |
 | `engine-parity.mjs` | `engine-parity <path-to-mif-cli> [--expected <json>]` | `0` node and Rust verdicts agree everywhere outside the expected-disagreement ledger; `1` unexpected disagreement, stale/orphaned ledger entry, or harness fault (missing/unparseable ledger, schema not hydrated, binary cannot run, gutted corpus); `2` usage error (missing binary path, wrong working directory). |
 
