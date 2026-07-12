@@ -609,3 +609,39 @@ test('stamp "auto" leaves a plain (non-genre) markdown file alone', () => {
     rmSync(base, { recursive: true, force: true });
   }
 });
+
+// Issue #108: a decline inside the mediated auto-stamp path (unwitnessed,
+// not-conformant, would-regress, or a thrown error) used to be fully
+// silent — indistinguishable, from inside the session, from capture being
+// broken outright. It must now surface via additionalContext, the same
+// fail-loud-never-fail-closed posture the #90 wiringWarning already uses.
+test('stamp "auto": warns via additionalContext when stampFile declines (issue #108)', () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "auto" } },
+  });
+  try {
+    const startRes = runHook(HOOKS.start, { session_id: "s-declined", cwd: project }, { home });
+    assert.equal(startRes.status, 0, startRes.stderr);
+    const doc = join(project, "doc.md");
+    // Genre-signaled (`type: semantic`) but not schema-conformant: mirrors
+    // provenance-stamp.test.mjs's "declines a non-conformant document"
+    // fixture, so stampFile returns { stamped: false, reason: "not-conformant" }.
+    writeFileSync(doc, "---\ntype: semantic\n---\n\nNo id, no created.\n");
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-declined", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /hookSpecificOutput/);
+    const parsed = JSON.parse(r.stdout.trim());
+    assert.match(parsed.hookSpecificOutput.additionalContext, /stamp mode is "auto"/);
+    assert.match(parsed.hookSpecificOutput.additionalContext, /declined/);
+    assert.match(parsed.hookSpecificOutput.additionalContext, /not-conformant/);
+    assert.match(parsed.hookSpecificOutput.additionalContext, /mif-provenance\.mjs verify/);
+    // The decline never blocks or mutates the write.
+    assert.equal(readFileSync(doc, "utf8"), "---\ntype: semantic\n---\n\nNo id, no created.\n");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
