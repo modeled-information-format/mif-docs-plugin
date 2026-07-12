@@ -26,8 +26,10 @@
 // capture is on but this session's hooks have not witnessed anything yet, or
 // this plugin's hooks.json has changed since this session's session_start —
 // confirmed by direct repro (issue #90) to mean the running session may still
-// be dispatching a stale hook set); 2 usage/environment error; 3 stamp
-// declined (unwitnessed, non-conformant, would-regress).
+// be dispatching a stale hook set); 2 usage/environment error (also covers:
+// session_start recorded a hooksHash but the current on-disk hooks.json can't
+// be read at all — that is an environment problem, never reported healthy);
+// 3 stamp declined (unwitnessed, non-conformant, would-regress).
 
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -99,14 +101,23 @@ if (verb === "status") {
   console.log(`ledger file:           ${ledger}`);
   if (start) {
     console.log(`session_start witnessed at: ${start.ts ?? "(no timestamp field)"}`);
-    const currentHooksHash = hooksManifestHash(HOOKS_JSON_PATH);
-    if (start.hooksHash && currentHooksHash && start.hooksHash !== currentHooksHash) {
-      console.log(
-        "this plugin's hooks.json has changed since this session started - the running " +
-          "session may still be dispatching the hook set it loaded at start. Restart your " +
-          "Claude Code session to pick up the change.",
-      );
-      process.exit(1);
+    if (start.hooksHash) {
+      const currentHooksHash = hooksManifestHash(HOOKS_JSON_PATH);
+      if (!currentHooksHash) {
+        console.log(
+          `this plugin's hooks.json could not be read at ${HOOKS_JSON_PATH} - the drift ` +
+            "check cannot run (environment/installation problem, not a healthy verdict).",
+        );
+        process.exit(2);
+      }
+      if (start.hooksHash !== currentHooksHash) {
+        console.log(
+          "this plugin's hooks.json has changed since this session started - the running " +
+            "session may still be dispatching the hook set it loaded at start. Restart your " +
+            "Claude Code session to pick up the change.",
+        );
+        process.exit(1);
+      }
     }
     console.log("hooks are wired and witnessing this session.");
     process.exit(0);

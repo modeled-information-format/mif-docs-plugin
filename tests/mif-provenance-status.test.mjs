@@ -11,7 +11,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from "node:fs";
+import { cpSync, mkdtempSync, mkdirSync, readFileSync, symlinkSync, writeFileSync, rmSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { tmpdir } from "node:os";
 import { join, dirname } from "node:path";
@@ -19,6 +19,19 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const cli = join(root, "scripts", "mif-provenance.mjs");
+
+// A throwaway copy of just scripts/+hooks/ so the "hooks.json unreadable"
+// test can delete it without touching this checkout's real, shared file
+// (node --test runs files concurrently; other tests read the real hooks.json).
+function makeHooksJsonMissingCopy() {
+  const dir = mkdtempSync(join(tmpdir(), "mif-prov-status-hooksmissing-"));
+  for (const sub of ["scripts", "hooks"]) {
+    cpSync(join(root, sub), join(dir, sub), { recursive: true });
+  }
+  symlinkSync(join(root, "node_modules"), join(dir, "node_modules"));
+  rmSync(join(dir, "hooks", "hooks.json"));
+  return dir;
+}
 
 // The status verb resolves this plugin's hooks.json relative to its own
 // script location (not $CLAUDE_PLUGIN_ROOT), so every test here hashes the
@@ -43,8 +56,8 @@ function fixture({ captureSetting, ledgerLines } = {}) {
   return { base, home, cwd, ledgerFile };
 }
 
-function runStatus({ home, cwd, ledgerFile, session, extraArgs = [] }) {
-  const args = [cli, "status", "--ledger", ledgerFile, ...extraArgs];
+function runStatus({ home, cwd, ledgerFile, session, extraArgs = [], cliPath = cli }) {
+  const args = [cliPath, "status", "--ledger", ledgerFile, ...extraArgs];
   if (session) args.push("--session", session);
   return spawnSync("node", args, {
     cwd,
@@ -141,6 +154,25 @@ test("status: hooksHash differing from the real hooks.json (issue #90) exits 1 w
     assert.match(r.stdout, /[Rr]estart your Claude Code session/);
   } finally {
     rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: hooksHash recorded but the current hooks.json can't be read is an environment error (exit 2), never a false-healthy verdict", () => {
+  const copyDir = makeHooksJsonMissingCopy();
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    ledgerLines: [
+      { v: 1, event: "session_start", sessionId: "s1", ts: "2026-01-01T00:00:00Z", hooksHash: REAL_HOOKS_HASH },
+    ],
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1", cliPath: join(copyDir, "scripts", "mif-provenance.mjs") });
+    assert.equal(r.status, 2, r.stderr);
+    assert.match(r.stdout, /hooks\.json could not be read/);
+    assert.doesNotMatch(r.stdout, /hooks are wired and witnessing this session/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+    rmSync(copyDir, { recursive: true, force: true });
   }
 });
 
