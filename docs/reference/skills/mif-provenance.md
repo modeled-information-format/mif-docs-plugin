@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T20:00:00Z'
+modified: '2026-07-11T23:56:58.865Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -19,19 +19,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:mif-provenance
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: specification
@@ -150,6 +151,20 @@ verdict is deterministic, with no model in the conformance path: identical
 document, ledger, and resolved config yield an identical verdict, the same
 discipline `mif-validate` established for schema conformance.
 
+### `status`
+
+Reports whether capture is actually active for the *current* session, from
+inside the session, without touching any document: the resolved
+`mifProvenance.capture`/`stamp` config, and — when capture is on — whether
+the session ledger has a `session_start` line for the current session id.
+Enabling capture mid-session, or updating this plugin mid-session, is not
+guaranteed to wire hooks into an already-running session's dispatch (issue
+[#90](https://github.com/modeled-information-format/mif-docs-plugin/issues/90)),
+and both `provenance-config.mjs` (fail-closed) and the capture hooks
+themselves (fail-open) are deliberately silent either way — `status` is the
+one surface built to say so plainly. A missing `session_start` line means:
+restart the Claude Code session, don't keep authoring and hoping.
+
 ## Session selection
 
 `--session <id>` wins; `$CLAUDE_CODE_SESSION_ID` (the same variable the
@@ -176,8 +191,10 @@ behaves as `"off"`.
 ```bash
 node scripts/mif-provenance.mjs stamp  <file> [--session <id>] [--ledger <path>]
 node scripts/mif-provenance.mjs verify <file> [--session <id>] [--ledger <path>]
+node scripts/mif-provenance.mjs status [--session <id>] [--ledger <path>]
 npm run provenance-corpus-check          # witnessed-vs-asserted coverage report
 ```
 
-Exit codes: `0` stamped / match, `1` verify drift (including unwitnessed),
-`2` usage or environment error, `3` stamp declined.
+Exit codes: `0` stamped / match / status-healthy, `1` verify drift (including
+unwitnessed) or status found no `session_start` line yet, `2` usage or
+environment error, `3` stamp declined.

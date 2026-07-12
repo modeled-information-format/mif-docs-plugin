@@ -4,6 +4,15 @@
 //
 //   mif-provenance stamp  <file> [--session <id>] [--ledger <path>]
 //   mif-provenance verify <file> [--session <id>] [--ledger <path>]
+//   mif-provenance status [--session <id>] [--ledger <path>]
+//
+// `status` answers "is capture actually active for THIS session right now" -
+// issue #90: hooks can silently never fire (a plugin update or a settings
+// change enabling capture mid-session isn't guaranteed to be wired into an
+// already-running session's dispatch), with no other signal from inside the
+// session that anything is wrong. Named `status`, not `doctor`, to avoid
+// colliding with the unrelated `scripts/doctor.mjs` (mif-cli/mif-mcp binary
+// health, `npm run doctor`).
 //
 // Session selection: --session, else $CLAUDE_CODE_SESSION_ID (the same
 // variable name the capture hooks record from), else — only when the
@@ -13,8 +22,10 @@
 // witnessed touching the document, so cross-session attribution is
 // structurally impossible.
 //
-// Exit codes: 0 stamped/match; 1 verify drift; 2 usage/environment error;
-// 3 stamp declined (unwitnessed, non-conformant, would-regress).
+// Exit codes: 0 stamped/match (status: healthy); 1 verify drift (status:
+// capture is on but this session's hooks have not witnessed anything yet);
+// 2 usage/environment error; 3 stamp declined (unwitnessed, non-conformant,
+// would-regress).
 
 import { resolve } from "node:path";
 import {
@@ -22,19 +33,75 @@ import {
   ledgerPath,
   readLedger,
   sessionsTouching,
+  sessionStartOf,
   SESSION_ENV_VAR,
 } from "./lib/provenance-ledger.mjs";
 import { stampFile, verifyFile } from "./lib/provenance-stamp.mjs";
+import { resolveProvenanceConfig } from "./lib/provenance-config.mjs";
 
 function usage(msg) {
   if (msg) console.error(`mif-provenance: ${msg}`);
-  console.error("usage: mif-provenance stamp|verify <file> [--session <id>] [--ledger <path>]");
+  console.error(
+    "usage: mif-provenance stamp|verify <file> [--session <id>] [--ledger <path>]\n" +
+      "       mif-provenance status [--session <id>] [--ledger <path>]",
+  );
   process.exit(2);
 }
 
 const args = process.argv.slice(2);
 const verb = args.shift();
-if (verb !== "stamp" && verb !== "verify") usage(`unknown verb: ${verb ?? "(none)"}`);
+if (verb !== "stamp" && verb !== "verify" && verb !== "status") {
+  usage(`unknown verb: ${verb ?? "(none)"}`);
+}
+
+if (verb === "status") {
+  let session;
+  let ledger;
+  for (let i = 0; i < args.length; i++) {
+    const a = args[i];
+    if (a === "--session") session = args[++i];
+    else if (a === "--ledger") ledger = args[++i];
+    else usage(`unexpected argument: ${a}`);
+  }
+  if (!session) session = process.env[SESSION_ENV_VAR];
+
+  const cfg = resolveProvenanceConfig();
+  console.log(`mifProvenance.capture: ${cfg.capture}`);
+  console.log(`mifProvenance.stamp:   ${cfg.stamp}`);
+
+  if (!ledger) {
+    const gitDir = findGitDir(process.cwd());
+    if (!gitDir) usage(`${process.cwd()} is not inside a git repository and no --ledger was given`);
+    ledger = ledgerPath(gitDir);
+  }
+
+  if (!cfg.capture) {
+    console.log("capture is off - nothing recorded, nothing expected.");
+    process.exit(0);
+  }
+  if (!session) {
+    console.log(
+      `capture is on, but $${SESSION_ENV_VAR} is not set and no --session was given - cannot check this session's ledger entries.`,
+    );
+    process.exit(2);
+  }
+
+  const lines = readLedger(ledger);
+  const start = sessionStartOf(lines, session);
+  console.log(`session:               ${session}`);
+  console.log(`ledger file:           ${ledger}`);
+  if (start) {
+    console.log(`session_start witnessed at: ${start.ts ?? "(no timestamp field)"}`);
+    console.log("hooks are wired and witnessing this session.");
+    process.exit(0);
+  }
+  console.log("no session_start line found for this session in the ledger.");
+  console.log(
+    "hooks have not fired for this session yet - if you just enabled capture or updated " +
+      "this plugin, restart your Claude Code session.",
+  );
+  process.exit(1);
+}
 
 let file;
 let session;

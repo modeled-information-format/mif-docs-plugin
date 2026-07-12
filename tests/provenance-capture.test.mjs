@@ -85,6 +85,53 @@ function ledgerLines(project) {
 
 const ENABLED = { mifProvenance: { capture: true } };
 
+// issue #90 / #95: the mid-session ACTIVATION boundary itself, not just the
+// off state and the on state in isolation (which every other test in this
+// file already covers separately). Models: capture off at "session start"
+// (no ledger, first Write), then flipped on mid-"session" (settings file
+// edited in place, same project/session id), then the NEXT qualifying tool
+// call. Scope, stated precisely: this proves each hook re-reads
+// mifProvenance fresh from disk on every invocation rather than caching a
+// stale resolution - the part of the activation gap that a direct subprocess
+// invocation can actually exercise. It does NOT prove hooks newly added to
+// hooks.json get wired into Claude Code's own live dispatch table for an
+// already-running session - that half is Claude Code's own runtime
+// internals, external to these scripts, and is #91/#96's repro instead.
+test("mid-session activation: capture flipped on between two tool calls in the same project/session populates the ledger from the very next qualifying call", () => {
+  const { base, home, project } = fixture(); // starts with NO settings file: capture off
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, "# plain\n");
+
+    // "Before": capture is off, this Write leaves no trace.
+    const before = runHook(
+      HOOKS.post,
+      { session_id: "s-mid", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(before.status, 0, before.stderr);
+    assert.equal(ledgerLines(project), null, "capture is off - nothing recorded yet");
+
+    // Mid-"session": flip capture on, in place, same project.
+    writeFileSync(join(project, ".claude", "settings.json"), JSON.stringify(ENABLED));
+
+    // "After": the very next qualifying tool call in the same session.
+    const after = runHook(
+      HOOKS.post,
+      { session_id: "s-mid", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(after.status, 0, after.stderr);
+    const lines = ledgerLines(project);
+    assert.ok(lines, "capture is on now - the ledger must exist");
+    assert.equal(lines.length, 1, "exactly the one touch since capture flipped on");
+    assert.equal(lines[0].event, "file_touch");
+    assert.equal(lines[0].sessionId, "s-mid");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
 test("disabled-silent: no config -> exit 0, nothing emitted, nothing written", () => {
   const { base, home, project } = fixture();
   try {
@@ -109,10 +156,17 @@ test("disabled path decides within the 50ms budget, before any git/ledger I/O", 
   // 50ms. The behavioral half (nothing written, nothing emitted) is the test
   // above.
   const { base, home, project } = fixture();
+  // A bare {cwd, home} falls through to the REAL process.env for the third
+  // param, and on any machine with $CLAUDE_CONFIG_DIR set (this workspace's
+  // own documented convention) that leaks real personal settings straight
+  // past the isolated `home` fixture above - the exact class of gap issue #90
+  // is about. Pass an explicit empty env so this test is isolated regardless
+  // of what's configured on the machine running it.
+  const env = {};
   try {
-    resolveProvenanceConfig({ cwd: project, home }); // warm the module
+    resolveProvenanceConfig({ cwd: project, home, env }); // warm the module
     const t0 = performance.now();
-    const cfg = resolveProvenanceConfig({ cwd: project, home });
+    const cfg = resolveProvenanceConfig({ cwd: project, home, env });
     const elapsed = performance.now() - t0;
     assert.deepEqual(cfg, { capture: false, stamp: "off" });
     assert.ok(elapsed < 50, `disabled decision took ${elapsed.toFixed(1)}ms (budget 50ms)`);
@@ -452,6 +506,78 @@ test('stamp "auto": stamps a witnessed MIF document without blocking the write',
     const { createHash } = await import("node:crypto");
     const diskHash = "sha256:" + createHash("sha256").update(readFileSync(doc)).digest("hex");
     assert.equal(last.contentHash, diskHash, "the ledger's newest hash matches the stamped bytes");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('stamp "auto": warns via additionalContext when this session has no session_start line yet (issue #90)', () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "auto" } },
+  });
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    // No session-start hook run for "s-nostart" - simulating hooks that
+    // silently never wired in for this session's SessionStart event.
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-nostart", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /hookSpecificOutput/);
+    const parsed = JSON.parse(r.stdout.trim());
+    assert.match(parsed.hookSpecificOutput.additionalContext, /no session_start entry/);
+    assert.match(parsed.hookSpecificOutput.additionalContext, /restart your Claude Code session/);
+    // The warning never blocks the stamp itself.
+    assert.match(readFileSync(doc, "utf8"), /wasGeneratedBy:/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('stamp "auto": stays silent when this session DOES have a session_start line', () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "auto" } },
+  });
+  try {
+    const startRes = runHook(
+      HOOKS.start,
+      { session_id: "s-started", cwd: project },
+      { home },
+    );
+    assert.equal(startRes.status, 0, startRes.stderr);
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-started", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    assert.equal(r.stdout, "", "no warning once session_start has been witnessed for this session");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test('stamp "ask": prepends the wiring warning to the approval message when session_start is missing', () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "ask" } },
+  });
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-ask-nostart", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const parsed = JSON.parse(r.stdout.trim());
+    assert.match(parsed.hookSpecificOutput.additionalContext, /no session_start entry/);
+    assert.match(parsed.hookSpecificOutput.additionalContext, /stamp mode is "ask"/);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

@@ -38,6 +38,8 @@ import {
   gitFacts,
   ledgerPath,
   modelFromTranscript,
+  readLedger,
+  sessionStartOf,
   strOrNull,
   toolVersionFrom,
   SESSION_ENV_VAR,
@@ -72,6 +74,15 @@ async function main() {
   if (!gitDir) return; // outside a git repository, capture disables — no alternative store
 
   const sessionId = strOrNull(payload?.session_id) ?? strOrNull(process.env[SESSION_ENV_VAR]);
+
+  // Read BEFORE this touch is appended below: a missing session_start for
+  // this session, even though a capture hook is running right now, is a
+  // strong signal hook wiring is incomplete for this session (issue #90) —
+  // e.g. a mid-session plugin update or capture-enable that wired SOME
+  // hooks but not all. This never changes the fail-open behavior below,
+  // it only decides whether to say something.
+  const priorLines = readLedger(ledgerPath(gitDir));
+  const sessionStartMissing = !!sessionId && !sessionStartOf(priorLines, sessionId);
 
   // One read serves the hash, the size, and the genre check.
   let contentBuf = null;
@@ -114,19 +125,32 @@ async function main() {
   if (cfg.stamp === "ask" && inCi()) return; // no interactive surface: behave as "off"
   if (!isMifGenreText(contentBuf.toString("utf8"))) return;
 
+  // issue #90: a missing session_start for this session, even while a
+  // capture hook is running right now, means hook wiring may be incomplete
+  // (e.g. only some of a mid-session plugin update's hooks got wired in).
+  // Fail-loud, never fail-closed: this only adds a message, it never changes
+  // whether stamping proceeds below.
+  const wiringWarning = sessionStartMissing
+    ? `mif-provenance: this session's ledger has no session_start entry for ${sessionId}, even though ` +
+      `a capture hook just ran for ${filePath}. If you enabled capture or updated this plugin mid-session, ` +
+      `hook wiring may be incomplete - run \`node scripts/mif-provenance.mjs status\` to check, or restart ` +
+      `your Claude Code session to be sure.`
+    : null;
+
   if (cfg.stamp === "ask") {
     // The approval surface is the conversation: nothing is written unless the
     // suggested command is explicitly run, on the user's say-so.
+    const askMessage =
+      `mif-provenance: stamp mode is "ask" and this session's ledger witnessed ${filePath}. ` +
+      `To approve stamping witnessed provenance into it, run: ` +
+      `node ${process.env.CLAUDE_PLUGIN_ROOT ?? "."}/scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}. ` +
+      `This requires the human user's explicit approval in this conversation; ` +
+      `in an unattended run, treat it as denied.`;
     process.stdout.write(
       JSON.stringify({
         hookSpecificOutput: {
           hookEventName: "PostToolUse",
-          additionalContext:
-            `mif-provenance: stamp mode is "ask" and this session's ledger witnessed ${filePath}. ` +
-            `To approve stamping witnessed provenance into it, run: ` +
-            `node ${process.env.CLAUDE_PLUGIN_ROOT ?? "."}/scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}. ` +
-            `This requires the human user's explicit approval in this conversation; ` +
-            `in an unattended run, treat it as denied.`,
+          additionalContext: wiringWarning ? `${wiringWarning}\n\n${askMessage}` : askMessage,
         },
       }) + "\n",
     );
@@ -139,6 +163,14 @@ async function main() {
   // the latest recorded contentHash always matches the on-disk bytes.
   const { stampFile } = await import("../scripts/lib/provenance-stamp.mjs");
   stampFile({ filePath, ledgerFile: ledgerPath(gitDir), sessionId });
+
+  if (wiringWarning) {
+    process.stdout.write(
+      JSON.stringify({
+        hookSpecificOutput: { hookEventName: "PostToolUse", additionalContext: wiringWarning },
+      }) + "\n",
+    );
+  }
 }
 
 try {
