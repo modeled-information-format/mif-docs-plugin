@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-11T20:00:00Z'
+modified: '2026-07-12T01:07:20.081Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -21,17 +21,18 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
+  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: specification
@@ -60,6 +61,42 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.4.2] - 2026-07-12
+
+### Added
+
+- `mif-provenance status` (#90/#92): a self-check verb answering "is capture
+  actually active for THIS session right now" — reports the resolved
+  `mifProvenance.capture`/`stamp` config and, when capture is on, whether the
+  session ledger has witnessed a `session_start` line for this session.
+  Enabling capture mid-session, or updating this plugin mid-session, is not
+  guaranteed to wire hooks into an already-running session's dispatch, and
+  both the config resolver and the capture hooks are deliberately silent
+  either way; `status` is the fail-loud check.
+- A fail-loud warning surfaced via the `PostToolUse` hook's `additionalContext`
+  (#90/#93) when a capture/stamp event fires for a session with no witnessed
+  `session_start` line — never blocking the write, only saying so.
+- `status` now also hashes this plugin's own `hooks.json` at every
+  `session_start` and compares it against the current on-disk copy (#90/#104).
+  Confirmed by direct repro: a hook command appended to an already-registered
+  `PostToolUse` matcher is never dispatched until the session restarts, with
+  no `/reload-plugins` needed to observe the gap — exactly what happens when
+  this plugin itself is updated mid-session. A mismatch means the running
+  session may still be dispatching a stale hook set.
+- `docs/how-to/witness-document-provenance.md` (#90/#94) documents the
+  restart-required caveat after enabling capture or updating this plugin.
+
+### Fixed
+
+- A test-isolation leak in `provenance-capture.test.mjs`'s 50ms-budget test
+  (#102): it resolved provenance config without an `env` override, which fell
+  through to the real `process.env` and could leak real personal
+  `mifProvenance` settings past the isolated fixture on any machine with
+  `$CLAUDE_CONFIG_DIR` set.
+- `status` treats an unreadable `hooks.json` (when a hash was recorded at
+  `session_start` but the current file can't be read at all) as an
+  environment error, never a false-healthy verdict.
 
 ## [0.4.1] - 2026-07-11
 
