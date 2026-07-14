@@ -56,16 +56,18 @@ genre skill to act on** — never as a validation verdict.
 
 ## Multi-root queries (spanning a shared central store)
 
-`search`, `find-similar`, and `corpus-stats` (CLI subcommands and MCP tools
-alike) accept an additional, repeatable root: `--extra-db-path <path>` on the
-CLI, an `extra_db_paths` array parameter on the MCP tools. This lets a query
-span the project-local `.mif/vectors.db` **and** any number of other vector
+`search`/`find-similar`/`corpus-stats` (CLI) and their MCP counterparts
+`search_documents`/`find_similar_documents`/`corpus_stats` accept an
+additional, repeatable root: `--extra-db-path <path>` on the CLI, an
+`extra_db_paths` array parameter on the MCP tools. This lets a query span
+the project-local `.mif/vectors.db` **and** any number of other vector
 stores in one call — most commonly a shared, user-level central corpus that
 multiple projects ingest into (e.g. the
 [`claude-artifact-authoring`](https://github.com/modeled-information-format/claude-code-plugins/tree/main/plugins/claude-artifact-authoring)
 plugin's `persist-artifact` skill best-effort-ingests graded artifacts into
 one via `mif-corpus ingest`, at an XDG-conformant path —
-`${XDG_DATA_HOME:-~/.local/share}/claude-artifact-authoring/corpus/vectors.db`).
+`$HOME/.local/share/claude-artifact-authoring/corpus/vectors.db`, i.e.
+`${XDG_DATA_HOME:-$HOME/.local/share}` with the default expanded).
 
 - Results are **merge-ranked by cosine similarity across every root** for
   `search`/`find-similar` — not grouped or root-ordered — with each match
