@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-15T17:38:12.850Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -18,19 +18,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:ea349909-51fc-46da-95a3-2043bbcf6bdb
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: tool
@@ -59,8 +60,8 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 43
-  x-purpose-group-count: 13
+  x-skill-count: 44
+  x-purpose-group-count: 14
 ---
 
 # mif-docs skills by purpose
@@ -96,6 +97,7 @@ Each skill name links to its full reference doc.
 | Scholarly & scientific writing | [`academic`](../skills/academic/), [`systematic-review`](../skills/systematic-review/), [`computing-paper`](../skills/computing-paper/), [`humanities-mla`](../skills/humanities-mla/), [`humanities-chicago`](../skills/humanities-chicago/) | Formal research writing under a discipline's citation and structural conventions. |
 | Regulated & compliance reports | [`clinical-submission`](../skills/clinical-submission/), [`nist-sp`](../skills/nist-sp/), [`regulatory-disclosure`](../skills/regulatory-disclosure/), [`compliance-audit`](../skills/compliance-audit/), [`security-pentest`](../skills/security-pentest/), [`legal-memo`](../skills/legal-memo/) | Reports produced against an external regulatory, standards, or audit framework. |
 | Research & market intelligence | [`market-research-report`](../skills/market-research-report/), [`sustainability-report`](../skills/sustainability-report/), [`trend-analysis`](../skills/trend-analysis/), [`competitive-quadrant`](../skills/competitive-quadrant/) | Evidence-grounded reports characterizing a market, trend, or competitive landscape. |
+| Business planning | [`business-plan`](../skills/business-plan/) | A single business's comprehensive, financing- and strategy-ready operating and financial plan. |
 | Business communication | [`briefing`](../skills/briefing/), [`exec-summary`](../skills/exec-summary/) | Short, audience-facing updates and decision summaries. |
 
 ## Orchestrator
@@ -679,6 +681,29 @@ mandatory Mermaid quadrant chart, per-vendor Strengths/Cautions.
   a required quadrant figure.
 - **Not this when:** the deliverable is a descriptive market survey with no
   quadrant placement (use `market-research-report`).
+- **MIF level / type:** L3, `semantic`.
+
+## Business planning
+
+A single business's own comprehensive operating and financial plan, distinct
+from the fieldwork-grounded and forward-looking reports above, which
+characterize a market rather than a specific company.
+
+### `business-plan`
+
+A full investor- and lender-ready business plan — SBA/SCORE-style structure
+(Executive Summary through Appendix), Lean Canvas problem-solution framing,
+and a mandatory Financial Plan & Projections section with disclosed
+assumptions.
+
+- **Authors:** a standalone, fundable business plan for one venture.
+- **Reach for it when:** the deliverable must justify business development,
+  financing, market planning, or strategic planning decisions with a
+  disclosed financial plan and (optionally) a funding request.
+- **Not this when:** scoping a single feature's build (use `prd` or
+  `feature-spec`), a fieldwork-sampled market study (use
+  `market-research-report`), or a technical trade-off evaluation (use
+  `engineering`).
 - **MIF level / type:** L3, `semantic`.
 
 ## Business communication
