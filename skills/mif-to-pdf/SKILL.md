@@ -29,21 +29,31 @@ hand-parse YAML frontmatter as a shortcut around the existing projection.
 
 ## Markdown rendering: this suite's own round-trip-safe subset
 
-The `content` body is real markdown text — this skill actually renders it,
-scoped to exactly the subset `mif-validate`'s own markdown-to-JSON-LD
-projection (`scripts/lib/projection.mjs`) round-trips losslessly: h1–h3
-headings (distinct sizes, bold), paragraphs, flat bullet lists, tables
-(bordered, header row bold), inline `code` (monospace), **bold**,
-`[text](url)` links and `<url>`
-autolinks (rendered as real clickable PDF link annotations, not just colored
-text), and figures — `![alt](path)` or `<img src="path" alt="...">` — for
-raster images (PNG/JPG, via `pdf-lib`'s native image embedding) and for
-`.svg` files (via a minimal vector renderer scoped to what this suite's own
-`svg-charts` skill emits: rect/text/line/circle/path/polyline/polygon with
-`<style>`-block or attribute-driven fill/font styling and `<g
-transform="translate(dx,dy)">` grouping — only the translate form, not
-rotate/scale/skew, and not a general SVG engine). Nested lists, blockquotes,
-footnotes, and raw HTML beyond `<img>` are out of scope for the same reason.
+The `content` body is real markdown text — this skill actually renders it.
+Most of the supported subset is exactly what `mif-validate`'s own
+markdown-to-JSON-LD projection (`scripts/lib/projection.mjs`) round-trips
+losslessly: h1–h3 headings (distinct sizes, bold), paragraphs, flat bullet
+lists, tables (bordered, header row bold), inline `code` (monospace),
+**bold**, `[text](url)` links and `<url>` autolinks (rendered as real
+clickable PDF link annotations, not just colored text), and figures —
+`![alt](path)` or `<img src="path" alt="...">` — for raster images (PNG/JPG,
+via `pdf-lib`'s native image embedding) and for `.svg` files (via a minimal
+vector renderer scoped to what this suite's own `svg-charts` skill emits:
+rect/text/line/circle/path/polyline/polygon with `<style>`-block or
+attribute-driven fill/font styling and `<g transform="translate(dx,dy)">`
+grouping — only the translate form, not rotate/scale/skew, and not a general
+SVG engine).
+
+Two constructs outside that round-trip-safe subset are handled too, since
+real documents contain them even though they don't round-trip: fenced code
+blocks render as a legible, line-preserving monospace block, labeled with
+their language tag when present — **this includes the `mermaid` fences most
+genres use for their default embedded-chart convention; the diagram is not
+rendered as a graphic, only its literal source text**, since drawing an
+actual Mermaid layout engine is out of scope for this converter. Single-level
+blockquotes render with their `>` marker stripped and a left rule, rather
+than leaking the literal `>` character as visible text. Nested lists,
+footnotes, and raw HTML beyond `<img>` remain out of scope.
 
 ## Output contract
 
@@ -81,11 +91,16 @@ footnotes, and raw HTML beyond `<img>` are out of scope for the same reason.
   `mif-validate` first if conformance matters for the use case; this skill
   will still render structurally-valid JSON that fails schema checks, but
   the PDF's metadata is only as trustworthy as its source.
-- **Markdown constructs outside this suite's round-trip-safe subset** —
-  nested/numbered lists, blockquotes, footnotes, and raw HTML beyond `<img>`
-  render as literal text rather than being interpreted; if a document needs
-  those, it is already outside what `mif-validate`'s own round-trip proof
-  covers, so treat that as a signal to simplify the source, not a bug here.
+- **Markdown constructs outside this suite's supported set** — nested/numbered
+  lists, footnotes, and raw HTML beyond `<img>` render as literal text rather
+  than being interpreted; if a document needs those, it is already outside
+  what `mif-validate`'s own round-trip proof covers, so treat that as a
+  signal to simplify the source, not a bug here.
+- **Expecting a fenced Mermaid diagram to render as a visual chart** — it
+  renders as its literal, legibly-formatted source text instead. A document
+  that needs the diagram itself visible in the PDF should render it to an
+  image first (e.g. via `svg-charts` or an external Mermaid renderer) and
+  embed that, rather than relying on this converter to interpret the fence.
 - **A general-purpose SVG file** — the embedded SVG renderer only covers the
   shape/text primitives this suite's own `svg-charts` skill produces; an
   arbitrary complex SVG (gradients, filters, clip paths, external fonts) will

@@ -19,9 +19,14 @@
 // losslessly: h1-h3, paragraphs, flat bullet lists, tables, inline code,
 // bold, links/autolinks, plus image embeds (`![alt](path)` /
 // `<img src="path" alt="...">`) since svg-charts and every genre that uses
-// it produce those. Nested lists, blockquotes,
-// footnotes, and raw HTML beyond `<img>` are out of scope by the same
-// convention.
+// it produce those. Two constructs outside that round-trip-safe subset are
+// still handled defensively, since real documents (e.g. the default
+// embedded-Mermaid convention most genres use for charts) contain them:
+// fenced code blocks render as a literal monospace block (including Mermaid
+// source — this converter does not render Mermaid diagrams as graphics, only
+// as their literal text) and single-level blockquotes render with their `>`
+// marker stripped. Nested lists, footnotes, and raw HTML beyond `<img>` are
+// still out of scope.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename, extname, dirname, resolve as resolvePath } from "node:path";
 import { pathToFileURL } from "node:url";
@@ -143,6 +148,30 @@ export function parseBlocks(markdown) {
       continue;
     }
 
+    const fence = line.match(/^```(\S*)\s*$/);
+    if (fence) {
+      const lang = fence[1] || null;
+      const codeLines = [];
+      i++;
+      while (i < lines.length && !/^```\s*$/.test(lines[i])) {
+        codeLines.push(lines[i]);
+        i++;
+      }
+      if (i < lines.length) i++; // consume the closing fence
+      blocks.push({ type: "codeblock", lang, lines: codeLines });
+      continue;
+    }
+
+    if (/^>\s?/.test(line)) {
+      const quoteLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        quoteLines.push(lines[i].replace(/^>\s?/, ""));
+        i++;
+      }
+      blocks.push({ type: "blockquote", text: quoteLines.join(" ").trim() });
+      continue;
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.*)$/);
     if (heading) {
       blocks.push({ type: "heading", level: heading[1].length, text: heading[2].trim() });
@@ -178,7 +207,9 @@ export function parseBlocks(markdown) {
       !parseImageLine(lines[i]) &&
       !/^(#{1,3})\s+/.test(lines[i]) &&
       !/^[-*]\s+/.test(lines[i]) &&
-      !/^\s*\|.*\|\s*$/.test(lines[i])
+      !/^\s*\|.*\|\s*$/.test(lines[i]) &&
+      !/^```\S*\s*$/.test(lines[i]) &&
+      !/^>\s?/.test(lines[i])
     ) {
       paraLines.push(lines[i]);
       i++;
@@ -357,6 +388,62 @@ function makeRenderer(doc, fonts) {
     y -= LINE_HEIGHT / 2;
   }
 
+  // Code lines are drawn whole (not word-tokenized) so internal spacing —
+  // load-bearing for indented DSLs like Mermaid directives — survives
+  // exactly; only a line too wide for the page falls back to word-wrapping,
+  // which necessarily loses that alignment since the line no longer fits.
+  function drawCodeBlock(lines, lang) {
+    const size = BODY_SIZE - 1;
+    const lh = size * 1.4;
+    const indent = MARGIN + 10;
+    const width = MAX_WIDTH - 10;
+    if (lang) {
+      ensureSpace(lh);
+      drawTextTracked(page, `[${lang}]`, { x: MARGIN, y, size: size - 1, font: fonts.bold, color: rgb(0.45, 0.45, 0.45) });
+      y -= lh;
+    }
+    const emit = (text) => {
+      ensureSpace(lh);
+      drawTextTracked(page, text, { x: indent, y, size, font: fonts.mono, color: rgb(0.2, 0.2, 0.2) });
+      y -= lh;
+    };
+    for (const raw of lines.length ? lines : [""]) {
+      if (fonts.mono.widthOfTextAtSize(raw, size) <= width) {
+        emit(raw);
+        continue;
+      }
+      let cur = "";
+      for (const word of raw.split(/(\s+)/)) {
+        if (cur && fonts.mono.widthOfTextAtSize(cur + word, size) > width) {
+          emit(cur);
+          cur = word.trimStart();
+        } else {
+          cur += word;
+        }
+      }
+      if (cur.trim()) emit(cur);
+    }
+    y -= LINE_HEIGHT / 2;
+  }
+
+  function drawBlockquote(text) {
+    const indent = MARGIN + LIST_INDENT;
+    const width = MAX_WIDTH - LIST_INDENT;
+    const lines = wrapTokens(tokenize(parseInline(text), BODY_SIZE), width);
+    for (const lineTokens of lines) {
+      ensureSpace(LINE_HEIGHT);
+      page.drawLine({
+        start: { x: MARGIN + 2, y: y - 2 },
+        end: { x: MARGIN + 2, y: y + LINE_HEIGHT - 4 },
+        thickness: 1.5,
+        color: rgb(0.7, 0.7, 0.7),
+      });
+      drawTokenLine(lineTokens, indent);
+      y -= LINE_HEIGHT;
+    }
+    y -= LINE_HEIGHT / 2;
+  }
+
   function drawTable(rows) {
     if (rows.length === 0) return;
     const cellFont = { regular: fonts.regular, bold: fonts.bold };
@@ -430,7 +517,19 @@ function makeRenderer(doc, fonts) {
     y -= LINE_HEIGHT / 2;
   }
 
-  return { drawHeading, drawParagraph, drawList, drawTable, drawImageBlock, getY: () => y, setY: (v) => (y = v), ensureSpace, getPage: () => page };
+  return {
+    drawHeading,
+    drawParagraph,
+    drawList,
+    drawTable,
+    drawCodeBlock,
+    drawBlockquote,
+    drawImageBlock,
+    getY: () => y,
+    setY: (v) => (y = v),
+    ensureSpace,
+    getPage: () => page,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -774,12 +873,27 @@ async function main() {
   };
 
   const renderer = makeRenderer(doc, fonts);
-  renderer.drawHeading(title, 1);
-  for (const block of parseBlocks(jsonld.content ?? "")) {
+  const blocks = parseBlocks(jsonld.content ?? "");
+  // Most genres this suite produces open the body with an H1 that matches
+  // the frontmatter title exactly (business-plan) or elaborates on it with a
+  // genre-specific prefix (adr's "ADR-0007: <title>") — drawing a synthetic
+  // title heading unconditionally duplicated it. Only skip the synthetic
+  // title when the body's own leading H1 is actually related to it (a
+  // substring either direction, case/whitespace-insensitive); an unrelated
+  // leading H1 (e.g. a document's first section happening to be H1) must not
+  // suppress the real title.
+  const normalize = (s) => String(s).trim().toLowerCase().replace(/\s+/g, " ");
+  const leading = blocks[0]?.type === "heading" && blocks[0].level === 1 ? blocks[0] : null;
+  const bodyOpensWithTitle =
+    leading && (normalize(leading.text).includes(normalize(title)) || normalize(title).includes(normalize(leading.text)));
+  if (!bodyOpensWithTitle) renderer.drawHeading(title, 1);
+  for (const block of blocks) {
     if (block.type === "heading") renderer.drawHeading(block.text, block.level);
     else if (block.type === "paragraph") renderer.drawParagraph(block.text);
     else if (block.type === "list") renderer.drawList(block.items);
     else if (block.type === "table") renderer.drawTable(block.rows);
+    else if (block.type === "codeblock") renderer.drawCodeBlock(block.lines, block.lang);
+    else if (block.type === "blockquote") renderer.drawBlockquote(block.text);
     else if (block.type === "image") await renderer.drawImageBlock(block.src, block.alt, baseDir);
   }
 

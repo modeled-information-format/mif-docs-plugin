@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T21:00:03.488Z'
+modified: '2026-07-15T21:53:51.431Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -121,15 +121,23 @@ performs), so the frontmatter-parsing logic that lives in
 headless-browser dependency):
 
 - **Markdown rendering.** The `content` field is real markdown text, parsed
-  and typeset — not wrapped as an undifferentiated blob. Scope is exactly
-  what `mif-validate`'s own markdown-to-JSON-LD projection
+  and typeset — not wrapped as an undifferentiated blob. Most of the scope is
+  exactly what `mif-validate`'s own markdown-to-JSON-LD projection
   (`scripts/lib/projection.mjs`) round-trips losslessly:
   h1–h3 headings (bold, sized by level), paragraphs, flat bullet lists,
   bordered tables with a bold header row, inline `code` (monospace), **bold**
   text, and `[text](url)`/`<url>` links rendered as real clickable PDF link
   annotations (per [ISO 32000-1 §12.5.6.5](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
   the Link annotation subtype), not just colored text. Long bodies paginate
-  rather than truncate.
+  rather than truncate. Two constructs outside that round-trip-safe subset
+  are handled too, since real documents contain them: fenced code
+  blocks — including the `mermaid` fences most genres use for their default
+  embedded-chart convention — render as a legible, line-preserving monospace
+  block labeled with the language tag; the diagram itself is not rendered as
+  a graphic, only its literal source text, since implementing a Mermaid
+  layout engine is out of scope for this converter. Single-level blockquotes
+  render with their `>` marker stripped rather than leaking it as visible
+  text.
 - **Figures.** `![alt](path)` and `<img src="path" alt="...">` are resolved
   relative to the source JSON file's directory and embedded, not skipped:
   PNG/JPG via `pdf-lib`'s native image embedding, and `.svg` via a minimal
@@ -185,9 +193,11 @@ legible on the page.
 
 Do **not** reach for it when the source is still Markdown — convert with
 `mif-convert emit-jsonld` first, since this skill does not read frontmatter
-— when the body uses markdown constructs outside this suite's round-trip-safe
-subset (nested/numbered lists, blockquotes, footnotes, raw HTML beyond
-`<img>`), which render as literal text rather than being interpreted — or
+— when the body uses markdown constructs outside this suite's supported set
+(nested/numbered lists, footnotes, raw HTML beyond `<img>`), which render as
+literal text rather than being interpreted — when a fenced Mermaid diagram
+needs to appear as an actual visual chart rather than its literal source
+text (render it to an image first and embed that instead) — or
 when a figure is a general-purpose SVG rather than this suite's own
 `svg-charts` output shape, which may render partially or not at all.
 

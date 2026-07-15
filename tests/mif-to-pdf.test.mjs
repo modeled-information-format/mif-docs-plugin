@@ -35,6 +35,31 @@ async function extractXmpText(pdfBytes) {
   return { doc, xml: new TextDecoder().decode(stream.contents) };
 }
 
+// Decodes every text-show operand's hex string, in content-stream order.
+// Code-block lines are drawn whole (one Tj per source line, preserving
+// internal spacing), while paragraph/heading/blockquote text is drawn one
+// word per Tj (the renderer's tokenizer splits on whitespace) — so this
+// returns line-granularity strings for code blocks and word-granularity
+// strings everywhere else, matching how each was actually drawn.
+function decodedTextTokens(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const contentsObj = doc.context.lookup(page.node.get(PDFName.of('Contents')));
+  const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
+  const raw = streamRefs
+    .map((ref) => {
+      const s = ref.constructor.name === 'PDFRef' ? doc.context.lookup(ref) : ref;
+      let bytes = Buffer.from(s.contents);
+      try {
+        bytes = inflateSync(bytes);
+      } catch {
+        // already-uncompressed stream; use raw bytes as-is
+      }
+      return bytes.toString('latin1');
+    })
+    .join('\n');
+  return [...raw.matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g)].map((m) => Buffer.from(m[1], 'hex').toString('latin1'));
+}
+
 function extractRawDocument(xml) {
   const m = xml.match(/<mif:rawDocument>([\s\S]*?)<\/mif:rawDocument>/);
   assert.ok(m, 'XMP packet must carry a mif:rawDocument element (the losslessness guarantee)');
@@ -88,6 +113,36 @@ test('parseBlocks: <img> HTML tags are recognized as image blocks too', () => {
   assert.equal(blocks[0].type, 'image');
   assert.equal(blocks[0].src, 'assets/chart.svg');
   assert.equal(blocks[0].alt, 'A chart');
+});
+
+test('parseBlocks: a fenced code block is recognized, preserving every line and the language tag (regression — previously fell through to the paragraph catch-all as one flattened line with literal ``` markers, garbling every Mermaid diagram)', () => {
+  const md = ['Some intro.', '', '```mermaid', 'pie title X', '    "A" : 1', '```', '', 'After.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['paragraph', 'codeblock', 'paragraph'],
+  );
+  assert.equal(blocks[1].lang, 'mermaid');
+  assert.deepEqual(blocks[1].lines, ['pie title X', '    "A" : 1']);
+});
+
+test('parseBlocks: a fenced code block with no language tag is still recognized', () => {
+  const blocks = parseBlocks(['```', 'raw text', '```'].join('\n'));
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].type, 'codeblock');
+  assert.equal(blocks[0].lang, null);
+  assert.deepEqual(blocks[0].lines, ['raw text']);
+});
+
+test('parseBlocks: a blockquote is recognized with its > marker stripped, merging consecutive lines (regression — previously fell through to the paragraph catch-all with a literal leaking > character)', () => {
+  const md = ['> Line one.', '> Line two.', '', 'Not a quote.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['blockquote', 'paragraph'],
+  );
+  assert.equal(blocks[0].text, 'Line one. Line two.');
+  assert.equal(blocks[1].text, 'Not a quote.');
 });
 
 test('parseInline: bold, inline code, links, and autolinks all parse to distinct runs', () => {
@@ -260,6 +315,120 @@ test('regression: does not re-embed a duplicate font resource for every word dra
     // NOT expected is one entry per word drawn (that pattern hit 80+ before
     // the fix, for a document with only 3 distinct fonts).
     assert.ok(count < 50, `expected well under 50 font resources for 3 distinct fonts, found ${count}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: no duplicate title when the body opens with an H1 matching the frontmatter title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const title = 'Zzyzxtitle: Corp Business Plan';
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:title-dedup',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title,
+      content: `# ${title}\n\nBody text follows without repeating the heading.`,
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    const occurrences = tokens.filter((t) => t === 'Zzyzxtitle:').length;
+    assert.equal(
+      occurrences,
+      1,
+      `expected the title's distinctive first word to be drawn exactly once (main() must not draw a synthetic title AND the body's own matching H1), found ${occurrences}`,
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('an unrelated leading H1 does not suppress the frontmatter title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const out = join(tmp, 'out.pdf');
+  try {
+    const r = runConverter(richFixture, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.includes('mif-to-pdf'),
+      'expected the frontmatter title to still be drawn since the body\'s first H1 ("Section One") is unrelated to it',
+    );
+    assert.ok(tokens.includes('Section'), "expected the body's own leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a fenced code block (e.g. Mermaid) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:codeblock',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'Codeblock fixture',
+      content: ['# Codeblock fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('```')),
+      'the literal ``` fence markers must never be drawn as visible text',
+    );
+    assert.ok(
+      tokens.includes('pie title Cost'),
+      "expected the code line to be drawn whole (line-preserving), not word-flattened into surrounding paragraph text",
+    );
+    assert.ok(
+      tokens.includes('    "Alpha" : 10'),
+      "expected the indented code line's internal whitespace to be preserved exactly",
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a blockquote renders without leaking its literal > marker as visible text', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:blockquote',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'Blockquote fixture',
+      content: ['# Blockquote fixture', '', '> Zzyzxquote note text.'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('>')),
+      'the literal > blockquote marker must never be drawn as visible text',
+    );
+    assert.ok(tokens.includes('Zzyzxquote'), "expected the blockquote's own text to still be drawn");
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
