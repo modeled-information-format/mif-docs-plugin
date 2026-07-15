@@ -148,7 +148,9 @@ export function parseBlocks(markdown) {
       continue;
     }
 
-    const fence = line.match(/^```(\S*)\s*$/);
+    // CommonMark trims the info string, so both "```mermaid" and the
+    // space-separated "``` mermaid" are valid fence-open lines.
+    const fence = line.match(/^```\s*(\S*)\s*$/);
     if (fence) {
       const lang = fence[1] || null;
       const codeLines = [];
@@ -168,7 +170,7 @@ export function parseBlocks(markdown) {
       // every line first) rather than swallowed as blockquote prose — the
       // same literal-marker-leaking failure this file's unnested fence
       // handling above already fixes, recurring one level deeper.
-      const innerFence = line.replace(/^>\s?/, "").match(/^```(\S*)\s*$/);
+      const innerFence = line.replace(/^>\s?/, "").match(/^```\s*(\S*)\s*$/);
       if (innerFence) {
         const lang = innerFence[1] || null;
         const codeLines = [];
@@ -227,7 +229,7 @@ export function parseBlocks(markdown) {
       !/^(#{1,3})\s+/.test(lines[i]) &&
       !/^[-*]\s+/.test(lines[i]) &&
       !/^\s*\|.*\|\s*$/.test(lines[i]) &&
-      !/^```\S*\s*$/.test(lines[i]) &&
+      !/^```\s*\S*\s*$/.test(lines[i]) &&
       !/^>\s?/.test(lines[i])
     ) {
       paraLines.push(lines[i]);

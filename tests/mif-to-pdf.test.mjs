@@ -47,7 +47,10 @@ function decodedTextTokens(doc, pageIndex) {
   const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
   const raw = streamRefs
     .map((ref) => {
-      const s = ref.constructor.name === 'PDFRef' ? doc.context.lookup(ref) : ref;
+      // context.lookup() itself checks `instanceof PDFRef` and passes an
+      // already-resolved object through unchanged, so it's safe to call
+      // unconditionally — no need for a constructor.name string check.
+      const s = doc.context.lookup(ref);
       let bytes = Buffer.from(s.contents);
       try {
         bytes = inflateSync(bytes);
@@ -132,6 +135,23 @@ test('parseBlocks: a fenced code block with no language tag is still recognized'
   assert.equal(blocks[0].type, 'codeblock');
   assert.equal(blocks[0].lang, null);
   assert.deepEqual(blocks[0].lines, ['raw text']);
+});
+
+test('parseBlocks: a fenced code block with a space before the language tag is recognized (CommonMark trims the info string) — regression, found in review', () => {
+  const blocks = parseBlocks(['``` mermaid', 'pie title X', '```'].join('\n'));
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].type, 'codeblock');
+  assert.equal(blocks[0].lang, 'mermaid');
+  assert.deepEqual(blocks[0].lines, ['pie title X']);
+});
+
+test('parseBlocks: a paragraph immediately followed by a space-language-tagged fence does not absorb the fence line — regression, found in review', () => {
+  const blocks = parseBlocks(['A paragraph.', '``` mermaid', 'pie title X', '```'].join('\n'));
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['paragraph', 'codeblock'],
+  );
+  assert.equal(blocks[0].text, 'A paragraph.');
 });
 
 test('parseBlocks: a blockquote is recognized with its > marker stripped, merging consecutive lines (regression — previously fell through to the paragraph catch-all with a literal leaking > character)', () => {
@@ -278,7 +298,7 @@ test('embeds the referenced SVG figure (regression — figures were previously i
     const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
     const text = streamRefs
       .map((ref) => {
-        const s = ref.constructor.name === 'PDFRef' ? doc.context.lookup(ref) : ref;
+        const s = doc.context.lookup(ref);
         let raw = Buffer.from(s.contents);
         try {
           raw = inflateSync(raw); // content streams may be FlateDecode-compressed
