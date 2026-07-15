@@ -55,9 +55,9 @@ hand-parse YAML frontmatter as a shortcut around the existing projection.
   will still render structurally-valid JSON that fails schema checks, but
   the PDF's metadata is only as trustworthy as its source.
 - **Producing a styled, typeset document** — this is a metadata-preserving
-  utility conversion (fixed-width single-column body text), not a layout
-  engine; it does not support headings, tables, images, or custom styling
-  from the source body.
+  utility conversion (a simple, unstyled single-column body in a proportional
+  font), not a layout engine; it does not support headings, tables, images,
+  or custom styling from the source body.
 
 ## Example
 

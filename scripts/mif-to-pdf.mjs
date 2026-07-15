@@ -76,12 +76,13 @@ function renderBody(doc, font, boldFont, title, bodyText) {
   let y = PAGE_HEIGHT - MARGIN;
 
   function drawLine(text, f, size) {
+    const lineHeight = size * (LINE_HEIGHT / BODY_SIZE);
     if (y < MARGIN) {
       page = doc.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
       y = PAGE_HEIGHT - MARGIN;
     }
     page.drawText(text, { x: MARGIN, y, size, font: f, color: rgb(0, 0, 0) });
-    y -= LINE_HEIGHT;
+    y -= lineHeight;
   }
 
   for (const line of wrapLine(title, boldFont, TITLE_SIZE, MAX_WIDTH)) drawLine(line, boldFont, TITLE_SIZE);
@@ -143,11 +144,23 @@ function attachXmpMetadata(doc, jsonld) {
   doc.catalog.set(PDFName.of("Metadata"), streamRef);
 }
 
+function parseArgs(argv) {
+  let file = null;
+  let outPath = null;
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === "--output") {
+      i++;
+      if (i >= argv.length) usageExit(2);
+      outPath = argv[i];
+    } else if (file === null) {
+      file = argv[i];
+    }
+  }
+  return { file, outPath };
+}
+
 async function main() {
-  const args = process.argv.slice(2);
-  const file = args.find((a) => !a.startsWith("--"));
-  const outIdx = args.indexOf("--output");
-  const outPath = outIdx >= 0 ? args[outIdx + 1] : null;
+  const { file, outPath } = parseArgs(process.argv.slice(2));
   if (!file) usageExit(2);
 
   const jsonld = readJsonld(file);

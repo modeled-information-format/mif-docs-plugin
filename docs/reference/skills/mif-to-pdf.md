@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T19:35:47.995Z'
+modified: '2026-07-15T19:47:22.600Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -147,9 +147,9 @@ the frontmatter.
 Do **not** reach for it when the source is still Markdown — convert with
 `mif-convert emit-jsonld` first, since this skill does not read frontmatter
 — or when a styled, typeset document is wanted: this is a metadata-
-preserving utility conversion (fixed-width single-column body text), not a
-layout engine, and supports no headings, tables, images, or custom styling
-from the source body.
+preserving utility conversion (a simple, unstyled single-column body in a
+proportional font), not a layout engine, and supports no headings, tables,
+images, or custom styling from the source body.
 
 ## Example
 
