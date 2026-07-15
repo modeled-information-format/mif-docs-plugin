@@ -145,6 +145,17 @@ test('parseBlocks: a blockquote is recognized with its > marker stripped, mergin
   assert.equal(blocks[1].text, 'Not a quote.');
 });
 
+test('parseBlocks: a fenced code block immediately inside a blockquote is unwrapped into its own code block, not swallowed as blockquote text with leaking fence markers (regression — found in review)', () => {
+  const md = ['> ```js', '> code line', '> ```', '', 'After.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['codeblock', 'paragraph'],
+  );
+  assert.equal(blocks[0].lang, 'js');
+  assert.deepEqual(blocks[0].lines, ['code line']);
+});
+
 test('parseInline: bold, inline code, links, and autolinks all parse to distinct runs', () => {
   const runs = parseInline('a **bold** b `code` c [text](https://x.test) d <https://y.test>');
   // Whitespace between special tokens stays part of the surrounding plain-text
@@ -364,6 +375,36 @@ test('an unrelated leading H1 does not suppress the frontmatter title', async ()
       'expected the frontmatter title to still be drawn since the body\'s first H1 ("Section One") is unrelated to it',
     );
     assert.ok(tokens.includes('Section'), "expected the body's own leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a short/acronym title that happens to be a substring of an unrelated leading H1 is not silently dropped', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  // "api" is a literal substring of "Rapid Deployment" — a plain substring
+  // match in either direction (the first version of the title-dedup fix)
+  // treated this as "the body already restates the title" and never drew
+  // the real title anywhere in the PDF.
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:short-title-collision',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'API',
+      content: '# Rapid Deployment\n\nThis section covers shipping builds, unrelated to interfaces.',
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(tokens.includes('API'), 'expected the real title "API" to still be drawn, not silently dropped');
+    assert.ok(tokens.includes('Rapid'), "expected the body's own unrelated leading heading to also be drawn");
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

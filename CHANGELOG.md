@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-15T21:56:46.511Z'
+modified: '2026-07-15T22:08:15.648Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -69,18 +69,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `mif-to-pdf`: fenced code blocks had no handling at all and fell through
   to the paragraph renderer, flattening into one unreadable line with
   literal ` ``` ` markers — this broke every `mermaid` fence, the default
-  embedded-chart convention most genres use. Now renders as a legible,
-  line-preserving monospace block labeled with its language tag. Mermaid
-  source still renders as text, not a graphic. Blockquotes leaked their
-  literal `>` marker as visible text; now render with it stripped
-  (indented, with a left rule).
+  embedded-chart convention most genres use. Now renders as a legible
+  monospace block labeled with its language tag, preserving each line's
+  exact spacing as long as it fits the page width (an overlong line falls
+  back to word-wrapping, which loses that alignment). Mermaid source still
+  renders as text, not a graphic. Blockquotes leaked their literal `>`
+  marker as visible text; now render with it stripped (indented, with a
+  left rule) — including a fenced code block immediately inside a
+  blockquote, which is unwrapped into its own code block rather than left
+  as literal quoted text with the fence markers still leaking.
 - `mif-to-pdf`: the frontmatter title was drawn twice — once as a synthetic
   heading, and again wherever the body's own leading H1 restated it, which
   every genre this suite produces does by convention. Now suppressed when
-  the body's first block is a level-1 heading that actually matches the
-  title (case/whitespace-insensitive substring either direction, so a
-  genre-prefixed heading like `ADR-0007: <title>` is still recognized); an
-  unrelated leading H1 no longer suppresses the real title.
+  the body's first block is a level-1 heading that actually restates the
+  title (an exact match, or a short prefix followed by the title verbatim —
+  so a genre-prefixed heading like `ADR-0007: <title>` is still recognized);
+  an unrelated leading H1 no longer suppresses the real title. An earlier
+  version of this fix used a plain substring match in either direction,
+  which silently dropped any short/acronym title that happened to be a
+  substring of an unrelated leading H1 (e.g. title "API" swallowed by a
+  heading "Rapid Deployment") — caught in review before merge.
 
 ## [0.6.1] - 2026-07-15
 

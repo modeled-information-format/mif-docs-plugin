@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T21:53:51.431Z'
+modified: '2026-07-15T22:07:36.591Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -132,11 +132,15 @@ headless-browser dependency):
   rather than truncate. Two constructs outside that round-trip-safe subset
   are handled too, since real documents contain them: fenced code
   blocks — including the `mermaid` fences most genres use for their default
-  embedded-chart convention — render as a legible, line-preserving monospace
-  block labeled with the language tag; the diagram itself is not rendered as
-  a graphic, only its literal source text, since implementing a Mermaid
-  layout engine is out of scope for this converter. Single-level blockquotes
-  render with their `>` marker stripped rather than leaking it as visible
+  embedded-chart convention — render as a legible monospace block labeled
+  with the language tag, preserving each line's exact spacing as long as it
+  fits the page width (an overlong line falls back to word-wrapping, which
+  loses that alignment); the diagram itself is not rendered as a graphic,
+  only its literal source text, since implementing a Mermaid layout engine
+  is out of scope for this converter. Single-level blockquotes (a fenced
+  code block immediately inside one is unwrapped into its own code block,
+  the one nested case handled) render with their `>` marker stripped rather
+  than leaking it as visible
   text.
 - **Figures.** `![alt](path)` and `<img src="path" alt="...">` are resolved
   relative to the source JSON file's directory and embedded, not skipped:

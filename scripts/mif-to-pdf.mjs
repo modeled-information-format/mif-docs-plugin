@@ -163,8 +163,27 @@ export function parseBlocks(markdown) {
     }
 
     if (/^>\s?/.test(line)) {
+      // A fence opening immediately inside a blockquote (`> ```lang`) is
+      // unwrapped into its own code block (stripping the `> ` prefix from
+      // every line first) rather than swallowed as blockquote prose — the
+      // same literal-marker-leaking failure this file's unnested fence
+      // handling above already fixes, recurring one level deeper.
+      const innerFence = line.replace(/^>\s?/, "").match(/^```(\S*)\s*$/);
+      if (innerFence) {
+        const lang = innerFence[1] || null;
+        const codeLines = [];
+        i++;
+        while (i < lines.length && !/^>\s?```\s*$/.test(lines[i])) {
+          codeLines.push(lines[i].replace(/^>\s?/, ""));
+          i++;
+        }
+        if (i < lines.length) i++; // consume the closing fence line
+        blocks.push({ type: "codeblock", lang, lines: codeLines });
+        continue;
+      }
+
       const quoteLines = [];
-      while (i < lines.length && /^>\s?/.test(lines[i])) {
+      while (i < lines.length && /^>\s?/.test(lines[i]) && !/^>\s?```/.test(lines[i])) {
         quoteLines.push(lines[i].replace(/^>\s?/, ""));
         i++;
       }
@@ -876,16 +895,25 @@ async function main() {
   const blocks = parseBlocks(jsonld.content ?? "");
   // Most genres this suite produces open the body with an H1 that matches
   // the frontmatter title exactly (business-plan) or elaborates on it with a
-  // genre-specific prefix (adr's "ADR-0007: <title>") — drawing a synthetic
-  // title heading unconditionally duplicated it. Only skip the synthetic
-  // title when the body's own leading H1 is actually related to it (a
-  // substring either direction, case/whitespace-insensitive); an unrelated
-  // leading H1 (e.g. a document's first section happening to be H1) must not
-  // suppress the real title.
-  const normalize = (s) => String(s).trim().toLowerCase().replace(/\s+/g, " ");
+  // short genre-specific prefix (adr's "ADR-0007: <title>") — drawing a
+  // synthetic title heading unconditionally duplicated it. Only skip the
+  // synthetic title when the body's own leading H1 actually restates it:
+  // an exact match, or a short prefix (<=40 chars, no colon of its own)
+  // followed by a colon and the title verbatim. A plain substring check in
+  // either direction was tried first and rejected — it silently dropped
+  // any short/acronym title that happened to be a substring of an unrelated
+  // leading H1 (title "API" swallowed by a heading "Rapid Deployment",
+  // since "api" ⊂ "Rapid").
+  const normalize = (s) => String(s).trim().toLowerCase().replace(/[-–—]/g, " ").replace(/\s+/g, " ");
+  const headingRestatesTitle = (headingText, t) => {
+    const h = normalize(headingText);
+    const nt = normalize(t);
+    if (h === nt) return true;
+    const prefixed = h.match(/^[^:]{1,40}:\s*(.+)$/);
+    return prefixed ? prefixed[1] === nt : false;
+  };
   const leading = blocks[0]?.type === "heading" && blocks[0].level === 1 ? blocks[0] : null;
-  const bodyOpensWithTitle =
-    leading && (normalize(leading.text).includes(normalize(title)) || normalize(title).includes(normalize(leading.text)));
+  const bodyOpensWithTitle = leading && headingRestatesTitle(leading.text, title);
   if (!bodyOpensWithTitle) renderer.drawHeading(title, 1);
   for (const block of blocks) {
     if (block.type === "heading") renderer.drawHeading(block.text, block.level);

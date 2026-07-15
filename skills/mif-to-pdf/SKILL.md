@@ -46,12 +46,15 @@ SVG engine).
 
 Two constructs outside that round-trip-safe subset are handled too, since
 real documents contain them even though they don't round-trip: fenced code
-blocks render as a legible, line-preserving monospace block, labeled with
-their language tag when present — **this includes the `mermaid` fences most
-genres use for their default embedded-chart convention; the diagram is not
-rendered as a graphic, only its literal source text**, since drawing an
-actual Mermaid layout engine is out of scope for this converter. Single-level
-blockquotes render with their `>` marker stripped and a left rule, rather
+blocks render as a legible monospace block, labeled with their language tag
+when present, preserving each line's exact spacing as long as the line fits
+the page width — a line too wide falls back to word-wrapping, which loses
+that exact alignment since the line no longer fits — **this includes the
+`mermaid` fences most genres use for their default embedded-chart
+convention; the diagram is not rendered as a graphic, only its literal
+source text**, since drawing an actual Mermaid layout engine is out of scope
+for this converter. Single-level blockquotes render with their `>` marker
+stripped and a left rule, rather
 than leaking the literal `>` character as visible text. Nested lists,
 footnotes, and raw HTML beyond `<img>` remain out of scope.
 
@@ -92,10 +95,13 @@ footnotes, and raw HTML beyond `<img>` remain out of scope.
   will still render structurally-valid JSON that fails schema checks, but
   the PDF's metadata is only as trustworthy as its source.
 - **Markdown constructs outside this suite's supported set** — nested/numbered
-  lists, footnotes, and raw HTML beyond `<img>` render as literal text rather
-  than being interpreted; if a document needs those, it is already outside
-  what `mif-validate`'s own round-trip proof covers, so treat that as a
-  signal to simplify the source, not a bug here.
+  lists, nested blockquotes (a `>` inside another `>`'s text), footnotes, and
+  raw HTML beyond `<img>` render as literal text rather than being
+  interpreted; if a document needs those, it is already outside what
+  `mif-validate`'s own round-trip proof covers, so treat that as a signal to
+  simplify the source, not a bug here. A fenced code block immediately
+  inside a single-level blockquote is the one nested case handled — it's
+  unwrapped into its own code block rather than left as literal quoted text.
 - **Expecting a fenced Mermaid diagram to render as a visual chart** — it
   renders as its literal, legibly-formatted source text instead. A document
   that needs the diagram itself visible in the PDF should render it to an
