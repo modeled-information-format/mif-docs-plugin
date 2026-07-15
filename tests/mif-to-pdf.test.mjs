@@ -41,7 +41,13 @@ async function extractXmpText(pdfBytes) {
 // word per Tj (the renderer's tokenizer splits on whitespace) — so this
 // returns line-granularity strings for code blocks and word-granularity
 // strings everywhere else, matching how each was actually drawn.
-function decodedTextTokens(doc, pageIndex) {
+//
+// Every drawn string carries a single trailing space (drawTextTracked's
+// fix for naive text extraction — see its own comment in mif-to-pdf.mjs);
+// trimmed off here since content-match assertions care about the logical
+// token, not that implementation detail. rawDecodedTextTokens below
+// preserves it, for tests that need to check the separator itself exists.
+function rawDecodedTextTokens(doc, pageIndex) {
   const page = doc.getPage(pageIndex);
   const contentsObj = doc.context.lookup(page.node.get(PDFName.of('Contents')));
   const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
@@ -61,6 +67,10 @@ function decodedTextTokens(doc, pageIndex) {
     })
     .join('\n');
   return [...raw.matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g)].map((m) => Buffer.from(m[1], 'hex').toString('latin1'));
+}
+
+function decodedTextTokens(doc, pageIndex) {
+  return rawDecodedTextTokens(doc, pageIndex).map((t) => t.trimEnd());
 }
 
 function extractRawDocument(xml) {
@@ -346,6 +356,32 @@ test('regression: does not re-embed a duplicate font resource for every word dra
     // NOT expected is one entry per word drawn (that pattern hit 80+ before
     // the fix, for a document with only 3 distinct fonts).
     assert.ok(count < 50, `expected well under 50 font resources for 3 distinct fonts, found ${count}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: naive text extraction (concatenating every drawn string with no added separator) does not smash words/lines together', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const out = join(tmp, 'out.pdf');
+  try {
+    const r = runConverter(richFixture, out);
+    assert.equal(r.status, 0, r.stderr);
+
+    const doc = await PDFDocument.load(readFileSync(out));
+    // Simulate the class of consumer that broke before this fix: copy-paste
+    // in most PDF viewers, pdftotext without -layout, screen readers, and
+    // most real-world PDF-to-text pipelines all read Tj-shown content in
+    // stream order with no geometric reconstruction — `pdftotext -layout`
+    // (used elsewhere in this suite's manual verification) reconstructs
+    // spacing from X/Y deltas and had been hiding this defect entirely.
+    const naive = rawDecodedTextTokens(doc, 0).join('');
+    assert.doesNotMatch(
+      naive,
+      /mif-to-pdfrich|rich-renderingfixture|fixtureSection|SectionOne/,
+      `expected real separators between distinct words/lines in naive extraction, got smashed-together text: ${JSON.stringify(naive.slice(0, 120))}`,
+    );
+    assert.match(naive, /mif-to-pdf rich-rendering fixture/, 'expected the title words to still read correctly with real spaces');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

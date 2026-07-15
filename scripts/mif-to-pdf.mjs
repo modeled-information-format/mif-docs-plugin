@@ -286,12 +286,24 @@ function addLinkAnnotation(doc, page, x, y, width, height, url) {
 // instead — this is what keeps the PDF from carrying dozens of duplicate
 // font-dictionary entries for a handful of real fonts.
 const currentPageFont = new WeakMap();
+// Every text-show call in this file goes through here, and each one sets
+// its own absolute position (Tm) rather than advancing from the previous
+// call — so a trailing space costs nothing visually (nothing downstream
+// measures the width of what was actually drawn; wrapping/positioning math
+// runs on the pre-space string). Without it, the raw PDF content stream has
+// no whitespace or newline between one word/line's Tj operator and the
+// next: a naive extractor (copy-paste in most PDF viewers, non-layout-mode
+// pdftotext, screen readers, most real-world PDF-to-text pipelines) reads
+// the words of an entire page run together with zero separation. Geometric
+// tools like `pdftotext -layout` reconstruct spacing from X/Y deltas and
+// hide this — that reconstruction is not what most consumers of "the text
+// in this PDF" actually use.
 function drawTextTracked(page, text, { x, y, size, font, color }) {
   if (currentPageFont.get(page) !== font) {
     page.setFont(font);
     currentPageFont.set(page, font);
   }
-  page.drawText(text, { x, y, size, color });
+  page.drawText(`${text} `, { x, y, size, color });
 }
 
 function makeRenderer(doc, fonts) {
