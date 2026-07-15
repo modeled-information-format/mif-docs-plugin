@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T20:39:05.227Z'
+modified: '2026-07-15T20:56:02.627Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -122,7 +122,8 @@ headless-browser dependency):
 
 - **Markdown rendering.** The `content` field is real markdown text, parsed
   and typeset — not wrapped as an undifferentiated blob. Scope is exactly
-  this suite's own documented round-trip-safe subset (`CLAUDE.local.md`):
+  what `mif-validate`'s own markdown-to-JSON-LD projection
+  (`scripts/lib/projection.mjs`) round-trips losslessly:
   h1–h3 headings (bold, sized by level), paragraphs, flat bullet lists,
   bordered tables with a bold header row, inline `code` (monospace), **bold**
   text, and `[text](url)`/`<url>` links rendered as real clickable PDF link

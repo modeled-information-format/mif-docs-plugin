@@ -14,11 +14,12 @@
 //   node scripts/mif-convert.mjs emit-jsonld <doc.md> > <doc.json>
 //   node scripts/mif-validate.mjs <doc.md> --level 1   # conformance gate
 //
-// Markdown support is scoped to this suite's own documented round-trip-safe
-// subset (see CLAUDE.local.md): h1-h3, paragraphs, flat bullet lists,
-// tables, inline code, bold, links/autolinks, plus image embeds
-// (`![alt](path)` / `<img src="path" alt="...">`) since svg-charts and
-// every genre that uses it produce those. Nested lists, blockquotes,
+// Markdown support is deliberately scoped to what mif-validate's own
+// markdown<->JSON-LD projection (scripts/lib/projection.mjs) round-trips
+// losslessly: h1-h3, paragraphs, flat bullet lists, tables, inline code,
+// bold, links/autolinks, plus image embeds (`![alt](path)` /
+// `<img src="path" alt="...">`) since svg-charts and every genre that uses
+// it produce those. Nested lists, blockquotes,
 // footnotes, and raw HTML beyond `<img>` are out of scope by the same
 // convention.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -29,6 +30,12 @@ const PAGE_WIDTH = 612; // US Letter, points
 const PAGE_HEIGHT = 792;
 const MARGIN = 54;
 const MAX_WIDTH = PAGE_WIDTH - MARGIN * 2;
+// A figure scaled to fit width alone can still be taller than a fresh page's
+// usable height, in which case even a page break can't make it fit — it
+// would draw past the bottom margin and clip silently. Capping by height too
+// (using the full usable height of an empty page, not just what's left on
+// the current one) guarantees a figure never exceeds what a page can hold.
+const MAX_HEIGHT = PAGE_HEIGHT - MARGIN * 2;
 const BODY_SIZE = 11;
 const LINE_HEIGHT = 15;
 const HEADING_SIZES = { 1: 18, 2: 15, 3: 13 };
@@ -410,7 +417,7 @@ function makeRenderer(doc, fonts) {
       drawParagraphRuns([{ text: `[unsupported figure format: ${src} (${e.message})]`, code: true }]);
       return;
     }
-    const scale = Math.min(1, MAX_WIDTH / image.width);
+    const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
     const w = image.width * scale;
     const h = image.height * scale;
     ensureSpace(h + LINE_HEIGHT);
@@ -431,6 +438,20 @@ function makeRenderer(doc, fonts) {
 // driven fill/font styling from a single inline <style> block, and <g
 // transform="translate(dx,dy)"> grouping. Not a general SVG engine.
 // ---------------------------------------------------------------------------
+
+// A single-pass `/<[^>]+>/g` strip can leave a reconstructed tag behind when
+// input is adversarially nested (CodeQL: incomplete multi-character
+// sanitization). Iterating to a fixed point closes that class of bypass
+// entirely, regardless of nesting depth.
+function stripXmlTags(s) {
+  let prev;
+  let cur = s;
+  do {
+    prev = cur;
+    cur = prev.replace(/<[^>]+>/g, "");
+  } while (cur !== prev);
+  return cur;
+}
 
 function parseSvgStyleBlock(svg) {
   const m = svg.match(/<style[^>]*>([\s\S]*?)<\/style>/i);
@@ -459,25 +480,38 @@ function svgColor(value) {
   return rgb(0, 0, 0);
 }
 
+// Attribute values may be single- or double-quoted (both are valid XML/SVG).
+// A tag-matching regex that only accepts one quote style doesn't just miss
+// that one attribute's value — since the attribute group is inside the tag's
+// own match, ANY differently-quoted attribute makes the WHOLE tag fail to
+// match, silently dropping the entire element from this pass. The other
+// (text) pass's tag matching uses a quote-agnostic `[^>]*` and doesn't have
+// this failure mode, so the two passes could desync on exactly this input
+// without both accepting the same quote styles.
+const ATTR_RE_SRC = String.raw`\s+[\w:-]+=(?:"[^"]*"|'[^']*')`;
 function tokenizeSvgTags(svg) {
   const tags = [];
-  const re = /<(\/?)([\w:-]+)((?:\s+[\w:-]+="[^"]*")*)\s*(\/?)>/g;
+  const re = new RegExp(`<(/?)([\\w:-]+)((?:${ATTR_RE_SRC})*)\\s*(/?)>`, "g");
   let m;
   while ((m = re.exec(svg))) {
-    const attrs = {};
-    const attrRe = /([\w:-]+)="([^"]*)"/g;
-    let am;
-    while ((am = attrRe.exec(m[3]))) attrs[am[1]] = am[2];
-    tags.push({ closing: m[1] === "/", name: m[2], attrs, selfClosing: m[4] === "/" });
+    tags.push({ closing: m[1] === "/", name: m[2], attrs: parseSvgAttrs(m[3]), selfClosing: m[4] === "/" });
   }
   return tags;
+}
+
+function parseSvgAttrs(attrStr) {
+  const attrs = {};
+  const attrRe = /([\w:-]+)=(?:"([^"]*)"|'([^']*)')/g;
+  let am;
+  while ((am = attrRe.exec(attrStr))) attrs[am[1]] = am[2] ?? am[3];
+  return attrs;
 }
 
 function drawSvgFigure(doc, fonts, getPage, ensureSpace, getY, setY, filePath, alt) {
   const svg = readFileSync(filePath, "utf8");
   const vb = svg.match(/viewBox="([\d.\s-]+)"/);
   const [, , svgW, svgH] = vb ? vb[1].trim().split(/\s+/).map(Number) : [0, 0, 640, 360];
-  const scale = Math.min(1, MAX_WIDTH / svgW);
+  const scale = Math.min(1, MAX_WIDTH / svgW, MAX_HEIGHT / svgH);
   const boxHeight = svgH * scale;
   ensureSpace(boxHeight + LINE_HEIGHT);
   const page = getPage();
@@ -567,16 +601,14 @@ function drawSvgFigure(doc, fonts, getPage, ensureSpace, getY, setY, filePath, a
     }
     searchIdx = tm.index + tm[0].length;
 
-    const attrStr = tm[1];
-    const attrs = {};
-    for (const am of attrStr.matchAll(/([\w:-]+)="([^"]*)"/g)) attrs[am[1]] = am[2];
+    const attrs = parseSvgAttrs(tm[1]);
     const cls = attrs.class ? styles[attrs.class] ?? {} : {};
     const size = Number(attrs["font-size"] ?? cls["font-size"]?.replace("px", "") ?? 12) * scale;
     const weight = attrs["font-weight"] ?? cls["font-weight"];
     const useFont = weight && Number(weight) >= 600 ? boldFont : font;
     const fillAttr = attrs.fill ?? cls.fill;
     const color = svgColor(fillAttr) ?? rgb(0, 0, 0);
-    const content = tm[2].replace(/<[^>]+>/g, "").trim();
+    const content = stripXmlTags(tm[2]).trim();
     if (!content) continue;
     // Uses groupStack2 (rebuilt in document order for this pass), not the
     // shape pass's groupStack — the two passes run independently.

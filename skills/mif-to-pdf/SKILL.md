@@ -30,10 +30,11 @@ hand-parse YAML frontmatter as a shortcut around the existing projection.
 ## Markdown rendering: this suite's own round-trip-safe subset
 
 The `content` body is real markdown text — this skill actually renders it,
-scoped to exactly the subset this repo's own conventions document as
-round-trip-safe (see `CLAUDE.local.md`): h1–h3 headings (distinct sizes,
-bold), paragraphs, flat bullet lists, tables (bordered, header row bold),
-inline `code` (monospace), **bold**, `[text](url)` links and `<url>`
+scoped to exactly the subset `mif-validate`'s own markdown-to-JSON-LD
+projection (`scripts/lib/projection.mjs`) round-trips losslessly: h1–h3
+headings (distinct sizes, bold), paragraphs, flat bullet lists, tables
+(bordered, header row bold), inline `code` (monospace), **bold**,
+`[text](url)` links and `<url>`
 autolinks (rendered as real clickable PDF link annotations, not just colored
 text), and figures — `![alt](path)` or `<img src="path" alt="...">` — for
 raster images (PNG/JPG, via `pdf-lib`'s native image embedding) and for

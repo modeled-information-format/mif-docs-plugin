@@ -222,8 +222,17 @@ test('embeds the referenced SVG figure (regression — figures were previously i
         return raw.toString('latin1');
       })
       .join('\n');
-    const fillOpCount = (text.match(/(?:^|\n)f(?:\n|$)/g) ?? []).length;
-    assert.ok(fillOpCount >= 7, `expected at least 7 fill operators (one per bar in the chart, plus background), found ${fillOpCount}`);
+    const fillMatches = [...text.matchAll(/(?:^|\n)f(?:\n|$)/g)];
+    assert.ok(fillMatches.length >= 7, `expected at least 7 fill operators (one per bar in the chart, plus background), found ${fillMatches.length}`);
+
+    // "and continues text flow after it" is a distinct claim from "the figure
+    // is drawn" — verify it directly: the trailing paragraph's text must
+    // actually be drawn, and drawn (by content-stream position) after the
+    // figure's last fill operator, not silently dropped or drawn out of order.
+    const lastFillIndex = fillMatches[fillMatches.length - 1].index;
+    const afterHex = Buffer.from('after', 'latin1').toString('hex');
+    const drawnAfterFigure = text.slice(lastFillIndex).match(new RegExp(`<[0-9A-Fa-f]*${afterHex}[0-9A-Fa-f]*> Tj`, 'i'));
+    assert.ok(drawnAfterFigure, 'expected the trailing paragraph text ("...after the figure...") to be drawn following the figure\'s fill operators, not dropped or reordered');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
