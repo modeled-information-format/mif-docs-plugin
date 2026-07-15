@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-15T19:29:59.635Z'
+modified: '2026-07-15T21:09:45.321Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,24 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.1] - 2026-07-15
+
+### Fixed
+
+- `mif-to-pdf` (#137): the converter shipped in 0.6.0 word-wrapped `content`
+  as an undifferentiated text blob (headings/bold/lists/tables/links all
+  rendered as literal markdown syntax), silently dropped every referenced
+  figure, and carried metadata as one opaque JSON blob in the XMP packet.
+  Now renders real markdown formatting (headings, bold, inline code, flat
+  bullet lists, tables, clickable link annotations), embeds PNG/JPG/SVG
+  figures (SVG via a minimal vector renderer scoped to `svg-charts`'s own
+  output shape), and emits real Dublin Core properties plus a fully typed
+  `mif:` RDF/XML tree in the XMP packet, alongside the retained raw-JSON
+  `mif:rawDocument` losslessness guarantee. Also fixes a table-row-loss
+  regression, a font-resource-duplication issue (~80 duplicate entries for
+  3 real fonts), a CodeQL-flagged incomplete-sanitization pattern, and an
+  SVG parser quote-style desync between its two parsing passes.
 
 ## [0.6.0] - 2026-07-15
 
