@@ -222,7 +222,11 @@ test('embeds the referenced SVG figure (regression — figures were previously i
         return raw.toString('latin1');
       })
       .join('\n');
-    const fillMatches = [...text.matchAll(/(?:^|\n)f(?:\n|$)/g)];
+    // Content-stream operators are whitespace-delimited generically (PDF
+    // syntax, not a pdf-lib formatting choice) — match on any whitespace,
+    // not specifically newlines, so this doesn't depend on pdf-lib emitting
+    // one operator per line.
+    const fillMatches = [...text.matchAll(/(?:^|\s)f(?:\s|$)/g)];
     assert.ok(fillMatches.length >= 7, `expected at least 7 fill operators (one per bar in the chart, plus background), found ${fillMatches.length}`);
 
     // "and continues text flow after it" is a distinct claim from "the figure

@@ -40,10 +40,10 @@ text), and figures — `![alt](path)` or `<img src="path" alt="...">` — for
 raster images (PNG/JPG, via `pdf-lib`'s native image embedding) and for
 `.svg` files (via a minimal vector renderer scoped to what this suite's own
 `svg-charts` skill emits: rect/text/line/circle/path/polyline/polygon with
-`<style>`-block or attribute-driven fill/font styling and `<g transform>`
-grouping — not a general SVG engine). Nested lists, blockquotes, footnotes,
-and raw HTML beyond `<img>` are out of scope by the same convention this repo
-already applies everywhere else.
+`<style>`-block or attribute-driven fill/font styling and `<g
+transform="translate(dx,dy)">` grouping — only the translate form, not
+rotate/scale/skew, and not a general SVG engine). Nested lists, blockquotes,
+footnotes, and raw HTML beyond `<img>` are out of scope for the same reason.
 
 ## Output contract
 

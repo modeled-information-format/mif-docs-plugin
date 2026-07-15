@@ -24,6 +24,7 @@
 // convention.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename, extname, dirname, resolve as resolvePath } from "node:path";
+import { pathToFileURL } from "node:url";
 import { PDFDocument, PDFName, PDFString, PDFRawStream, StandardFonts, rgb } from "pdf-lib";
 
 const PAGE_WIDTH = 612; // US Letter, points
@@ -719,7 +720,10 @@ function buildXmpPacket(jsonld, title) {
     .filter(Boolean)
     .join("\n      ");
 
-  // Full typed mif: tree — one real property per top-level MIF field.
+  // Full typed mif: tree — one real property per top-level MIF field, except
+  // @context (JSON-LD plumbing, not document data) and content (already
+  // represented above via dc:description, and verbatim via mif:rawDocument
+  // below — a third, truncated copy here would be redundant, not more complete).
   const mifFields = Object.entries(jsonld)
     .filter(([k]) => !["@context", "content"].includes(k))
     .map(([k, v]) => valueToRdf(sanitizeTag(k), v))
@@ -789,4 +793,7 @@ async function main() {
 
 // Guarded so tests can `import { parseBlocks, parseInline }` from this file
 // without triggering a CLI run (and its process.exit calls) as a side effect.
-if (import.meta.url === `file://${process.argv[1]}`) main();
+// pathToFileURL (not a hand-built `file://${...}` template) handles relative
+// paths, spaces, and other characters that need URL-encoding consistently
+// with how import.meta.url is actually formed.
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) main();

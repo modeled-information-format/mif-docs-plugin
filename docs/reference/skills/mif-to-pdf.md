@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T20:56:02.627Z'
+modified: '2026-07-15T21:00:03.488Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -135,8 +135,9 @@ headless-browser dependency):
   PNG/JPG via `pdf-lib`'s native image embedding, and `.svg` via a minimal
   vector renderer scoped to what this suite's own `svg-charts` skill
   produces (`rect`/`text`/`line`/`circle`/`path`/`polyline`/`polygon`,
-  `<style>`-block or attribute-driven fill/font styling, `<g transform>`
-  grouping) — using `pdf-lib`'s `drawSvgPath` for raw path data and manual
+  `<style>`-block or attribute-driven fill/font styling,
+  `<g transform="translate(dx,dy)">` grouping — only the translate form, not
+  rotate/scale/skew) — using `pdf-lib`'s `drawSvgPath` for raw path data and manual
   coordinate mapping for the rest, since `pdf-lib` has no built-in SVG
   rasterizer. A missing figure file draws a visible placeholder rather than
   silently vanishing.
