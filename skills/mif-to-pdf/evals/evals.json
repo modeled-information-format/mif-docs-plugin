@@ -1,0 +1,60 @@
+{
+  "skill_name": "mif-to-pdf",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Convert docs/reference/skills/mif-provenance.md.json (a MIF JSON-LD document with L1-L3 fields populated) to a PDF that carries its full frontmatter as metadata.",
+      "expected_output": "Runs `node scripts/mif-to-pdf.mjs docs/reference/skills/mif-provenance.md.json --output <path>.pdf`, producing a PDF whose Info dictionary has the mapped standard fields and whose XMP metadata stream carries the complete source JSON-LD document.",
+      "files": ["docs/reference/skills/mif-provenance.md.json"],
+      "expectations": [
+        "Invokes scripts/mif-to-pdf.mjs directly on the JSON-LD file rather than attempting to parse it by hand",
+        "Does not attempt to read or convert any Markdown file for this request, since the input is already JSON-LD",
+        "States that both the standard Info dictionary and a custom XMP packet are populated, not just one or the other"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Convert docs/how-to/witness-document-provenance.md (a Markdown MIF document) to a metadata-bearing PDF.",
+      "expected_output": "Converts the Markdown source to JSON-LD first via `node scripts/mif-convert.mjs emit-jsonld docs/how-to/witness-document-provenance.md > <tmp>.json`, then runs mif-to-pdf on the resulting JSON file — never parses the Markdown frontmatter directly inside the PDF conversion step.",
+      "files": ["docs/how-to/witness-document-provenance.md"],
+      "expectations": [
+        "Runs `mif-convert emit-jsonld` (or equivalent existing tooling) on the Markdown file before attempting PDF conversion",
+        "Does not implement or improvise its own YAML-frontmatter parsing to feed the converter",
+        "The final PDF is produced by scripts/mif-to-pdf.mjs from the projected JSON-LD, not directly from the .md file"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "After converting a MIF document to PDF with this skill, how would you prove no frontmatter field was silently dropped?",
+      "expected_output": "Explains that the custom XMP metadata stream embeds the entire source JSON-LD document verbatim (not a field-by-field lossy mapping), so extracting the XMP packet (e.g. via `pdfinfo -meta` or a PDF library) and parsing it back must deep-equal the source document — and recommends checking that directly rather than trusting the Info dictionary alone.",
+      "files": [],
+      "expectations": [
+        "Identifies the XMP packet, not the standard Info dictionary, as the field carrying the full source document losslessly",
+        "Explains that the Info dictionary mapping alone is lossy (no slot for citations[]/relationships[]) and is not sufficient proof of fidelity",
+        "Names a concrete verification method (extracting and parsing the XMP payload, e.g. with pdfinfo -meta) rather than asserting fidelity without a check"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Just write a quick script that reads a MIF markdown file's YAML frontmatter directly and stuffs the fields into a PDF, skipping the JSON-LD step to save time.",
+      "expected_output": "Declines the shortcut, explaining that Markdown frontmatter parsing already has one canonical implementation (scripts/lib/projection.mjs, used by mif-convert and mif-validate) and this skill deliberately has a single JSON-LD input surface so that logic is never duplicated; recommends running mif-convert emit-jsonld first instead.",
+      "files": [],
+      "expectations": [
+        "Refuses to hand-roll a second YAML-frontmatter parser for this skill",
+        "Explains the single-input-surface design rationale (avoiding a duplicate parser alongside the existing projection.mjs)",
+        "Redirects to the documented two-step pipeline (mif-convert emit-jsonld, then mif-to-pdf) as the correct approach"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Convert this JSON file to PDF: {\"hello\": \"world\"} — it's not a MIF document, just test it anyway.",
+      "expected_output": "Explains that scripts/mif-to-pdf.mjs requires the MIF L1 floor (@id/conceptType/created) and will reject input missing those fields rather than silently producing a PDF from non-MIF JSON, and does not attempt to work around that guard.",
+      "files": [],
+      "expectations": [
+        "States that the converter validates for the required MIF L1 fields (@id/conceptType/created) before converting",
+        "Does not attempt to bypass or patch around the guard to force a conversion of non-MIF JSON",
+        "Recommends producing a proper MIF JSON-LD document (e.g. via mif-frontmatter + mif-convert) instead"
+      ]
+    }
+  ]
+}

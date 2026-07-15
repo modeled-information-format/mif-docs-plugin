@@ -1,6 +1,6 @@
 {
   "name": "mif-docs",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "MIF-first documentation skill suite plugin \u2014 tooling (mif-validate, plugin manifest validation).",
   "type": "module",
   "private": true,
@@ -9,6 +9,7 @@
     "validate-plugin": "node scripts/validate-plugin.mjs",
     "mif-validate": "node scripts/mif-validate.mjs",
     "mif-convert": "node scripts/mif-convert.mjs",
+    "mif-to-pdf": "node scripts/mif-to-pdf.mjs",
     "hydrate-schema": "node scripts/hydrate-schema.mjs",
     "hydrate-ontology": "node scripts/hydrate-ontology.mjs",
     "validate-ontology": "node scripts/validate-ontology.mjs",
@@ -21,7 +22,8 @@
   "dependencies": {
     "ajv": "8.20.0",
     "ajv-formats": "3.0.1",
-    "js-yaml": "5.2.1"
+    "js-yaml": "5.2.1",
+    "pdf-lib": "1.17.1"
   },
   "devDependencies": {
     "markdownlint-cli2": "0.23.0"

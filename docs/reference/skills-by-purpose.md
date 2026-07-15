@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-15T18:00:00Z'
+modified: '2026-07-15T19:31:42.459Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -18,19 +18,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: tool
@@ -59,7 +60,7 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 45
+  x-skill-count: 46
   x-purpose-group-count: 14
 ---
 
@@ -68,7 +69,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 45 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 46 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -85,7 +86,7 @@ Each skill name links to its full reference doc.
 | Group | Skills | What the group is for |
 | --- | --- | --- |
 | Orchestrator | [`doc-set-planner`](../skills/doc-set-planner/) | Decompose a broad subject into a coordinated document set and reconcile the cross-document graph. |
-| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/), [`svg-charts`](../skills/svg-charts/) | Supply or check the MIF layer, the acceptance criteria, and the chart assets that genres ride on. |
+| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/), [`svg-charts`](../skills/svg-charts/), [`mif-to-pdf`](../skills/mif-to-pdf/) | Supply or check the MIF layer, the acceptance criteria, the chart assets, and the PDF rendering that genres ride on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
 | Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
@@ -222,6 +223,28 @@ markup from rendered markdown.
   `c4-model-diagram`, and `business-plan` all do by default.
 - **Used by:** `business-plan`; available to any other genre that hits
   Mermaid's limits.
+
+### `mif-to-pdf`
+
+Converts a MIF **JSON-LD** document to a PDF, embedding every frontmatter
+field — `id`/`type`/`created`, `namespace`/`modified`/`temporal`,
+`provenance`/`citations`/`relationships` — into the produced PDF's own
+metadata: the standard Info dictionary (best-effort mapped) plus a custom
+XMP packet carrying the full document losslessly. It has one input surface
+only; a Markdown source is converted to JSON-LD first with the existing
+`mif-convert`/`mif-validate` tooling rather than a second, duplicate
+frontmatter parser living inside this skill.
+
+- **Authors:** one PDF file whose metadata (not just its rendered body)
+  carries the source document's complete frontmatter.
+- **Reach for it when:** a MIF document needs a portable, single-file
+  rendering that keeps its provenance/citations/relationships inspectable as
+  metadata rather than only as prose.
+- **Not this when:** the source is still Markdown (convert with
+  `mif-convert emit-jsonld` first) or a styled/typeset document is wanted —
+  this is a metadata-preserving utility conversion, not a layout engine.
+- **Requires:** the `pdf-lib` dependency (pure JS, no native binary, no
+  headless browser).
 
 ## Diátaxis quadrants
 

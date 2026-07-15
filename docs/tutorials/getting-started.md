@@ -2,7 +2,7 @@
 id: tutorial-getting-started
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-11T20:00:00Z'
+modified: '2026-07-15T19:53:49.457Z'
 namespace: tutorials/getting-started
 title: Get Started with mif-docs
 tags:
@@ -35,19 +35,20 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://diataxis.fr/tutorials/
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: documentation
@@ -89,7 +90,7 @@ claude plugin marketplace add modeled-information-format/claude-code-plugins
 claude plugin install mif-docs@modeled-information-format
 ```
 
-You now have **mif-docs v0.5.0** available, which ships 38 genre skills, six
+You now have **mif-docs v0.6.0** available, which ships 38 genre skills, seven
 substrate skills, and the `doc-set-planner`. The install also registers the
 PostToolUse guard you will meet in Step 4.
 

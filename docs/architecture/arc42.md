@@ -2,7 +2,7 @@
 id: arch-arc42-mif-docs
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-07-15T19:53:39.074Z'
 namespace: architecture/mif-docs
 title: mif-docs Plugin — Architecture Document (arc42)
 tags:
@@ -24,19 +24,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://arc42.org/
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: documentation
@@ -140,9 +141,9 @@ Level 1 decomposes mif-docs into four black boxes:
   regulated/compliance-report genres, four research/market-intelligence
   genres, one business-planning genre, and two business-communication
   genres — see [skills by purpose](../reference/skills-by-purpose/) for the
-  full grouping) plus 6 substrate skills (mif-frontmatter L1–L3,
+  full grouping) plus 7 substrate skills (mif-frontmatter L1–L3,
   ears-acceptance-criteria, mif-validate, mif-corpus, mif-provenance,
-  svg-charts) and `doc-set-planner` (engine plus the diataxis, ai-spec,
+  svg-charts, mif-to-pdf) and `doc-set-planner` (engine plus the diataxis, ai-spec,
   kiro, and architecture recipes). Each genre ships `good-l1.md`, `good.md`,
   `bad.md`, and `evals/evals.json`.
 - **`scripts/`** — the deterministic tooling: `mif-validate`, `mif-convert`

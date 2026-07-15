@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-15T18:00:00Z'
+modified: '2026-07-15T19:29:59.635Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -21,17 +21,18 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: specification
@@ -60,6 +61,19 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.6.0] - 2026-07-15
+
+### Added
+
+- `mif-to-pdf` (#122): a substrate helper that converts a MIF JSON-LD
+  document to PDF, embedding every frontmatter field (`id`/`type`/`created`,
+  `namespace`/`modified`/`temporal`, `provenance`/`citations`/
+  `relationships`) into the produced PDF's own metadata — the standard Info
+  dictionary (best-effort mapped) plus a custom XMP packet carrying the full
+  document losslessly. Input is JSON-LD only; a Markdown source is converted
+  first with the existing `mif-convert`/`mif-validate` tooling rather than a
+  second, duplicate frontmatter parser. Built on `pdf-lib`.
 
 ## [0.5.0] - 2026-07-15
 
