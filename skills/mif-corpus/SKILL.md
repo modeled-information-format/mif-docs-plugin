@@ -54,6 +54,37 @@ are cosine similarity; on this suite's own corpus, useful matches typically
 land in the ~0.55-0.78 range. Treat results as **candidates for a human or a
 genre skill to act on** — never as a validation verdict.
 
+## Multi-root queries (spanning a shared central store)
+
+`search`/`find-similar`/`corpus-stats` (CLI) and their MCP counterparts
+`search_documents`/`find_similar_documents`/`corpus_stats` accept an
+additional, repeatable root: `--extra-db-path <path>` on the CLI, an
+`extra_db_paths` array parameter on the MCP tools. This lets a query span
+the project-local `.mif/vectors.db` **and** any number of other vector
+stores in one call — most commonly a shared, user-level central corpus that
+multiple projects ingest into (e.g. the
+[`claude-artifact-authoring`](https://github.com/modeled-information-format/claude-code-plugins/tree/main/plugins/claude-artifact-authoring)
+plugin's `persist-artifact` skill best-effort-ingests graded artifacts into
+one via `mif-corpus ingest`, at an XDG-conformant path —
+`$HOME/.local/share/claude-artifact-authoring/corpus/vectors.db`, i.e.
+`${XDG_DATA_HOME:-$HOME/.local/share}` with the default expanded).
+
+- Results are **merge-ranked by cosine similarity across every root** for
+  `search`/`find-similar` — not grouped or root-ordered — with each match
+  additionally tagged with the root it came from. Single-root behavior (no
+  `--extra-db-path`/`extra_db_paths` given) is unchanged.
+- `corpus-stats`/`corpus_stats` is not a ranked search — with extra roots it
+  returns the primary root's `count`/`dim` plus a `total_count` and a
+  per-root breakdown (`extra_roots`); nothing is merge-ranked, since there is
+  no query vector in a stats call.
+- Fails **closed per root**: a root that cannot be opened or queried aborts
+  the whole call rather than silently dropping it from the results. A root
+  that has a valid parent directory but no database file yet (never
+  ingested) is treated as empty, not an error.
+- The same document id can legitimately exist in more than one root (e.g. a
+  document ingested both locally and into the shared central store) — this
+  is expected, not a collision to dedupe.
+
 ## Known exclusion: documents with a `description:` key (the ADRs)
 
 Documents carrying a top-level `description:` frontmatter key currently fail
