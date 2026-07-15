@@ -2,7 +2,7 @@
 id: tutorial-getting-started
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-15T19:53:49.457Z'
+modified: '2026-07-15T21:21:53.806Z'
 namespace: tutorials/getting-started
 title: Get Started with mif-docs
 tags:
@@ -90,7 +90,7 @@ claude plugin marketplace add modeled-information-format/claude-code-plugins
 claude plugin install mif-docs@modeled-information-format
 ```
 
-You now have **mif-docs v0.6.0** available, which ships 38 genre skills, seven
+You now have **mif-docs** available, which ships 38 genre skills, seven
 substrate skills, and the `doc-set-planner`. The install also registers the
 PostToolUse guard you will meet in Step 4.
 
