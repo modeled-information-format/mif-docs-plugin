@@ -35,6 +35,34 @@ async function extractXmpText(pdfBytes) {
   return { doc, xml: new TextDecoder().decode(stream.contents) };
 }
 
+// Decodes every text-show operand's hex string, in content-stream order.
+// Code-block lines are drawn whole (one Tj per source line, preserving
+// internal spacing), while paragraph/heading/blockquote text is drawn one
+// word per Tj (the renderer's tokenizer splits on whitespace) — so this
+// returns line-granularity strings for code blocks and word-granularity
+// strings everywhere else, matching how each was actually drawn.
+function decodedTextTokens(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const contentsObj = doc.context.lookup(page.node.get(PDFName.of('Contents')));
+  const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
+  const raw = streamRefs
+    .map((ref) => {
+      // context.lookup() itself checks `instanceof PDFRef` and passes an
+      // already-resolved object through unchanged, so it's safe to call
+      // unconditionally — no need for a constructor.name string check.
+      const s = doc.context.lookup(ref);
+      let bytes = Buffer.from(s.contents);
+      try {
+        bytes = inflateSync(bytes);
+      } catch {
+        // already-uncompressed stream; use raw bytes as-is
+      }
+      return bytes.toString('latin1');
+    })
+    .join('\n');
+  return [...raw.matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g)].map((m) => Buffer.from(m[1], 'hex').toString('latin1'));
+}
+
 function extractRawDocument(xml) {
   const m = xml.match(/<mif:rawDocument>([\s\S]*?)<\/mif:rawDocument>/);
   assert.ok(m, 'XMP packet must carry a mif:rawDocument element (the losslessness guarantee)');
@@ -88,6 +116,64 @@ test('parseBlocks: <img> HTML tags are recognized as image blocks too', () => {
   assert.equal(blocks[0].type, 'image');
   assert.equal(blocks[0].src, 'assets/chart.svg');
   assert.equal(blocks[0].alt, 'A chart');
+});
+
+test('parseBlocks: a fenced code block is recognized, preserving every line and the language tag (regression — previously fell through to the paragraph catch-all as one flattened line with literal ``` markers, garbling every Mermaid diagram)', () => {
+  const md = ['Some intro.', '', '```mermaid', 'pie title X', '    "A" : 1', '```', '', 'After.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['paragraph', 'codeblock', 'paragraph'],
+  );
+  assert.equal(blocks[1].lang, 'mermaid');
+  assert.deepEqual(blocks[1].lines, ['pie title X', '    "A" : 1']);
+});
+
+test('parseBlocks: a fenced code block with no language tag is still recognized', () => {
+  const blocks = parseBlocks(['```', 'raw text', '```'].join('\n'));
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].type, 'codeblock');
+  assert.equal(blocks[0].lang, null);
+  assert.deepEqual(blocks[0].lines, ['raw text']);
+});
+
+test('parseBlocks: a fenced code block with a space before the language tag is recognized (CommonMark trims the info string) — regression, found in review', () => {
+  const blocks = parseBlocks(['``` mermaid', 'pie title X', '```'].join('\n'));
+  assert.equal(blocks.length, 1);
+  assert.equal(blocks[0].type, 'codeblock');
+  assert.equal(blocks[0].lang, 'mermaid');
+  assert.deepEqual(blocks[0].lines, ['pie title X']);
+});
+
+test('parseBlocks: a paragraph immediately followed by a space-language-tagged fence does not absorb the fence line — regression, found in review', () => {
+  const blocks = parseBlocks(['A paragraph.', '``` mermaid', 'pie title X', '```'].join('\n'));
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['paragraph', 'codeblock'],
+  );
+  assert.equal(blocks[0].text, 'A paragraph.');
+});
+
+test('parseBlocks: a blockquote is recognized with its > marker stripped, merging consecutive lines (regression — previously fell through to the paragraph catch-all with a literal leaking > character)', () => {
+  const md = ['> Line one.', '> Line two.', '', 'Not a quote.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['blockquote', 'paragraph'],
+  );
+  assert.equal(blocks[0].text, 'Line one. Line two.');
+  assert.equal(blocks[1].text, 'Not a quote.');
+});
+
+test('parseBlocks: a fenced code block immediately inside a blockquote is unwrapped into its own code block, not swallowed as blockquote text with leaking fence markers (regression — found in review)', () => {
+  const md = ['> ```js', '> code line', '> ```', '', 'After.'].join('\n');
+  const blocks = parseBlocks(md);
+  assert.deepEqual(
+    blocks.map((b) => b.type),
+    ['codeblock', 'paragraph'],
+  );
+  assert.equal(blocks[0].lang, 'js');
+  assert.deepEqual(blocks[0].lines, ['code line']);
 });
 
 test('parseInline: bold, inline code, links, and autolinks all parse to distinct runs', () => {
@@ -212,7 +298,7 @@ test('embeds the referenced SVG figure (regression — figures were previously i
     const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
     const text = streamRefs
       .map((ref) => {
-        const s = ref.constructor.name === 'PDFRef' ? doc.context.lookup(ref) : ref;
+        const s = doc.context.lookup(ref);
         let raw = Buffer.from(s.contents);
         try {
           raw = inflateSync(raw); // content streams may be FlateDecode-compressed
@@ -260,6 +346,188 @@ test('regression: does not re-embed a duplicate font resource for every word dra
     // NOT expected is one entry per word drawn (that pattern hit 80+ before
     // the fix, for a document with only 3 distinct fonts).
     assert.ok(count < 50, `expected well under 50 font resources for 3 distinct fonts, found ${count}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: no duplicate title when the body opens with an H1 matching the frontmatter title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const title = 'Zzyzxtitle: Corp Business Plan';
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:title-dedup',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title,
+      content: `# ${title}\n\nBody text follows without repeating the heading.`,
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    const occurrences = tokens.filter((t) => t === 'Zzyzxtitle:').length;
+    assert.equal(
+      occurrences,
+      1,
+      `expected the title's distinctive first word to be drawn exactly once (main() must not draw a synthetic title AND the body's own matching H1), found ${occurrences}`,
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('an unrelated leading H1 does not suppress the frontmatter title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const out = join(tmp, 'out.pdf');
+  try {
+    const r = runConverter(richFixture, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.includes('mif-to-pdf'),
+      'expected the frontmatter title to still be drawn since the body\'s first H1 ("Section One") is unrelated to it',
+    );
+    assert.ok(tokens.includes('Section'), "expected the body's own leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a short/acronym title that happens to be a substring of an unrelated leading H1 is not silently dropped', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  // "api" is a literal substring of "Rapid Deployment" — a plain substring
+  // match in either direction (the first version of the title-dedup fix)
+  // treated this as "the body already restates the title" and never drew
+  // the real title anywhere in the PDF.
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:short-title-collision',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'API',
+      content: '# Rapid Deployment\n\nThis section covers shipping builds, unrelated to interfaces.',
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(tokens.includes('API'), 'expected the real title "API" to still be drawn, not silently dropped');
+    assert.ok(tokens.includes('Rapid'), "expected the body's own unrelated leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: an ordinary prose prefix before a colon does not falsely count as a genre-ID restatement of the title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  // "Note: API" ends with ": <title>" the same shape as a real genre-ID
+  // prefix ("ADR-0007: <title>"), but "Note" is ordinary prose, not a
+  // genre ID — a looser "<any prefix>: <title>" heuristic (the second
+  // version of the title-dedup fix) still wrongly treated this as the
+  // body restating the title and dropped it.
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:prose-prefix-collision',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'API',
+      content: '# Note: API\n\nThis heading is an unrelated aside, not a restatement of the title.',
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    // "API" is drawn twice on a correct output: once as the standalone
+    // synthetic title, once as the second word of the body's own "Note:
+    // API" heading — zero occurrences would mean the title was dropped.
+    assert.equal(
+      tokens.filter((t) => t === 'API').length,
+      2,
+      'expected the real title "API" to be drawn as its own heading in addition to appearing inside the unrelated body heading',
+    );
+    assert.ok(tokens.includes('Note:'), "expected the body's own unrelated leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a fenced code block (e.g. Mermaid) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:codeblock',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'Codeblock fixture',
+      content: ['# Codeblock fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('```')),
+      'the literal ``` fence markers must never be drawn as visible text',
+    );
+    assert.ok(
+      tokens.includes('pie title Cost'),
+      "expected the code line to be drawn whole (line-preserving), not word-flattened into surrounding paragraph text",
+    );
+    assert.ok(
+      tokens.includes('    "Alpha" : 10'),
+      "expected the indented code line's internal whitespace to be preserved exactly",
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a blockquote renders without leaking its literal > marker as visible text', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:blockquote',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'Blockquote fixture',
+      content: ['# Blockquote fixture', '', '> Zzyzxquote note text.'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('>')),
+      'the literal > blockquote marker must never be drawn as visible text',
+    );
+    assert.ok(tokens.includes('Zzyzxquote'), "expected the blockquote's own text to still be drawn");
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
