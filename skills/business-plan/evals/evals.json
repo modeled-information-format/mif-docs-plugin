@@ -3,7 +3,7 @@
   "evals": [
     {
       "id": 1,
-      "prompt": "Write a full business plan for a bootstrapped local roastery-cafe seeking a $150,000 SBA loan. It has one year of trading history: $310,000 revenue, 18% gross margin growth quarter over quarter. Include all required sections in order plus a Funding Request for the loan.",
+      "prompt": "Write a full business plan for a bootstrapped local roastery-cafe seeking a $150,000 SBA loan. It has one year of trading history: $310,000 revenue at a 58% gross margin, with gross margin improving by roughly 3 percentage points per quarter. Include all required sections in order plus a Funding Request for the loan.",
       "expected_output": "A business plan with Executive Summary, Company Description, Products & Services, Market Analysis, Competitive Analysis, Marketing & Sales Strategy, Operations Plan, Management & Organization, Financial Plan & Projections, Funding Request, and Appendix, in that order. The Financial Plan discloses a 3-year projection (income statement, cash flow, balance sheet) with explicit assumptions, and the Funding Request states the $150,000 amount, use of funds, and terms sought.",
       "files": [],
       "expectations": [

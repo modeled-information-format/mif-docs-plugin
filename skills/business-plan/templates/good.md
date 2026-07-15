@@ -89,17 +89,20 @@ sub-90-second service time.
 
 ## Market Analysis
 
-The U.S. ready-to-drink coffee segment, which includes cold-brew, has grown
-faster than total coffee-category sales for the past several years as
-younger consumers shift toward cold and convenience formats; Meridian's
-target customer is the 22-40 age cohort within a 2-mile radius of each
-location, a segment that indexes heavily toward cold-brew over hot coffee
-in Portland foot-traffic studies the company has reviewed informally. This
-market-sizing signal is sourced from a companion `market-research-report`
-commissioned by Meridian (see `relationships[]` above); Meridian treats it
-as a directional signal, not a precisely sized local total addressable
-market, and will commission updated local sizing data before finalizing
-site selection for any location beyond the second.
+**Assumption, not a cited statistic:** Meridian assumes the U.S.
+ready-to-drink coffee segment (which includes cold-brew) is growing faster
+than total coffee-category sales, based on the founders' own observation of
+category shelf space and menu trends rather than a sourced industry
+report — no citation is attached to this claim, and it should not be read
+as a verified figure. Meridian's target customer is the 22-40 age cohort
+within a 2-mile radius of each location, a segment that indexes heavily
+toward cold-brew over hot coffee in Portland foot-traffic studies the
+company has reviewed informally (also unsourced, same caveat). A companion
+`market-research-report` commissioned by Meridian (see `relationships[]`
+above) is planned to replace both assumptions with sourced, sampled
+figures before finalizing site selection for any location beyond the
+second — that report, not this section, is where the sampling and
+fieldwork disclosure this genre's sibling requires would live.
 
 ## Competitive Analysis
 
