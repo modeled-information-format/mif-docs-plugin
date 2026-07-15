@@ -1,14 +1,14 @@
 ---
 name: mif-to-pdf
-description: Convert a MIF JSON-LD document to a PDF, embedding every MIF frontmatter field (id/type/created, namespace/modified/temporal, provenance/citations/relationships) into the produced PDF's own metadata — both the standard Info dictionary and a custom XMP packet carrying the full document losslessly. Input is JSON-LD only; a Markdown source is converted first with the existing mif-convert/mif-validate tooling. Use when a MIF document needs a portable, metadata-bearing PDF rendering.
+description: Convert a MIF JSON-LD document to a typeset PDF with real markdown rendering (headings, bold, inline code, flat bullet lists, tables, clickable links, embedded raster/SVG figures) plus every MIF frontmatter field (id/type/created, namespace/modified/temporal, provenance/citations/relationships) embedded as PDF metadata — the standard Info dictionary, real Dublin Core properties, a fully typed mif-namespaced RDF/XML tree per field, and a retained raw-JSON copy as the machine-checkable losslessness guarantee. Input is JSON-LD only; a Markdown source is converted first with the existing mif-convert/mif-validate tooling. Use when a MIF document needs a portable, richly-formatted, metadata-bearing PDF rendering.
 argument-hint: "<path to a MIF JSON-LD document> [--output path.pdf]"
 ---
 
 # mif-to-pdf
 
 Shared helper (not a standalone document genre). Converts a **MIF JSON-LD
-document** into a real PDF file, embedding every field the source carries as
-PDF metadata rather than only rendering the body text.
+document** into a real, typeset PDF file — not a plain-text dump of the body —
+embedding every field the source carries as richly structured PDF metadata.
 
 ## One input surface: JSON-LD only
 
@@ -27,24 +27,51 @@ If asked to convert a `.md` file directly, run the `emit-jsonld` step first
 rather than attempting to read the Markdown's frontmatter directly — never
 hand-parse YAML frontmatter as a shortcut around the existing projection.
 
+## Markdown rendering: this suite's own round-trip-safe subset
+
+The `content` body is real markdown text — this skill actually renders it,
+scoped to exactly the subset `mif-validate`'s own markdown-to-JSON-LD
+projection (`scripts/lib/projection.mjs`) round-trips losslessly: h1–h3
+headings (distinct sizes, bold), paragraphs, flat bullet lists, tables
+(bordered, header row bold), inline `code` (monospace), **bold**,
+`[text](url)` links and `<url>`
+autolinks (rendered as real clickable PDF link annotations, not just colored
+text), and figures — `![alt](path)` or `<img src="path" alt="...">` — for
+raster images (PNG/JPG, via `pdf-lib`'s native image embedding) and for
+`.svg` files (via a minimal vector renderer scoped to what this suite's own
+`svg-charts` skill emits: rect/text/line/circle/path/polyline/polygon with
+`<style>`-block or attribute-driven fill/font styling and `<g
+transform="translate(dx,dy)">` grouping — only the translate form, not
+rotate/scale/skew, and not a general SVG engine). Nested lists, blockquotes,
+footnotes, and raw HTML beyond `<img>` are out of scope for the same reason.
+
 ## Output contract
 
-1. Render the document's `content` body as the PDF's visible text (wrapped
-   and paginated — a long body spans multiple pages, never truncated).
+1. Render the document's `content` body as real typeset PDF content per the
+   markdown scope above — never a single undifferentiated text blob, and
+   never silently skip a referenced figure.
 2. Set the standard PDF Info dictionary fields (Title/Author/Subject/Keywords/
    Creator/CreationDate/ModDate) from a best-effort mapping of the source
    fields. This mapping is necessarily lossy — the Info dictionary has no slot
-   for `citations[]` or `relationships[]` — which is why step 3 exists.
+   for `citations[]` or `relationships[]` — which is why steps 3–4 exist.
 3. Attach a custom XMP metadata stream (`/Metadata` on the PDF's document
-   catalog, `xmlns:mif="https://mif-spec.dev/ns#"`) carrying the **entire**
-   source JSON-LD document verbatim, so every field — not just the ones with
-   a standard Info-dict home — is recoverable from the produced PDF. This is
-   the losslessness guarantee: extracting and parsing the XMP payload back
-   must deep-equal the source document.
-4. Never silently drop a field. If a future change narrows what the XMP
-   packet carries, that is a defect, not an acceptable trade-off — the whole
-   point of the custom stream is that nothing gets left out the way an
-   Info-dict-only mapping would.
+   catalog) carrying **real, individually typed metadata**, not one opaque
+   blob: standard Dublin Core properties (`dc:title`, `dc:creator`,
+   `dc:subject`, `dc:description`, `dc:identifier`, `xmp:CreateDate`/
+   `xmp:ModifyDate`) plus a full `mif:`-namespaced RDF/XML tree with one real
+   property per top-level MIF field — nested objects (`provenance`, `entity`,
+   …) become nested `rdf:Description`s, arrays (`citations[]`,
+   `relationships[]`, `tags[]`) become `rdf:Seq`, generically, so no
+   future/extension field needs new code to appear structurally.
+4. Additionally embed the **entire source JSON-LD document verbatim** under
+   `mif:rawDocument`, so every field — including ones step 3's typed tree
+   might not yet special-case — is provably recoverable: extracting and
+   parsing that one property back must deep-equal the source document. This
+   is the losslessness guarantee; step 3 is what makes the metadata
+   genuinely inspectable by a real XMP-aware tool without parsing JSON.
+5. Never silently drop a field. If a future change narrows the metadata
+   surface (step 3's typed tree, or step 4's raw copy), that is a defect,
+   not an acceptable trade-off.
 
 ## Anti-triggers — do not use this helper for
 
@@ -54,19 +81,31 @@ hand-parse YAML frontmatter as a shortcut around the existing projection.
   `mif-validate` first if conformance matters for the use case; this skill
   will still render structurally-valid JSON that fails schema checks, but
   the PDF's metadata is only as trustworthy as its source.
-- **Producing a styled, typeset document** — this is a metadata-preserving
-  utility conversion (a simple, unstyled single-column body in a proportional
-  font), not a layout engine; it does not support headings, tables, images,
-  or custom styling from the source body.
+- **Markdown constructs outside this suite's round-trip-safe subset** —
+  nested/numbered lists, blockquotes, footnotes, and raw HTML beyond `<img>`
+  render as literal text rather than being interpreted; if a document needs
+  those, it is already outside what `mif-validate`'s own round-trip proof
+  covers, so treat that as a signal to simplify the source, not a bug here.
+- **A general-purpose SVG file** — the embedded SVG renderer only covers the
+  shape/text primitives this suite's own `svg-charts` skill produces; an
+  arbitrary complex SVG (gradients, filters, clip paths, external fonts) will
+  render partially or not at all.
 
 ## Example
 
-A `docs/reference/skills/mif-to-pdf.md` reference doc needs to be handed to a
-reviewer who wants a single portable file with the document's provenance and
-citations still attached as inspectable metadata, not just prose in the body.
-Running `node scripts/mif-to-pdf.mjs docs/reference/skills/mif-to-pdf.md.json
---output mif-to-pdf-reference.pdf` (after `mif-convert emit-jsonld`) produces
-a PDF whose Info dictionary shows the title/author/keywords at a glance, and
-whose XMP packet — inspectable with `pdfinfo -meta mif-to-pdf-reference.pdf`
-or any XMP-aware tool — carries the full `provenance`/`citations`/
-`relationships` blocks the source document had.
+A `docs/reference/skills/mif-to-pdf.md` reference doc — headings, a table, a
+`svg-charts`-generated figure, and all — needs to be handed to a reviewer as
+one portable file with its provenance and citations still attached as
+inspectable metadata, not just prose in the body.
+
+```bash
+node scripts/mif-convert.mjs emit-jsonld docs/reference/skills/mif-to-pdf.md > mif-to-pdf.json
+node scripts/mif-to-pdf.mjs mif-to-pdf.json --output mif-to-pdf-reference.pdf
+```
+
+The result is a PDF with real rendered headings/tables/figures, whose Info
+dictionary shows the title/author/keywords at a glance, and whose XMP packet —
+inspectable with `pdfinfo -meta mif-to-pdf-reference.pdf` or any XMP-aware
+tool — shows real `dc:title`/`dc:creator`/`mif:provenance` properties, not a
+single opaque field, while still carrying the full source verbatim under
+`mif:rawDocument` for anything that needs it losslessly.

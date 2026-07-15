@@ -4,12 +4,12 @@
     {
       "id": 1,
       "prompt": "Convert docs/reference/skills/mif-provenance.md.json (a MIF JSON-LD document with L1-L3 fields populated) to a PDF that carries its full frontmatter as metadata.",
-      "expected_output": "Runs `node scripts/mif-to-pdf.mjs docs/reference/skills/mif-provenance.md.json --output <path>.pdf`, producing a PDF whose Info dictionary has the mapped standard fields and whose XMP metadata stream carries the complete source JSON-LD document.",
+      "expected_output": "Runs `node scripts/mif-to-pdf.mjs docs/reference/skills/mif-provenance.md.json --output <path>.pdf`, producing a PDF with real typeset rendering of the body (headings/lists/tables/links as applicable) whose Info dictionary has the mapped standard fields and whose XMP metadata stream carries real Dublin Core + mif: typed properties for every field, plus the full source document verbatim under mif:rawDocument.",
       "files": ["docs/reference/skills/mif-provenance.md.json"],
       "expectations": [
         "Invokes scripts/mif-to-pdf.mjs directly on the JSON-LD file rather than attempting to parse it by hand",
         "Does not attempt to read or convert any Markdown file for this request, since the input is already JSON-LD",
-        "States that both the standard Info dictionary and a custom XMP packet are populated, not just one or the other"
+        "States that both the standard Info dictionary and the structured XMP packet (Dublin Core + typed mif: properties, not one opaque blob) are populated"
       ]
     },
     {
@@ -26,12 +26,12 @@
     {
       "id": 3,
       "prompt": "After converting a MIF document to PDF with this skill, how would you prove no frontmatter field was silently dropped?",
-      "expected_output": "Explains that the custom XMP metadata stream embeds the entire source JSON-LD document verbatim (not a field-by-field lossy mapping), so extracting the XMP packet (e.g. via `pdfinfo -meta` or a PDF library) and parsing it back must deep-equal the source document — and recommends checking that directly rather than trusting the Info dictionary alone.",
+      "expected_output": "Explains that the mif:rawDocument property inside the XMP packet embeds the entire source JSON-LD document verbatim, so extracting that one property (e.g. via `pdfinfo -meta` or a PDF library) and parsing it back must deep-equal the source document — distinct from the separate, individually typed Dublin Core + mif: properties in the rest of the XMP tree, which exist for human/tool readability, not as the losslessness proof.",
       "files": [],
       "expectations": [
-        "Identifies the XMP packet, not the standard Info dictionary, as the field carrying the full source document losslessly",
+        "Identifies mif:rawDocument specifically (not the Info dictionary, and not just \"the XMP packet\" generically) as the field carrying the full source document losslessly",
         "Explains that the Info dictionary mapping alone is lossy (no slot for citations[]/relationships[]) and is not sufficient proof of fidelity",
-        "Names a concrete verification method (extracting and parsing the XMP payload, e.g. with pdfinfo -meta) rather than asserting fidelity without a check"
+        "Names a concrete verification method (extracting and parsing the mif:rawDocument payload, e.g. with pdfinfo -meta) rather than asserting fidelity without a check"
       ]
     },
     {
@@ -54,6 +54,28 @@
         "States that the converter validates for the required MIF L1 fields (@id/conceptType/created) before converting",
         "Does not attempt to bypass or patch around the guard to force a conversion of non-MIF JSON",
         "Recommends producing a proper MIF JSON-LD document (e.g. via mif-frontmatter + mif-convert) instead"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "The source document's content field has a couple of headings, a bulleted list, and a table. Will the PDF actually show those as headings/list/table, or just as plain wrapped paragraph text?",
+      "expected_output": "States that the converter parses this suite's own round-trip-safe markdown subset (h1-h3, paragraphs, flat bullet lists, tables, inline code, bold, links/autolinks) and renders each construct with real typesetting — larger bold text for headings, a bulleted/indented list, a bordered table with a bold header row — not a single undifferentiated text blob.",
+      "files": [],
+      "expectations": [
+        "States plainly that headings, lists, and tables are actually rendered with distinct visual treatment, not flattened into plain paragraph text",
+        "Names the specific markdown subset supported (this suite's documented round-trip-safe set), not a claim of full CommonMark support",
+        "Does not claim support for markdown constructs outside that subset (nested lists, blockquotes, footnotes) as if they were covered"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "The MIF document's body references a chart via `![Competitor share](assets/chart.svg)`, generated earlier by the svg-charts skill. Will that figure actually appear in the PDF?",
+      "expected_output": "Confirms the figure is rendered, not skipped: the path is resolved relative to the source JSON file's directory, and for an SVG specifically, the skill's minimal vector renderer (rect/text/line/circle/path/polyline/polygon, scoped to what svg-charts itself emits) draws it directly into the page — PNG/JPG figures are embedded natively via pdf-lib. If the file is missing, states that a visible placeholder is drawn instead of silently omitting the figure.",
+      "files": [],
+      "expectations": [
+        "States that the referenced figure is actually drawn into the PDF, not silently dropped or left as a broken reference",
+        "Distinguishes the SVG path (a scoped vector renderer, not a general SVG engine) from the raster PNG/JPG path (native pdf-lib image embedding)",
+        "Mentions the missing-file behavior (a visible placeholder, not a silent gap) rather than asserting only the happy path"
       ]
     }
   ]
