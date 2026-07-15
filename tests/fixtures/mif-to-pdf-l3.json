@@ -1,0 +1,55 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:mif-docs-plugin/mif-to-pdf:fixture-l3",
+  "conceptType": "semantic",
+  "created": "2026-07-15T12:00:00Z",
+  "modified": "2026-07-15T13:30:00Z",
+  "namespace": "mif-docs-plugin/mif-to-pdf",
+  "title": "mif-to-pdf fixture: a fully-populated L3 document",
+  "tags": ["fixture", "mif-to-pdf", "pdf", "metadata"],
+  "temporal": {
+    "@type": "TemporalMetadata",
+    "validFrom": "2026-07-15T00:00:00Z",
+    "recordedAt": "2026-07-15T12:00:00Z",
+    "ttl": "P1Y"
+  },
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "trustLevel": "user_stated",
+    "agent": "claude-code/claude-sonnet-5",
+    "wasAttributedTo": {
+      "@id": "https://github.com/modeled-information-format",
+      "@type": "prov:Agent"
+    },
+    "wasGeneratedBy": {
+      "@id": "urn:mif:activity:mif-to-pdf-fixture-authoring",
+      "@type": "prov:Activity"
+    },
+    "wasDerivedFrom": [
+      {
+        "@id": "https://github.com/modeled-information-format/mif-docs-plugin",
+        "@type": "prov:Entity"
+      }
+    ]
+  },
+  "citations": [
+    {
+      "@type": "Citation",
+      "citationType": "specification",
+      "citationRole": "methodology",
+      "title": "MIF — Modeled Information Format specification",
+      "url": "https://mif-spec.dev",
+      "accessed": "2026-07-15"
+    }
+  ],
+  "relationships": [
+    { "type": "relates-to", "target": "urn:mif:reference-skill-mif-to-pdf" }
+  ],
+  "entity": {
+    "name": "mif-to-pdf fixture author",
+    "entity_type": "fixture-document"
+  },
+  "content": "This is a fixture document used to prove the mif-to-pdf skill embeds every MIF frontmatter field into the produced PDF's metadata.\n\nIt has a real body with two paragraphs, so the converter's text-wrapping and pagination get exercised, not just the metadata path.\n\nA third paragraph checks that multi-paragraph bodies render as separate blocks rather than one run-on line."
+}

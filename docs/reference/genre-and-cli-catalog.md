@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-15T18:00:00Z'
+modified: '2026-07-15T19:31:02.093Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -17,19 +17,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
+  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: tool
@@ -61,7 +62,7 @@ entity:
   entity_type: reference-document
 extensions:
   x-genre-count: 38
-  x-substrate-count: 6
+  x-substrate-count: 7
   x-recipe-count: 4
 ---
 
@@ -117,7 +118,7 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `briefing` | One-page briefing / standup update | `episodic` | 3 |
 | `exec-summary` | 1-2 page BLUF decision-oriented executive summary | `semantic` | 3 |
 
-## Substrate skills (6) and the planner
+## Substrate skills (7) and the planner
 
 These do not author a finished genre artifact; they supply or check the MIF layer
 that every genre rides on, plus the multi-document engine.
@@ -130,6 +131,7 @@ that every genre rides on, plus the multi-document engine.
 | `mif-corpus` | Semantically index and query MIF docs via the optional mif-rs tools; suggestion signal, never a gate. |
 | `mif-provenance` | Stamp hook-witnessed provenance into frontmatter and verify blocks against the session ledger; witnessed, never asserted. |
 | `svg-charts` | Generate a standalone `.svg` chart file (and its `<img>` embed line) for cases beyond Mermaid's documented range. |
+| `mif-to-pdf` | Convert a MIF JSON-LD document to PDF, embedding every frontmatter field as PDF metadata (Info dictionary + a custom lossless XMP packet). |
 | `doc-set-planner` | Plan a subject into a coordinated SET of documents, fan out to genres, reconcile the relationship graph. |
 
 ## Doc-set recipes (4)
@@ -154,6 +156,7 @@ Every script is fail-closed: any failure exits non-zero.
 | --- | --- | --- |
 | `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file); `3` schema cache not hydrated locally (environment gap, not a document failure — run `npm run hydrate-schema`). |
 | `mif-convert.mjs` | `mif-convert <emit-jsonld\|emit-markdown\|roundtrip> <file> [--no-check]` | `0` success; `1` schema check / non-lossless round-trip; `2` usage error. |
+| `mif-to-pdf.mjs` | `mif-to-pdf <doc.json> [--output out.pdf]` | `0` PDF written; `1` unreadable/unparseable input or missing required MIF L1 field; `2` usage error (no file). |
 | `hydrate-schema.mjs` | `hydrate-schema [latest\|<version>]` | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
 | `hydrate-ontology.mjs` | `hydrate-ontology` | `0` ontology cached from published URI / ontologies repo / local sibling checkout; `1` unresolved. |
 | `validate-ontology.mjs` | `validate-ontology` | `0` ontology valid and all `entity_type` / relationship types resolve; `1` not hydrated or dangling reference. |
