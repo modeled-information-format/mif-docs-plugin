@@ -70,7 +70,7 @@ function rawDecodedTextTokens(doc, pageIndex) {
 }
 
 function decodedTextTokens(doc, pageIndex) {
-  return rawDecodedTextTokens(doc, pageIndex).map((t) => t.trimEnd());
+  return rawDecodedTextTokens(doc, pageIndex).map((t) => (t.endsWith(' ') ? t.slice(0, -1) : t));
 }
 
 function extractRawDocument(xml) {
