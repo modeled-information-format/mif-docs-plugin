@@ -1,0 +1,23 @@
+{
+  "@context": "https://mif-spec.dev/schema/context.jsonld",
+  "@type": "Concept",
+  "@id": "urn:mif:concept:mif-docs-plugin/mif-to-pdf:fixture-rich",
+  "conceptType": "semantic",
+  "created": "2026-07-15T12:00:00Z",
+  "modified": "2026-07-15T13:30:00Z",
+  "namespace": "mif-docs-plugin/mif-to-pdf",
+  "title": "mif-to-pdf rich-rendering fixture",
+  "tags": ["fixture", "mif-to-pdf", "markdown", "rendering"],
+  "provenance": {
+    "@type": "Provenance",
+    "sourceType": "agent_inferred",
+    "trustLevel": "user_stated",
+    "agent": "claude-code/claude-sonnet-5",
+    "wasAttributedTo": { "@id": "https://github.com/modeled-information-format", "@type": "prov:Agent" }
+  },
+  "citations": [
+    { "@type": "Citation", "citationType": "specification", "citationRole": "methodology", "title": "MIF specification", "url": "https://mif-spec.dev", "accessed": "2026-07-15" }
+  ],
+  "entity": { "name": "mif-to-pdf rich fixture author", "entity_type": "fixture-document" },
+  "content": "# Section One\n\nThis paragraph has **bold text**, inline `code span`, and a [link to mif-spec.dev](https://mif-spec.dev) plus an autolink <https://github.com/modeled-information-format>.\n\n## Bullet List\n\n- First item with **bold**\n- Second item with `code`\n- Third plain item\n\n## A Table\n\n| Competitor | Share |\n| --- | --- |\n| Bottled Bottler Co | 22% |\n| Cafe Roast Collective | 18% |\n\n### Figure\n\n![Portland cold-brew market share](assets/portland-coldbrew-competitor-share.svg)\n\nText after the figure to prove flow continues correctly below an embedded image."
+}
