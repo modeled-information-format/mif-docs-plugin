@@ -131,7 +131,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
       - name: Validate ADR — structured-MADR mode (strict)
-        uses: modeled-information-format/structured-madr@f3d2e8808a1e98d41239aa3e6a7ef165b61ff08d # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: smadr
           path: skills/adr/templates
@@ -139,7 +139,7 @@ jobs:
           strict: 'true'
           fail-on-error: 'true'
       - name: Validate ADR — MIF conformance mode (level 3)
-        uses: modeled-information-format/structured-madr@f3d2e8808a1e98d41239aa3e6a7ef165b61ff08d # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: mif
           mif-level: '3'
