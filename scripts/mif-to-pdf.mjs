@@ -897,22 +897,30 @@ async function main() {
   const blocks = parseBlocks(jsonld.content ?? "");
   // Most genres this suite produces open the body with an H1 that matches
   // the frontmatter title exactly (business-plan) or elaborates on it with a
-  // short genre-specific prefix (adr's "ADR-0007: <title>") — drawing a
-  // synthetic title heading unconditionally duplicated it. Only skip the
-  // synthetic title when the body's own leading H1 actually restates it:
-  // an exact match, or a short prefix (<=40 chars, no colon of its own)
-  // followed by a colon and the title verbatim. A plain substring check in
-  // either direction was tried first and rejected — it silently dropped
-  // any short/acronym title that happened to be a substring of an unrelated
-  // leading H1 (title "API" swallowed by a heading "Rapid Deployment",
-  // since "api" ⊂ "Rapid").
+  // short genre-ID prefix (adr's "ADR-0007: <title>", prd's "PRD: <title>")
+  // — drawing a synthetic title heading unconditionally duplicated it. Only
+  // skip the synthetic title when the body's own leading H1 actually
+  // restates it: an exact match, or a genre-ID-style prefix (starts
+  // uppercase, and either contains a digit or is fully uppercase — "ADR-0007",
+  // "PRD", not an ordinary capitalized word) followed by a colon and the
+  // title verbatim. Two looser heuristics were tried first and rejected: a
+  // plain substring check in either direction silently dropped any
+  // short/acronym title that happened to be a substring of an unrelated
+  // leading H1 (title "API" swallowed by a heading "Rapid Deployment", since
+  // "api" ⊂ "Rapid"); a "<any short prefix>: <title>" pattern with no
+  // constraint on the prefix's shape still wrongly matched ordinary prose
+  // headings like "Note: API" or "See also: Search" that merely happen to
+  // end with the title after a colon, not restate it as a genre ID would.
   const normalize = (s) => String(s).trim().toLowerCase().replace(/[-–—]/g, " ").replace(/\s+/g, " ");
   const headingRestatesTitle = (headingText, t) => {
     const h = normalize(headingText);
     const nt = normalize(t);
     if (h === nt) return true;
-    const prefixed = h.match(/^[^:]{1,40}:\s*(.+)$/);
-    return prefixed ? prefixed[1] === nt : false;
+    const prefixed = String(headingText).trim().match(/^([^:]{1,20}):\s*(.+)$/);
+    if (!prefixed) return false;
+    const [, prefix, suffix] = prefixed;
+    const looksLikeGenreId = /^[A-Z]/.test(prefix) && (/\d/.test(prefix) || prefix === prefix.toUpperCase());
+    return looksLikeGenreId && normalize(suffix) === nt;
   };
   const leading = blocks[0]?.type === "heading" && blocks[0].level === 1 ? blocks[0] : null;
   const bodyOpensWithTitle = leading && headingRestatesTitle(leading.text, title);

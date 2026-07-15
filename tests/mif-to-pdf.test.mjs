@@ -430,6 +430,44 @@ test('regression: a short/acronym title that happens to be a substring of an unr
   }
 });
 
+test('regression: an ordinary prose prefix before a colon does not falsely count as a genre-ID restatement of the title', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  // "Note: API" ends with ": <title>" the same shape as a real genre-ID
+  // prefix ("ADR-0007: <title>"), but "Note" is ordinary prose, not a
+  // genre ID — a looser "<any prefix>: <title>" heuristic (the second
+  // version of the title-dedup fix) still wrongly treated this as the
+  // body restating the title and dropped it.
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:prose-prefix-collision',
+      conceptType: 'semantic',
+      created: '2026-07-15T12:00:00Z',
+      title: 'API',
+      content: '# Note: API\n\nThis heading is an unrelated aside, not a restatement of the title.',
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    // "API" is drawn twice on a correct output: once as the standalone
+    // synthetic title, once as the second word of the body's own "Note:
+    // API" heading — zero occurrences would mean the title was dropped.
+    assert.equal(
+      tokens.filter((t) => t === 'API').length,
+      2,
+      'expected the real title "API" to be drawn as its own heading in addition to appearing inside the unrelated body heading',
+    );
+    assert.ok(tokens.includes('Note:'), "expected the body's own unrelated leading heading to also be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('regression: a fenced code block (e.g. Mermaid) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
   const input = join(tmp, 'doc.json');
