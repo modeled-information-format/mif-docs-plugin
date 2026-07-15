@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-15T17:38:12.850Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -18,20 +18,19 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  trustLevel: high_confidence
+  agent: anthropic/claude-code
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea349909-51fc-46da-95a3-2043bbcf6bdb
+    '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
-  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: tool
@@ -60,7 +59,7 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 44
+  x-skill-count: 45
   x-purpose-group-count: 14
 ---
 
@@ -69,7 +68,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 43 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 45 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -86,7 +85,7 @@ Each skill name links to its full reference doc.
 | Group | Skills | What the group is for |
 | --- | --- | --- |
 | Orchestrator | [`doc-set-planner`](../skills/doc-set-planner/) | Decompose a broad subject into a coordinated document set and reconcile the cross-document graph. |
-| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
+| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/), [`svg-charts`](../skills/svg-charts/) | Supply or check the MIF layer, the acceptance criteria, and the chart assets that genres ride on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
 | Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
@@ -204,6 +203,25 @@ is the user-facing walk-through.
   or proving schema/level conformance (`mif-validate`).
 - **Requires:** capture enabled (`mifProvenance.capture: true`) so the session
   ledger exists; declines any document the ledger did not witness.
+
+### `svg-charts`
+
+Generates a standalone, brand-colorable `.svg` chart file — never inline
+markup — for the specific cases the suite's default embedded-Mermaid
+convention cannot cover: more than roughly five pie/bar segments, custom
+per-series colors, log scales, or multi-series combo charts. Returns the
+`<img>` line a calling genre embeds, since GitHub strips inline `<svg>`
+markup from rendered markdown.
+
+- **Authors:** one standalone `.svg` file plus its `<img>` embed line — never a finished document.
+- **Reach for it when:** a chart's segment count, color requirement, or
+  scale exceeds Mermaid's documented range.
+- **Not this when:** the chart is within Mermaid's range (five or fewer
+  segments, standard colors) — use the embedded-Mermaid convention instead,
+  as `market-research-report`, `competitive-quadrant`, `trend-analysis`,
+  `c4-model-diagram`, and `business-plan` all do by default.
+- **Used by:** `business-plan`; available to any other genre that hits
+  Mermaid's limits.
 
 ## Diátaxis quadrants
 

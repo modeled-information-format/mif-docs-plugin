@@ -77,33 +77,50 @@ checklist, not a certifying format standard.
   financing. Do not stub it with invented numbers for an internal or
   self-funded plan — omit the section and say why in the Executive Summary
   instead.
-- Render every financial or market chart as a fenced `mermaid` code block —
-  `xychart-beta` for revenue/cash-flow trajectories, `pie` for market
-  segmentation or use-of-funds breakdown, `quadrantChart` for competitive
-  positioning if used — never ASCII art, an image link, or Graphviz/DOT.
-  This follows the same convention `market-research-report`,
-  `competitive-quadrant`, `trend-analysis`, and `c4-model-diagram` already
-  use in this suite.
+- Render every financial or market chart within Mermaid's range as a
+  fenced `mermaid` code block — `xychart-beta` for revenue/cash-flow
+  trajectories, `pie` for market segmentation or use-of-funds breakdown of
+  five or fewer segments, `quadrantChart` for competitive positioning if
+  used — never ASCII art, or Graphviz/DOT. This follows the same
+  convention `market-research-report`, `competitive-quadrant`,
+  `trend-analysis`, and `c4-model-diagram` already use in this suite. When
+  a chart exceeds that range (more than roughly five segments, or a
+  specific brand color palette), invoke the `svg-charts` skill instead
+  (see below) rather than forcing it into a Mermaid block that would
+  render illegibly.
 - Hedge projections honestly: state the confidence basis for a projection
   (historical actuals, comparable-company benchmark, or a stated assumption)
   rather than presenting every number with uniform certainty.
 
-## No new helper skill for charts/graphics — decision and why
+## Charts/graphics: Mermaid by default, `svg-charts` when it isn't enough
 
-This genre needs revenue, market-segmentation, and use-of-funds charts, plus
-an optional org chart. **No new helper skill was built for this.** Every
-diagram-bearing genre already in this suite (`market-research-report`,
-`competitive-quadrant`, `trend-analysis`, `c4-model-diagram`) embeds its
-chart guidance directly in its own `SKILL.md` as fenced `mermaid` blocks —
-there is no precedent in `skills/` for a separate diagram-generation helper
-skill, and introducing one here would be the first of its kind with no
-reuse case yet. `business-plan` follows the same embedded-Mermaid convention
-above instead. Two things already cover graphics quality outside this
-repo's own skill suite and are worth reaching for, but are not part of this
-plugin: the session-level `dataviz` skill (chart design/accessibility
-guidance, any output medium) and, for MIF-branded surfaces specifically,
-`mif-brand` — neither is business-plan-specific and neither is duplicated
-here.
+This genre needs revenue, market-segmentation, competitor, and use-of-funds
+charts, plus an optional org chart. Two things are true at once, both
+grounded in checked evidence rather than assumption:
+
+- **Mermaid covers most of it, and stays the default.** Every
+  diagram-bearing genre already in this suite (`market-research-report`,
+  `competitive-quadrant`, `trend-analysis`, `c4-model-diagram`) embeds its
+  chart guidance directly in its own `SKILL.md` as fenced `mermaid`
+  blocks; `business-plan` does the same for anything within Mermaid's
+  documented range (see the *Rules* section above).
+- **Mermaid has real, documented limits this genre will hit**: pie-chart
+  labels collide past roughly five slices, its base syntax has no
+  per-segment custom-color override (colors come from a fixed theme), and
+  it has no log-scale or multi-series combo support
+  (<https://www.mermaidcreator.com/blog/mermaid-pie-bar-chart-metrics-visualization>,
+  <https://www.pkgpulse.com/guides/mermaid-vs-d3-vs-chartjs-diagrams-data-visualization-2026>).
+  A business plan with more than five named competitors, or one that needs
+  to match a company's actual brand colors, will hit these limits in
+  practice, not hypothetically.
+
+For those cases this genre invokes the **`svg-charts`** helper skill,
+which generates a standalone `.svg` file (never inline markup — GitHub
+strips embedded `<svg>` elements from rendered markdown, so inline SVG
+would silently fail to render on the primary surface these documents are
+viewed on: <https://alexwlchan.net/notes/2024/how-to-render-svgs-on-github/>)
+and returns the `<img src="...">` line to embed. See the `svg-charts`
+skill for its full decision rule and output contract.
 
 ## Anti-triggers — do not use this genre for
 

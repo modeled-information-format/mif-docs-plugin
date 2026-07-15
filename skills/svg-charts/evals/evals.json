@@ -1,0 +1,50 @@
+{
+  "skill_name": "svg-charts",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "A market-research-report needs a pie chart of 3 age-segment adoption shares in the report's default theme colors. Should this use svg-charts?",
+      "expected_output": "Recommends staying with the default embedded-Mermaid pie chart instead, explaining that 3 segments with default colors is well within Mermaid's documented range and svg-charts adds unnecessary indirection (a separate file to manage) for no benefit here.",
+      "files": [],
+      "expectations": [
+        "Recommends the default Mermaid pie chart, not svg-charts, for this request",
+        "Explains that 3 segments with standard colors is within Mermaid's documented range",
+        "Does not generate an .svg file or an <img> tag for this case"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "A business-plan document needs a pie chart showing revenue share across 9 named wholesale accounts, each rendered in the company's specific brand colors (#1E3A5F, #E07A3F, ...). Generate the chart.",
+      "expected_output": "Generates a standalone .svg file (not inline markup) with 9 labeled, distinctly colored segments matching the requested brand colors, and returns an <img src=\"...\" alt=\"...\"> line to embed in the document body.",
+      "files": [],
+      "expectations": [
+        "Produces a real standalone .svg file, never inline <svg>...</svg> markup embedded directly in the document body",
+        "Returns an <img src=\"...\"> tag referencing that file for embedding, with a descriptive alt text",
+        "The chart applies the requested custom brand colors per segment rather than a default theme palette",
+        "States the reason svg-charts was used instead of Mermaid: too many segments and/or custom colors"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Just paste the SVG markup for a bar chart directly into the middle of my business-plan.md document body so it's all in one file.",
+      "expected_output": "Declines to embed inline <svg> markup in the document body, explaining that GitHub strips inline SVG from rendered markdown so it would silently fail to render, and instead generates a separate .svg file plus the <img> tag to embed.",
+      "files": [],
+      "expectations": [
+        "Explains that GitHub does not render inline <svg> markup embedded in markdown, citing this as the reason",
+        "Refuses to paste raw <svg>...</svg> markup directly into the document body even though that's what was asked",
+        "Produces a separate .svg file and the corresponding <img> embed line as the working alternative"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Generate a chart comparing two competitors' growth rates on a logarithmic scale, since one grew 3x and the other grew 300x and a linear scale would flatten the smaller value to invisibility.",
+      "expected_output": "Uses svg-charts (not Mermaid) since a log scale is outside Mermaid's chart grammar, and generates a standalone .svg file with a logarithmic axis plus the <img> embed line.",
+      "files": [],
+      "expectations": [
+        "Identifies the log-scale requirement as a case Mermaid cannot handle and uses svg-charts instead",
+        "Generates a real .svg file with a log-scaled axis, not a Mermaid xychart-beta block (which lacks log-scale support)",
+        "Returns the <img> embed line rather than inline markup"
+      ]
+    }
+  ]
+}

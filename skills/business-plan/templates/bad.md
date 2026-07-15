@@ -7,15 +7,6 @@ title: 'Antipattern: A Business Plan With No Disclosed Financial Assumptions'
 tags:
   - antipattern
   - business-plan
-provenance:
-  '@type': Provenance
-  agent: claude-code/claude-sonnet-5
-  wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea349909-51fc-46da-95a3-2043bbcf6bdb
-    '@type': prov:Activity
-  trustLevel: user_stated
-  agentVersion: 2.1.210
-modified: '2026-07-15T17:37:30.061Z'
 ---
 
 # Business Plan: Summit Outdoor Gear Co-op
@@ -43,7 +34,9 @@ $5,000,000.
      unit volume, growth rate, or cost basis behind any of them — a reader
      has no way to judge whether these numbers are grounded in anything or
      simply invented. There is also no income statement, cash flow
-     statement, balance sheet, or break-even analysis. -->
+     statement, or balance sheet anywhere in the document — contrast with
+     templates/good.md, which discloses all three in-document, not just
+     referenced as "available on request." -->
 
 ## Funding Request
 

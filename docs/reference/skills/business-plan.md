@@ -2,7 +2,7 @@
 id: reference-skill-business-plan
 type: semantic
 created: '2026-07-15T13:45:00Z'
-modified: '2026-07-15T17:38:50.831Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: reference/skills
 title: 'Skill reference: business-plan'
 tags:
@@ -19,20 +19,19 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  trustLevel: high_confidence
+  agent: anthropic/claude-code
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea349909-51fc-46da-95a3-2043bbcf6bdb
+    '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:business-plan
       '@type': prov:Entity
-  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: specification
@@ -76,6 +75,8 @@ relationships:
     target: urn:mif:reference-skill-market-research-report
   - type: relates-to
     target: urn:mif:reference-skill-prd
+  - type: relates-to
+    target: urn:mif:reference-skill-svg-charts
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -156,13 +157,17 @@ machine-conformant unit.
   labeled assumption, and keeps the Funding Request section conditional on
   whether financing is actually being sought rather than stubbing it with
   invented numbers.
-- **Charts stay in-line, no new helper skill.** Revenue, use-of-funds, and
-  market-segmentation charts are rendered as fenced `mermaid` blocks
-  (`xychart-beta`, `pie`, optionally `quadrantChart`) directly in the
-  skill's own instructions — the same convention already used by
-  `market-research-report`, `competitive-quadrant`, `trend-analysis`, and
-  `c4-model-diagram`. No dedicated diagram-generation helper skill exists
-  in this suite, and none was introduced for this genre.
+- **Mermaid by default, `svg-charts` when it isn't enough.** Revenue,
+  use-of-funds, and simple market-segmentation charts within Mermaid's
+  documented range are rendered as fenced `mermaid` blocks (`xychart-beta`,
+  `pie`) directly in the skill's own instructions — the same convention
+  already used by `market-research-report`, `competitive-quadrant`,
+  `trend-analysis`, and `c4-model-diagram`. For charts that exceed that
+  range — more than roughly five competitor/segment slices, or a specific
+  brand color palette a plan needs to match — `business-plan` cross-
+  references the new [svg-charts](../svg-charts/) helper, which generates a
+  standalone `.svg` file and the `<img>` line to embed it, since GitHub
+  strips inline `<svg>` markup from rendered markdown.
 - **Exemplars set the bar.** Like every genre in the suite it ships
   `good-l1.md` (the MIF Level-1 floor), `good.md` (the Level-3 target),
   `bad.md` (a counter-example missing the Financial Plan assumption

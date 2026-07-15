@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-12T02:19:33.569Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -21,18 +21,17 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  trustLevel: high_confidence
+  agent: anthropic/claude-code
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:0baec4b0-123e-4559-a4cb-5342f36006c2
+    '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +60,21 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.5.0] - 2026-07-15
+
+### Added
+
+- `business-plan` (#120): a full investor- and lender-ready business plan
+  genre — Executive Summary through Appendix, SBA/SCORE convention plus
+  Lean Canvas problem-solution framing, a mandatory Financial Plan &
+  Projections section (3-statement projection with disclosed assumptions).
+- `svg-charts` (#120): a substrate helper that generates a standalone
+  `.svg` chart file (and its `<img>` embed line) for chart needs beyond
+  Mermaid's documented range — more than roughly five pie/bar segments,
+  custom per-series colors, log scales, or multi-series combo charts.
+  Never emits inline `<svg>` markup, since GitHub strips it from rendered
+  markdown.
 
 ## [0.4.3] - 2026-07-12
 

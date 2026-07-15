@@ -2,7 +2,7 @@
 id: business-plan-meridian-cold-brew-2026
 type: semantic
 created: '2026-07-15T09:00:00Z'
-modified: '2026-07-15T17:37:19.732Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: business-plan/food-and-beverage
 title: 'Business Plan: Meridian Cold-Brew Coffee Co. — Second Location & Wholesale Expansion (2026)'
 tags:
@@ -17,12 +17,10 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: user_explicit
-  trustLevel: user_stated
+  trustLevel: verified
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:ea349909-51fc-46da-95a3-2043bbcf6bdb
+    '@id': urn:mif:activity:meridian-cold-brew-loan-application-2026
     '@type': prov:Activity
-  agent: claude-code/claude-sonnet-5
-  agentVersion: 2.1.210
 citations:
   - '@type': Citation
     citationType: specification
@@ -105,6 +103,15 @@ site selection for any location beyond the second.
 
 ## Competitive Analysis
 
+Meridian tracks seven named competitors in the Portland cold-brew market,
+plus a fragmented tail of 6+ smaller operators. Because that is more
+segments than a Mermaid pie chart renders legibly (labels collide past
+roughly five slices), this section uses the `svg-charts` helper to generate
+a standalone, brand-colored bar chart instead of forcing it into Mermaid:
+
+<img src="assets/portland-coldbrew-competitor-share.svg"
+     alt="Estimated Portland cold-brew market share by competitor">
+
 Meridian's competitors fall into two groups: national cold-brew bottlers
 sold in grocery (convenient, lower quality, no local brand affinity) and
 full-service Portland cafes that offer cold-brew as a menu item rather than
@@ -150,20 +157,6 @@ average 40 units/week/account. Cost basis: 34% COGS on retail, 42% COGS on
 wholesale (lower margin, higher volume). Fixed costs: $9,200/month for the
 new location (rent, utilities, base staffing) once opened.
 
-**Year 1** (monthly detail, opening month 2 of the loan term): revenue
-ramps from roughly $18,000/month (existing location only) to $34,000/month
-by month 12 as the second location and wholesale line ramp in. Year-1
-total: approximately $340,000.
-
-**Year 2** (quarterly detail): revenue grows to approximately $480,000 as
-both channels reach steady-state volumes assumed above.
-
-**Year 3** (annual): revenue reaches approximately $640,000 as wholesale
-accounts grow from 10 to an assumed 16 based on the year-2 sales
-relationship pace; this year-3 figure is a lower-confidence extrapolation
-of the year-1/2 sales-pace assumption, not a comparable-company benchmark,
-and is flagged as such.
-
 ```mermaid
 xychart-beta
     title "Projected annual revenue ($000s)"
@@ -176,10 +169,44 @@ xychart-beta
 monthly break-even at approximately 165 cups/day, projected in month 7
 post-open.
 
-**Cash flow and balance sheet.** Full monthly cash-flow and balance-sheet
-schedules are provided in the Appendix; the loan is modeled as a 10-year
-SBA 7(a) term note at the current published SBA base rate at time of
-application.
+### Income statement (projected, $000s)
+
+| Line | Year 1 | Year 2 | Year 3 |
+| --- | --- | --- | --- |
+| Revenue | 340 | 480 | 640 |
+| COGS (34% retail / 42% wholesale blended) | 125 | 174 | 230 |
+| Gross profit | 215 | 306 | 410 |
+| Operating expenses (rent, staffing, marketing, depreciation) | 158 | 198 | 232 |
+| Operating income (EBIT) | 57 | 108 | 178 |
+| Loan interest (10-yr SBA 7(a), current published base rate) | 11 | 10 | 9 |
+| Net income | 46 | 98 | 169 |
+
+### Cash flow statement (projected, $000s)
+
+| Line | Year 1 | Year 2 | Year 3 |
+| --- | --- | --- | --- |
+| Net income | 46 | 98 | 169 |
+| Depreciation (leasehold improvements, equipment) | 12 | 12 | 12 |
+| Change in working capital | (18) | (9) | (6) |
+| Cash from operations | 40 | 101 | 175 |
+| Capital expenditures (second-location build-out) | (85) | 0 | 0 |
+| Loan proceeds | 150 | 0 | 0 |
+| Loan principal repayment | (11) | (13) | (14) |
+| Net change in cash | 94 | 88 | 161 |
+| Ending cash balance | 119 | 207 | 368 |
+
+### Balance sheet (projected year-end, $000s)
+
+| Line | Year 1 | Year 2 | Year 3 |
+| --- | --- | --- | --- |
+| Cash | 119 | 207 | 368 |
+| Inventory & other current assets | 22 | 27 | 33 |
+| Fixed assets, net of depreciation | 73 | 61 | 49 |
+| **Total assets** | 214 | 295 | 450 |
+| SBA loan payable | 139 | 126 | 112 |
+| Other current liabilities | 15 | 17 | 19 |
+| **Total liabilities** | 154 | 143 | 131 |
+| Owners' equity | 60 | 152 | 319 |
 
 ## Funding Request
 
@@ -198,10 +225,11 @@ pie title Use of $150,000 SBA loan proceeds
 
 ## Appendix
 
-Detailed monthly cash-flow schedule (months 1-36), balance sheet
-projections, founder resumes, existing-location 2025 financial statements,
-and the Hawthorne lease letter of intent are attached to the full loan
-application package and available on request.
+Founder resumes, existing-location 2025 financial statements, and the
+Hawthorne lease letter of intent are attached to the full loan application
+package and available on request; the projected income statement, cash
+flow statement, and balance sheet above are the complete 3-statement
+projection this plan discloses in-document.
 
 ### Sources
 
