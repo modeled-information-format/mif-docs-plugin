@@ -47,8 +47,9 @@ Singletons have no member set and are invoked directly: `adr`, `changelog`,
 `engineering`, `academic`, `systematic-review`, `computing-paper`,
 `humanities-mla`, `humanities-chicago`, `clinical-submission`, `nist-sp`,
 `regulatory-disclosure`, `compliance-audit`, `security-pentest`,
-`legal-memo`, `market-research-report`, `sustainability-report`,
-`trend-analysis`, `competitive-quadrant`, `briefing`, `exec-summary`.
+`legal-memo`, `market-research-report`, `business-plan`,
+`sustainability-report`, `trend-analysis`, `competitive-quadrant`,
+`briefing`, `exec-summary`.
 
 ## Semantic discovery (optional, via mif-corpus)
 

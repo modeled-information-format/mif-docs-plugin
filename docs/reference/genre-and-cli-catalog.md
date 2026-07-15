@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-11T23:57:22.616Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -17,20 +17,19 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  trustLevel: high_confidence
+  agent: anthropic/claude-code
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:8e92fcf2-b3f5-40c5-9171-89075e3b605c
+    '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
-  agentVersion: 2.1.207
 citations:
   - '@type': Citation
     citationType: tool
@@ -61,18 +60,18 @@ entity:
   name: mif-docs genre and CLI catalog
   entity_type: reference-document
 extensions:
-  x-genre-count: 37
-  x-substrate-count: 4
+  x-genre-count: 38
+  x-substrate-count: 6
   x-recipe-count: 4
 ---
 
 # mif-docs genre and CLI catalog
 
-An exhaustive lookup for the **mif-docs v0.2.0** plugin: every skill it ships,
+An exhaustive lookup for the **mif-docs v0.5.0** plugin: every skill it ships,
 every doc-set recipe, and every script in `scripts/` with its arguments and exit
 behavior. Consult an entry; do not read this end to end.
 
-## Genre skills (37)
+## Genre skills (38)
 
 Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, and
 `evals/evals.json`.
@@ -111,13 +110,14 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `security-pentest` | Penetration-test report (PTES/OWASP-style, CVSS findings) | `semantic` | 3 |
 | `legal-memo` | Predictive legal memorandum (IRAC, Bluebook citations) | `semantic` | 3 |
 | `market-research-report` | Market research report (methodology/fieldwork-grounded) | `semantic` | 3 |
+| `business-plan` | Investor/lender-ready business plan (SBA/SCORE structure, Lean Canvas framing) | `semantic` | 3 |
 | `sustainability-report` | GRI-Standards sustainability/ESG report | `semantic` | 3 |
 | `trend-analysis` | Trajectory report (drivers/inhibitors, scenario diagram) | `semantic` | 3 |
 | `competitive-quadrant` | Two-axis competitive-quadrant report (Mermaid quadrant chart) | `semantic` | 3 |
 | `briefing` | One-page briefing / standup update | `episodic` | 3 |
 | `exec-summary` | 1-2 page BLUF decision-oriented executive summary | `semantic` | 3 |
 
-## Substrate skills (5) and the planner
+## Substrate skills (6) and the planner
 
 These do not author a finished genre artifact; they supply or check the MIF layer
 that every genre rides on, plus the multi-document engine.
@@ -129,6 +129,7 @@ that every genre rides on, plus the multi-document engine.
 | `mif-validate` | Deterministically prove a document is MIF-conformant and convert between forms. |
 | `mif-corpus` | Semantically index and query MIF docs via the optional mif-rs tools; suggestion signal, never a gate. |
 | `mif-provenance` | Stamp hook-witnessed provenance into frontmatter and verify blocks against the session ledger; witnessed, never asserted. |
+| `svg-charts` | Generate a standalone `.svg` chart file (and its `<img>` embed line) for cases beyond Mermaid's documented range. |
 | `doc-set-planner` | Plan a subject into a coordinated SET of documents, fan out to genres, reconcile the relationship graph. |
 
 ## Doc-set recipes (4)

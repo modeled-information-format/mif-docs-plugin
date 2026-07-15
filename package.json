@@ -1,6 +1,6 @@
 {
   "name": "mif-docs",
-  "version": "0.4.3",
+  "version": "0.5.0",
   "description": "MIF-first documentation skill suite plugin \u2014 tooling (mif-validate, plugin manifest validation).",
   "type": "module",
   "private": true,

@@ -1,0 +1,72 @@
+{
+  "skill_name": "business-plan",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Write a full business plan for a bootstrapped local roastery-cafe seeking a $150,000 SBA loan. It has one year of trading history: $310,000 revenue at a 58% gross margin, with gross margin improving by roughly 3 percentage points per quarter. Include all required sections in order plus a Funding Request for the loan.",
+      "expected_output": "A business plan with Executive Summary, Company Description, Products & Services, Market Analysis, Competitive Analysis, Marketing & Sales Strategy, Operations Plan, Management & Organization, Financial Plan & Projections, Funding Request, and Appendix, in that order. The Financial Plan discloses a 3-year projection (income statement, cash flow, balance sheet) with explicit assumptions, and the Funding Request states the $150,000 amount, use of funds, and terms sought.",
+      "files": [],
+      "expectations": [
+        "Has all eleven sections in order, including a fully specified Funding Request naming the $150,000 amount and use of funds",
+        "The Financial Plan & Projections section discloses explicit assumptions (pricing, volume/growth rate, cost basis) behind every projected figure — this disclosure is mandatory, not optional",
+        "States the SBA/SCORE convention-not-standard caveat rather than claiming an 'SBA-approved format'",
+        "Emits MIF frontmatter with type: semantic and passes mif-validate --level 1"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Review this business plan draft: it presents three years of revenue projections and a $500,000 funding ask, but there is no stated pricing, unit volume, growth rate, or cost basis anywhere — just a table of dollar figures by year. What's wrong and how do I fix it?",
+      "expected_output": "Identifies the missing Financial Plan assumptions disclosure as the central defect — not a stylistic nitpick — and explains that an unlabeled revenue projection cannot be evaluated by a lender or investor. Recommends adding the pricing, volume, growth-rate, and cost-basis assumptions behind each projected figure.",
+      "files": [],
+      "expectations": [
+        "Names the missing Financial Plan assumptions disclosure as the core defect, not a minor omission",
+        "Explains that a projected figure with no disclosed pricing, volume, growth-rate, or cost-basis assumption cannot be trusted or evaluated by a reader",
+        "Recommends adding the specific missing assumption categories (pricing, volume/growth rate, cost basis)"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "We want to understand where the electric-bike market is heading over the next three years and what could accelerate or slow adoption — should this be a business-plan?",
+      "expected_output": "Recommends trend-analysis instead, explaining that a forward-looking trajectory-and-scenarios deliverable belongs to trend-analysis, while a business-plan is a single business's own operating and financial plan, not a market-wide forecast.",
+      "files": [],
+      "expectations": [
+        "Recommends trend-analysis rather than business-plan for this request",
+        "Explains that business-plan's defining trait is a single business's operating and financial plan, not a market-wide trajectory forecast",
+        "Distinguishes this from market-research-report (a fieldwork-sampled study of the market), which also does not fit this forecasting request"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "Write a business plan for an internally funded product line inside an existing company — no outside financing is being sought. Should it include a Funding Request section?",
+      "expected_output": "Explains that the Funding Request section is genre-conditional and should be omitted cleanly (not stubbed with invented numbers) for a self-funded plan, with a brief note in the Executive Summary explaining that no external financing is sought. All other sections, including a fully assumption-disclosed Financial Plan & Projections, are still produced.",
+      "files": [],
+      "expectations": [
+        "States that Funding Request is omitted (not stubbed with placeholder numbers) because no external financing is sought",
+        "Notes that the Executive Summary should state that the plan is self-funded / internally funded instead",
+        "Still requires the Financial Plan & Projections section with disclosed assumptions even though no funding is being requested"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Should we use market-research-report or business-plan to justify greenlighting a brand-new product line, including whether there's customer demand, what it will cost to build and launch, and how much funding we need to ask leadership for?",
+      "expected_output": "Recommends business-plan as the primary deliverable because the ask spans a funding request and a full financial plan, not just a demand study, and explains that a market-research-report could be commissioned first (with disclosed sampling/fieldwork) and then cited as a source within the business plan's Market Analysis section, rather than substituting for it.",
+      "files": [],
+      "expectations": [
+        "Recommends business-plan as the primary deliverable given the funding-request and financial-plan requirement",
+        "Explains market-research-report could feed the business plan's Market Analysis as a cited source rather than replace it",
+        "Distinguishes the two genres by business-plan's mandatory Financial Plan & Projections vs. market-research-report's mandatory sampling/fieldwork disclosure"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "Draft the Market Analysis section for a business plan targeting the U.S. specialty-coffee market. No market-sizing data was provided by the user and none is available from prior research in this session. How should the section handle that gap?",
+      "expected_output": "Either gathers a market-sizing figure via live web research and cites the source, or, if that is not done, states the gap explicitly and labels any figure used as an assumption rather than presenting it as sourced fact — never a bare, unsourced statistic presented as settled.",
+      "files": [],
+      "expectations": [
+        "Does not present an invented market-size figure as if it were a cited, sourced fact",
+        "Either cites a real source fetched for the figure, or explicitly labels the figure as an assumption and states why",
+        "Explains that this labeling requirement is what lets the reader trust the Market Analysis section without asserting false precision"
+      ]
+    }
+  ]
+}

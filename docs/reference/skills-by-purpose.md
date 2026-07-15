@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-15T18:00:00Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -59,8 +59,8 @@ entity:
   name: mif-docs skills by purpose
   entity_type: reference-document
 extensions:
-  x-skill-count: 43
-  x-purpose-group-count: 13
+  x-skill-count: 45
+  x-purpose-group-count: 14
 ---
 
 # mif-docs skills by purpose
@@ -68,7 +68,7 @@ extensions:
 Every skill the **mif-docs** suite ships, grouped by the job it does rather than
 by the genre it emits. Where the [genre and CLI catalog](../genre-and-cli-catalog/)
 is the terse lookup for scripts, recipes, and exit codes, this reference is the
-**index** to the suite's 43 skills: a one-line orientation per skill, grouped by
+**index** to the suite's 45 skills: a one-line orientation per skill, grouped by
 the job it does, with each name linking to its own deep reference doc — what the
 document type is, how the skill produces it, when it is beneficial, and the
 verified provenance and citations behind it. Consult a section; do not read it
@@ -85,7 +85,7 @@ Each skill name links to its full reference doc.
 | Group | Skills | What the group is for |
 | --- | --- | --- |
 | Orchestrator | [`doc-set-planner`](../skills/doc-set-planner/) | Decompose a broad subject into a coordinated document set and reconcile the cross-document graph. |
-| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/) | Supply or check the MIF layer and the acceptance criteria that every genre rides on. |
+| Authoring helpers | [`mif-frontmatter`](../skills/mif-frontmatter/), [`ears-acceptance-criteria`](../skills/ears-acceptance-criteria/), [`mif-validate`](../skills/mif-validate/), [`mif-corpus`](../skills/mif-corpus/), [`mif-provenance`](../skills/mif-provenance/), [`svg-charts`](../skills/svg-charts/) | Supply or check the MIF layer, the acceptance criteria, and the chart assets that genres ride on. |
 | Diátaxis quadrants | [`diataxis-tutorial`](../skills/diataxis-tutorial/), [`diataxis-how-to`](../skills/diataxis-how-to/), [`diataxis-reference`](../skills/diataxis-reference/), [`diataxis-explanation`](../skills/diataxis-explanation/) | The four user-need modes of product documentation. |
 | Architecture & design | [`arc42-arch-doc`](../skills/arc42-arch-doc/), [`c4-model-diagram`](../skills/c4-model-diagram/), [`google-design-doc`](../skills/google-design-doc/), [`ai-architecture-doc`](../skills/ai-architecture-doc/) | Describe how a system is structured and why. |
 | Decisions & proposals | [`adr`](../skills/adr/), [`engineering`](../skills/engineering/), [`rust-rfc`](../skills/rust-rfc/), [`python-pep`](../skills/python-pep/) | Record one decision, evaluate options before deciding, or propose one change for consensus. |
@@ -96,6 +96,7 @@ Each skill name links to its full reference doc.
 | Scholarly & scientific writing | [`academic`](../skills/academic/), [`systematic-review`](../skills/systematic-review/), [`computing-paper`](../skills/computing-paper/), [`humanities-mla`](../skills/humanities-mla/), [`humanities-chicago`](../skills/humanities-chicago/) | Formal research writing under a discipline's citation and structural conventions. |
 | Regulated & compliance reports | [`clinical-submission`](../skills/clinical-submission/), [`nist-sp`](../skills/nist-sp/), [`regulatory-disclosure`](../skills/regulatory-disclosure/), [`compliance-audit`](../skills/compliance-audit/), [`security-pentest`](../skills/security-pentest/), [`legal-memo`](../skills/legal-memo/) | Reports produced against an external regulatory, standards, or audit framework. |
 | Research & market intelligence | [`market-research-report`](../skills/market-research-report/), [`sustainability-report`](../skills/sustainability-report/), [`trend-analysis`](../skills/trend-analysis/), [`competitive-quadrant`](../skills/competitive-quadrant/) | Evidence-grounded reports characterizing a market, trend, or competitive landscape. |
+| Business planning | [`business-plan`](../skills/business-plan/) | A single business's comprehensive, financing- and strategy-ready operating and financial plan. |
 | Business communication | [`briefing`](../skills/briefing/), [`exec-summary`](../skills/exec-summary/) | Short, audience-facing updates and decision summaries. |
 
 ## Orchestrator
@@ -202,6 +203,25 @@ is the user-facing walk-through.
   or proving schema/level conformance (`mif-validate`).
 - **Requires:** capture enabled (`mifProvenance.capture: true`) so the session
   ledger exists; declines any document the ledger did not witness.
+
+### `svg-charts`
+
+Generates a standalone, brand-colorable `.svg` chart file — never inline
+markup — for the specific cases the suite's default embedded-Mermaid
+convention cannot cover: more than roughly five pie/bar segments, custom
+per-series colors, log scales, or multi-series combo charts. Returns the
+`<img>` line a calling genre embeds, since GitHub strips inline `<svg>`
+markup from rendered markdown.
+
+- **Authors:** one standalone `.svg` file plus its `<img>` embed line — never a finished document.
+- **Reach for it when:** a chart's segment count, color requirement, or
+  scale exceeds Mermaid's documented range.
+- **Not this when:** the chart is within Mermaid's range (five or fewer
+  segments, standard colors) — use the embedded-Mermaid convention instead,
+  as `market-research-report`, `competitive-quadrant`, `trend-analysis`,
+  `c4-model-diagram`, and `business-plan` all do by default.
+- **Used by:** `business-plan`; available to any other genre that hits
+  Mermaid's limits.
 
 ## Diátaxis quadrants
 
@@ -679,6 +699,29 @@ mandatory Mermaid quadrant chart, per-vendor Strengths/Cautions.
   a required quadrant figure.
 - **Not this when:** the deliverable is a descriptive market survey with no
   quadrant placement (use `market-research-report`).
+- **MIF level / type:** L3, `semantic`.
+
+## Business planning
+
+A single business's own comprehensive operating and financial plan, distinct
+from the fieldwork-grounded and forward-looking reports above, which
+characterize a market rather than a specific company.
+
+### `business-plan`
+
+A full investor- and lender-ready business plan — SBA/SCORE-style structure
+(Executive Summary through Appendix), Lean Canvas problem-solution framing,
+and a mandatory Financial Plan & Projections section with disclosed
+assumptions.
+
+- **Authors:** a standalone, fundable business plan for one venture.
+- **Reach for it when:** the deliverable must justify business development,
+  financing, market planning, or strategic planning decisions with a
+  disclosed financial plan and (optionally) a funding request.
+- **Not this when:** scoping a single feature's build (use `prd` or
+  `feature-spec`), a fieldwork-sampled market study (use
+  `market-research-report`), or a technical trade-off evaluation (use
+  `engineering`).
 - **MIF level / type:** L3, `semantic`.
 
 ## Business communication
