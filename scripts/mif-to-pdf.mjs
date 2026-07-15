@@ -291,13 +291,27 @@ const currentPageFont = new WeakMap();
 // call — so a trailing space costs nothing visually (nothing downstream
 // measures the width of what was actually drawn; wrapping/positioning math
 // runs on the pre-space string). Without it, the raw PDF content stream has
-// no whitespace or newline between one word/line's Tj operator and the
-// next: a naive extractor (copy-paste in most PDF viewers, non-layout-mode
-// pdftotext, screen readers, most real-world PDF-to-text pipelines) reads
-// the words of an entire page run together with zero separation. Geometric
-// tools like `pdftotext -layout` reconstruct spacing from X/Y deltas and
-// hide this — that reconstruction is not what most consumers of "the text
-// in this PDF" actually use.
+// no whitespace between one word/line's Tj operator and the next: a naive
+// extractor (copy-paste in most PDF viewers, non-layout-mode pdftotext,
+// screen readers, most real-world PDF-to-text pipelines) reads the words of
+// an entire page run together with zero separation. Geometric tools like
+// `pdftotext -layout` reconstruct spacing from X/Y deltas and hide this —
+// that reconstruction is not what most consumers of "the text in this PDF"
+// actually use.
+//
+// This closes word-level smashing everywhere, but NOT line/row-boundary
+// loss: a multi-line code block or a multi-row table still naive-extracts
+// as one continuous space-separated run, since a naive extractor has no way
+// to distinguish "next word on this line" from "next line entirely" once
+// only spaces separate every call. A `\n` appended to pdf-lib's drawText
+// does not fix this — verified empirically that pdf-lib splits the string
+// on `\n` and draws the pieces as separate Tj operations with the newline
+// character itself discarded, never surviving into the shown content, so a
+// naive extractor still sees nothing between them. Actually preserving
+// line/row boundaries in naive-extracted text needs either hand-built
+// content-stream operators (bypassing drawText) or real Tagged-PDF marked
+// content — tracked separately rather than attempted here under a bugfix
+// PR whose scope is closing the word-smashing defect.
 function drawTextTracked(page, text, { x, y, size, font, color }) {
   if (currentPageFont.get(page) !== font) {
     page.setFont(font);

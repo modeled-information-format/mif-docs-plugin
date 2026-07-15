@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-15T22:08:15.648Z'
+modified: '2026-07-15T23:00:01.718Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -67,17 +67,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Fixed
 
 - `mif-to-pdf`: every drawn word/line was positioned with its own absolute
-  coordinates and no space or newline character in its actual text content
-  — visually correct, but a naive text extractor (copy-paste in most PDF
-  viewers, `pdftotext` without `-layout`, screen readers, most real-world
-  PDF-to-text pipelines) reads the raw content stream in order with no
-  geometric reconstruction, so the entire document's text ran together with
-  zero separation between every single word and line (confirmed on a real
-  document: `mif-to-pdfrich-renderingfixtureSectionOne...`). This affected
-  every rendered PDF, not just fenced code blocks. Fixed at the single
-  shared text-drawing chokepoint (`drawTextTracked`), which now appends a
-  space to every drawn string — free of visual side effects, since position
-  is always set absolutely per call, never advanced from the previous one.
+  coordinates and no space character in its actual text content — visually
+  correct, but a naive text extractor (copy-paste in most PDF viewers,
+  `pdftotext` without `-layout`, screen readers, most real-world PDF-to-text
+  pipelines) reads the raw content stream in order with no geometric
+  reconstruction, so the entire document's text ran together with zero
+  separation between every single word (confirmed on a real document:
+  `mif-to-pdfrich-renderingfixtureSectionOne...`). This affected every
+  rendered PDF, not just fenced code blocks. Fixed at the single shared
+  text-drawing chokepoint (`drawTextTracked`), which now appends a space to
+  every drawn string — free of visual side effects, since position is
+  always set absolutely per call, never advanced from the previous one.
+  Word-level smashing is now fixed everywhere; line/row *boundaries* (a
+  multi-line code block, a multi-row table) still naive-extract as one
+  continuous space-separated run rather than distinct lines — a `\n`
+  character does not survive pdf-lib's `drawText` into the shown content
+  (verified empirically), so preserving that needs a larger change than
+  this bugfix's scope; tracked as a follow-up.
 
 ## [0.6.2] - 2026-07-15
 
