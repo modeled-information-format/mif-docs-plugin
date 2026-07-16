@@ -556,12 +556,12 @@ function makeRenderer(doc, fonts) {
     y -= LINE_HEIGHT / 2;
   }
 
-  // Shared by drawImageBlock (bytes read from a figure file) and
-  // drawMermaidBlock (bytes rendered in-memory by a real Mermaid layout
-  // engine) — both end up with a PNG's raw bytes and need the identical
-  // embed/scale-to-fit/draw/caption sequence.
-  async function drawPngBytes(bytes, alt) {
-    const image = await doc.embedPng(bytes);
+  // The true shared primitive: every embedded raster image (PNG or JPG,
+  // whether from a figure file or rendered in-memory by Mermaid) ends at an
+  // already-embedded pdf-lib image and needs the identical
+  // scale-to-fit/draw/caption sequence — this is the one place that logic
+  // lives.
+  async function drawEmbeddedImage(image, alt) {
     const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
     const w = image.width * scale;
     const h = image.height * scale;
@@ -572,6 +572,13 @@ function makeRenderer(doc, fonts) {
       drawParagraphRuns([{ text: alt }], { size: BODY_SIZE - 2 });
     }
     y -= LINE_HEIGHT / 2;
+  }
+
+  // Thin PNG-specific wrapper over drawEmbeddedImage, for callers (figure
+  // files with a .png extension, and drawMermaidBlock's in-memory render
+  // output) that start from raw bytes rather than an already-embedded image.
+  async function drawPngBytes(bytes, alt) {
+    await drawEmbeddedImage(await doc.embedPng(bytes), alt);
   }
 
   async function drawImageBlock(src, alt, baseDir) {
@@ -589,15 +596,7 @@ function makeRenderer(doc, fonts) {
     const bytes = readFileSync(resolved);
     try {
       if (ext === ".jpg" || ext === ".jpeg") {
-        const image = await doc.embedJpg(bytes);
-        const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
-        const w = image.width * scale;
-        const h = image.height * scale;
-        ensureSpace(h + LINE_HEIGHT);
-        page.drawImage(image, { x: MARGIN, y: y - h, width: w, height: h });
-        y -= h + 4;
-        if (alt) drawParagraphRuns([{ text: alt }], { size: BODY_SIZE - 2 });
-        y -= LINE_HEIGHT / 2;
+        await drawEmbeddedImage(await doc.embedJpg(bytes), alt);
       } else {
         await drawPngBytes(bytes, alt);
       }
@@ -1022,9 +1021,26 @@ async function main() {
   // A browser is only launched (Chromium startup costs ~1-2s) when the
   // document actually has a mermaid fence to render; every other document
   // never pays this cost. Shared across every mermaid block in this
-  // document rather than one browser per diagram.
+  // document rather than one browser per diagram. --no-sandbox is needed
+  // because CI runners (and many containers) restrict the unprivileged user
+  // namespaces Chromium's sandbox needs — safe here since this browser only
+  // ever renders local, static Mermaid source, never untrusted web content.
+  // The launch itself is inside this try/catch, not just each diagram's own
+  // render call: an unguarded launch failure would throw out of main()
+  // entirely and abort the whole document, defeating the per-diagram
+  // fallback drawMermaidBlock provides below — a launch failure instead
+  // leaves `browser` null, which drawMermaidBlock already treats the same
+  // as "no browser available" and falls back to source text for every
+  // mermaid fence in the document, not just the failing one.
   const hasMermaid = blocks.some((b) => b.type === "codeblock" && b.lang === "mermaid");
-  const browser = hasMermaid ? await puppeteer.launch() : null;
+  let browser = null;
+  if (hasMermaid) {
+    try {
+      browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+    } catch (e) {
+      console.warn(`mif-to-pdf: could not launch a browser for mermaid rendering, falling back to source text: ${e.message}`);
+    }
+  }
   try {
     for (const block of blocks) {
       if (block.type === "heading") renderer.drawHeading(block.text, block.level);

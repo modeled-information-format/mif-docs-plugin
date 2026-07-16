@@ -542,12 +542,13 @@ test('regression: a fenced code block (e.g. Python) renders as legible line-pres
 
 // A ```mermaid fence is the one language that does NOT follow the
 // legible-text path above — see drawMermaidBlock in mif-to-pdf.mjs. These
-// two tests spawn the real converter (not a mock), which launches a real
+// tests spawn the real converter (not a mock), which launches a real
 // headless Chromium via Puppeteer to render the diagram — slower than the
-// rest of this suite, but a mocked renderer would not have caught either
-// of the two real defects this feature already went through (see
-// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs): both were
-// only visible in actual rendered pixel output.
+// rest of this suite, but a mocked renderer would not have caught the real
+// defect this feature already went through (see
+// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs, and the
+// dedicated regression test for it below): it was only visible in actual
+// rendered pixel output, and the exact pixel dimensions matter.
 function pageHasEmbeddedImage(doc, pageIndex) {
   const page = doc.getPage(pageIndex);
   const resources = doc.context.lookup(page.node.get(PDFName.of('Resources')));
@@ -557,6 +558,27 @@ function pageHasEmbeddedImage(doc, pageIndex) {
     const xObject = doc.context.lookup(xObjectDict.get(key));
     return xObject?.dict?.get(PDFName.of('Subtype'))?.toString() === '/Image';
   });
+}
+
+// Returns the pixel width of the first embedded image XObject on the page,
+// or null if none. Used by the quadrantChart regression test below: Mermaid
+// renders a quadrantChart at a default internal width of a few hundred
+// pixels (too narrow for a long quadrant label, which does not wrap — see
+// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs), so a
+// sufficiently wide embedded image is a reliable, mockable-only-by-actually-
+// rendering signal that the widening config is still being honored.
+function embeddedImageWidth(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const resources = doc.context.lookup(page.node.get(PDFName.of('Resources')));
+  const xObjectDict = resources && doc.context.lookup(resources.get(PDFName.of('XObject')));
+  if (!xObjectDict) return null;
+  for (const key of xObjectDict.keys()) {
+    const xObject = doc.context.lookup(xObjectDict.get(key));
+    if (xObject?.dict?.get(PDFName.of('Subtype'))?.toString() === '/Image') {
+      return xObject.dict.get(PDFName.of('Width'))?.asNumber() ?? null;
+    }
+  }
+  return null;
 }
 
 test('regression: a ```mermaid fence renders as a real embedded diagram image, not literal source text', async () => {
@@ -587,6 +609,52 @@ test('regression: a ```mermaid fence renders as a real embedded diagram image, n
     assert.ok(
       !tokens.some((t) => t.includes('pie title') || t.includes('```')),
       'the mermaid source text must not also be drawn as literal text once it renders as an image',
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a quadrantChart with a long quadrant label renders at a widened chart size, not Mermaid\'s narrow default (which clips long labels mid-word since quadrantChart does not wrap them)', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const longLabelDefinition = [
+    'quadrantChart',
+    '    title Positioning',
+    '    x-axis Low --> High',
+    '    y-axis Low --> High',
+    '    quadrant-1 Target position - dual-use and self-sufficient',
+    '    quadrant-2 Guest-only and self-sufficient',
+    '    quadrant-3 Guest-only and utility-offloading',
+    '    quadrant-4 Housing-only with no rental',
+  ].join('\n');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-quadrant-width',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Quadrant width fixture',
+      content: ['# Quadrant width fixture', '', '```mermaid', longLabelDefinition, '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const width = embeddedImageWidth(doc, 0);
+    assert.ok(width !== null, 'expected the quadrantChart to render as an embedded image');
+    // Mermaid's own quadrantChart default width is a few hundred pixels —
+    // nowhere near enough for a 48-character quadrant label, which the
+    // chart does not wrap. mif-to-pdf.mjs's mermaidConfig.quadrantChart.
+    // chartWidth widens this explicitly; this threshold is comfortably
+    // below the configured 900 (at deviceScaleFactor 2, ~1800px) but well
+    // above what the unconfigured default could ever produce, so this
+    // fails if that config is ever removed or shrunk back down.
+    assert.ok(
+      width >= 1200,
+      `expected the widened quadrantChart config to be honored (image width ${width}px, expected >= 1200px)`,
     );
   } finally {
     rmSync(tmp, { recursive: true, force: true });
