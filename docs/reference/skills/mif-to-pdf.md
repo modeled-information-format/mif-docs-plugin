@@ -2,7 +2,7 @@
 id: reference-skill-mif-to-pdf
 type: semantic
 created: '2026-07-15T18:00:00Z'
-modified: '2026-07-15T22:07:36.591Z'
+modified: '2026-07-16T13:20:19.537Z'
 namespace: reference/skills
 title: 'Skill reference: mif-to-pdf'
 tags:
@@ -32,7 +32,7 @@ provenance:
       '@type': prov:Entity
     - '@id': urn:mif:skill:mif-to-pdf
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.211
 citations:
   - '@type': Citation
     citationType: specification
@@ -58,6 +58,12 @@ citations:
     title: 'pdf-lib — Create and modify PDF documents in any JavaScript environment'
     url: https://pdf-lib.js.org/
     accessed: '2026-07-15'
+  - '@type': Citation
+    citationType: tool
+    citationRole: source
+    title: '@mermaid-js/mermaid-cli — command-line interface for mermaid.js (Puppeteer-driven diagram rendering)'
+    url: https://github.com/mermaid-js/mermaid-cli
+    accessed: '2026-07-16'
   - '@type': Citation
     citationType: tool
     citationRole: source
@@ -117,8 +123,9 @@ performs), so the frontmatter-parsing logic that lives in
 ## How the skill produces one
 
 `mif-to-pdf` renders the body and writes its metadata in one pass, via
-`scripts/mif-to-pdf.mjs` (`pdf-lib`, pure JavaScript, no native binary and no
-headless-browser dependency):
+`scripts/mif-to-pdf.mjs` (`pdf-lib`, pure JavaScript, no native binary or
+headless-browser dependency for everything except mermaid diagrams — see
+below):
 
 - **Markdown rendering.** The `content` field is real markdown text, parsed
   and typeset — not wrapped as an undifferentiated blob. Most of the scope is
@@ -129,19 +136,29 @@ headless-browser dependency):
   text, and `[text](url)`/`<url>` links rendered as real clickable PDF link
   annotations (per [ISO 32000-1 §12.5.6.5](https://opensource.adobe.com/dc-acrobat-sdk-docs/pdfstandards/PDF32000_2008.pdf),
   the Link annotation subtype), not just colored text. Long bodies paginate
-  rather than truncate. Two constructs outside that round-trip-safe subset
-  are handled too, since real documents contain them: fenced code
-  blocks — including the `mermaid` fences most genres use for their default
-  embedded-chart convention — render as a legible monospace block labeled
-  with the language tag, preserving each line's exact spacing as long as it
-  fits the page width (an overlong line falls back to word-wrapping, which
-  loses that alignment); the diagram itself is not rendered as a graphic,
-  only its literal source text, since implementing a Mermaid layout engine
-  is out of scope for this converter. Single-level blockquotes (a fenced
-  code block immediately inside one is unwrapped into its own code block,
-  the one nested case handled) render with their `>` marker stripped rather
-  than leaking it as visible
-  text.
+  rather than truncate. Constructs outside that round-trip-safe subset are
+  handled too, since real documents contain them: fenced code blocks render
+  as a legible monospace block labeled with the language tag, preserving
+  each line's exact spacing as long as it fits the page width (an overlong
+  line falls back to word-wrapping, which loses that alignment). Single-level
+  blockquotes (a fenced code block immediately inside one is unwrapped into
+  its own code block, the one nested case handled) render with their `>`
+  marker stripped rather than leaking it as visible text.
+- **`mermaid` fences render as real diagram images, not source text.** Every
+  other language's fence renders as legible monospace source (see above); a
+  ```` ```mermaid ```` fence is rendered by an actual Mermaid layout engine —
+  a headless Chromium instance launched via `@mermaid-js/mermaid-cli` and
+  Puppeteer — and the resulting PNG is embedded in the page, the same way a
+  figure is. This is the one genuinely non-offline-by-default part of the
+  skill: Puppeteer downloads its own Chromium binary at install time (no
+  network calls happen at conversion time — the render is fully local, but
+  the binary itself is a real few-hundred-MB dependency this skill did not
+  previously carry). A browser is launched once per document (shared across
+  every mermaid fence in it, not one browser per diagram) and only when the
+  document actually contains one. If a diagram fails to render — malformed
+  Mermaid syntax, a rendering-engine error — the fence falls back to the
+  same legible-source-text rendering as every other language rather than
+  aborting the whole conversion.
 - **Figures.** `![alt](path)` and `<img src="path" alt="...">` are resolved
   relative to the source JSON file's directory and embedded, not skipped:
   PNG/JPG via `pdf-lib`'s native image embedding, and `.svg` via a minimal
@@ -199,11 +216,13 @@ Do **not** reach for it when the source is still Markdown — convert with
 `mif-convert emit-jsonld` first, since this skill does not read frontmatter
 — when the body uses markdown constructs outside this suite's supported set
 (nested/numbered lists, footnotes, raw HTML beyond `<img>`), which render as
-literal text rather than being interpreted — when a fenced Mermaid diagram
-needs to appear as an actual visual chart rather than its literal source
-text (render it to an image first and embed that instead) — or
-when a figure is a general-purpose SVG rather than this suite's own
-`svg-charts` output shape, which may render partially or not at all.
+literal text rather than being interpreted — when a figure is a
+general-purpose SVG rather than this suite's own `svg-charts` output shape,
+which may render partially or not at all — or in an environment where
+launching a local headless Chromium process is genuinely infeasible (a
+heavily sandboxed or resource-constrained runner with no browser-sandbox
+support), since any document containing a `mermaid` fence now depends on
+that.
 
 ## Example
 
@@ -240,6 +259,11 @@ provenance, citations, and relationships blocks losslessly under
   attach the custom XMP stream and Link annotations (no high-level API for
   either exists in pdf-lib 1.17.1) and its `drawSvgPath` helper for the
   embedded-SVG figure renderer's path data.
+- **Mermaid diagram rendering:** [@mermaid-js/mermaid-cli](https://github.com/mermaid-js/mermaid-cli)'s
+  programmatic `renderMermaid` API, run against a Puppeteer-launched
+  headless Chromium — the only part of this skill that depends on a
+  browser binary or draws PDF content from anything other than pdf-lib's
+  own primitives.
 - **Skill provenance:** authored by the `mif-to-pdf` skill in the mif-docs
   plugin, <https://github.com/modeled-information-format/mif-docs-plugin>.
 - **MIF conformance:** projects to canonical JSON-LD under the MIF

@@ -504,7 +504,7 @@ test('regression: an ordinary prose prefix before a colon does not falsely count
   }
 });
 
-test('regression: a fenced code block (e.g. Mermaid) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
+test('regression: a fenced code block (e.g. Python) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
   const input = join(tmp, 'doc.json');
   const out = join(tmp, 'out.pdf');
@@ -515,7 +515,7 @@ test('regression: a fenced code block (e.g. Mermaid) renders as legible line-pre
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'Codeblock fixture',
-      content: ['# Codeblock fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '```'].join('\n'),
+      content: ['# Codeblock fixture', '', '```python', 'def cost(alpha):', '    return alpha * 10', '```'].join('\n'),
     }),
   );
   try {
@@ -528,12 +528,161 @@ test('regression: a fenced code block (e.g. Mermaid) renders as legible line-pre
       'the literal ``` fence markers must never be drawn as visible text',
     );
     assert.ok(
-      tokens.includes('pie title Cost'),
+      tokens.includes('def cost(alpha):'),
       "expected the code line to be drawn whole (line-preserving), not word-flattened into surrounding paragraph text",
     );
     assert.ok(
-      tokens.includes('    "Alpha" : 10'),
+      tokens.includes('    return alpha * 10'),
       "expected the indented code line's internal whitespace to be preserved exactly",
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// A ```mermaid fence is the one language that does NOT follow the
+// legible-text path above — see drawMermaidBlock in mif-to-pdf.mjs. These
+// tests spawn the real converter (not a mock), which launches a real
+// headless Chromium via Puppeteer to render the diagram — slower than the
+// rest of this suite, but a mocked renderer would not have caught the real
+// defect this feature already went through (see
+// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs, and the
+// dedicated regression test for it below): it was only visible in actual
+// rendered pixel output, and the exact pixel dimensions matter.
+function pageHasEmbeddedImage(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const resources = doc.context.lookup(page.node.get(PDFName.of('Resources')));
+  const xObjectDict = resources && doc.context.lookup(resources.get(PDFName.of('XObject')));
+  if (!xObjectDict) return false;
+  return xObjectDict.keys().some((key) => {
+    const xObject = doc.context.lookup(xObjectDict.get(key));
+    return xObject?.dict?.get(PDFName.of('Subtype'))?.toString() === '/Image';
+  });
+}
+
+// Returns the pixel width of the first embedded image XObject on the page,
+// or null if none. Used by the quadrantChart regression test below: Mermaid
+// renders a quadrantChart at a default internal width of a few hundred
+// pixels (too narrow for a long quadrant label, which does not wrap — see
+// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs), so a
+// sufficiently wide embedded image is a reliable, mockable-only-by-actually-
+// rendering signal that the widening config is still being honored.
+function embeddedImageWidth(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const resources = doc.context.lookup(page.node.get(PDFName.of('Resources')));
+  const xObjectDict = resources && doc.context.lookup(resources.get(PDFName.of('XObject')));
+  if (!xObjectDict) return null;
+  for (const key of xObjectDict.keys()) {
+    const xObject = doc.context.lookup(xObjectDict.get(key));
+    if (xObject?.dict?.get(PDFName.of('Subtype'))?.toString() === '/Image') {
+      return xObject.dict.get(PDFName.of('Width'))?.asNumber() ?? null;
+    }
+  }
+  return null;
+}
+
+test('regression: a ```mermaid fence renders as a real embedded diagram image, not literal source text', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-graphic',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Mermaid graphic fixture',
+      content: ['# Mermaid graphic fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '    "Beta" : 20', '```'].join(
+        '\n',
+      ),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    assert.ok(
+      pageHasEmbeddedImage(doc, 0),
+      'expected the mermaid diagram to be embedded as a real PDF image XObject',
+    );
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('pie title') || t.includes('```')),
+      'the mermaid source text must not also be drawn as literal text once it renders as an image',
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a quadrantChart with a long quadrant label renders at a widened chart size, not Mermaid\'s narrow default (which clips long labels mid-word since quadrantChart does not wrap them)', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const longLabelDefinition = [
+    'quadrantChart',
+    '    title Positioning',
+    '    x-axis Low --> High',
+    '    y-axis Low --> High',
+    '    quadrant-1 Target position - dual-use and self-sufficient',
+    '    quadrant-2 Guest-only and self-sufficient',
+    '    quadrant-3 Guest-only and utility-offloading',
+    '    quadrant-4 Housing-only with no rental',
+  ].join('\n');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-quadrant-width',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Quadrant width fixture',
+      content: ['# Quadrant width fixture', '', '```mermaid', longLabelDefinition, '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const width = embeddedImageWidth(doc, 0);
+    assert.ok(width !== null, 'expected the quadrantChart to render as an embedded image');
+    // Mermaid's own quadrantChart default width is a few hundred pixels —
+    // nowhere near enough for a 48-character quadrant label, which the
+    // chart does not wrap. mif-to-pdf.mjs's mermaidConfig.quadrantChart.
+    // chartWidth widens this explicitly; this threshold is comfortably
+    // below the configured 900 (at deviceScaleFactor 2, ~1800px) but well
+    // above what the unconfigured default could ever produce, so this
+    // fails if that config is ever removed or shrunk back down.
+    assert.ok(
+      width >= 1200,
+      `expected the widened quadrantChart config to be honored (image width ${width}px, expected >= 1200px)`,
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a ```mermaid fence with invalid diagram syntax falls back to legible source text instead of crashing the whole conversion', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-fallback',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Mermaid fallback fixture',
+      content: ['# Mermaid fallback fixture', '', '```mermaid', 'this is not valid mermaid syntax at all', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.includes('this is not valid mermaid syntax at all'),
+      'expected the unrenderable mermaid source to fall back to legible literal text rather than being silently dropped',
     );
   } finally {
     rmSync(tmp, { recursive: true, force: true });
