@@ -49,14 +49,25 @@ real documents contain them even though they don't round-trip: fenced code
 blocks render as a legible monospace block, labeled with their language tag
 when present, preserving each line's exact spacing as long as the line fits
 the page width — a line too wide falls back to word-wrapping, which loses
-that exact alignment since the line no longer fits — **this includes the
-`mermaid` fences most genres use for their default embedded-chart
-convention; the diagram is not rendered as a graphic, only its literal
-source text**, since drawing an actual Mermaid layout engine is out of scope
-for this converter. Single-level blockquotes render with their `>` marker
-stripped and a left rule, rather
+that exact alignment since the line no longer fits. Single-level
+blockquotes render with their `>` marker stripped and a left rule, rather
 than leaking the literal `>` character as visible text. Nested lists,
 footnotes, and raw HTML beyond `<img>` remain out of scope.
+
+**`mermaid` fences are the one exception to "legible text, not a real
+diagram."** A ```` ```mermaid ```` block renders as a real diagram image,
+produced by an actual Mermaid layout engine running in a headless Chromium
+(via `@mermaid-js/mermaid-cli` + Puppeteer, launched once per document and
+shared across every diagram in it). This adds a real dependency: Puppeteer
+downloads its own Chromium binary at install time (a few hundred MB, one
+time, regardless of whether a given document uses mermaid), and each
+conversion of a document containing a mermaid fence launches a local
+headless browser process — no document content ever leaves the machine
+(fully local, no network calls), but the Chromium binary itself is a
+real, non-trivial addition to what is otherwise a lightweight tool. If the
+diagram fails to render (malformed Mermaid syntax, a rendering-engine
+error) the fence falls back to the same legible-source-text rendering as
+every other language, rather than aborting the whole document.
 
 ## Output contract
 
@@ -102,11 +113,6 @@ footnotes, and raw HTML beyond `<img>` remain out of scope.
   simplify the source, not a bug here. A fenced code block immediately
   inside a single-level blockquote is the one nested case handled — it's
   unwrapped into its own code block rather than left as literal quoted text.
-- **Expecting a fenced Mermaid diagram to render as a visual chart** — it
-  renders as its literal, legibly-formatted source text instead. A document
-  that needs the diagram itself visible in the PDF should render it to an
-  image first (e.g. via `svg-charts` or an external Mermaid renderer) and
-  embed that, rather than relying on this converter to interpret the fence.
 - **A general-purpose SVG file** — the embedded SVG renderer only covers the
   shape/text primitives this suite's own `svg-charts` skill produces; an
   arbitrary complex SVG (gradients, filters, clip paths, external fonts) will

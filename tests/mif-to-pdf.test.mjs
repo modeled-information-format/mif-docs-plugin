@@ -504,7 +504,7 @@ test('regression: an ordinary prose prefix before a colon does not falsely count
   }
 });
 
-test('regression: a fenced code block (e.g. Mermaid) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
+test('regression: a fenced code block (e.g. Python) renders as legible line-preserving monospace text, not a single flattened paragraph with literal ``` markers', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
   const input = join(tmp, 'doc.json');
   const out = join(tmp, 'out.pdf');
@@ -515,7 +515,7 @@ test('regression: a fenced code block (e.g. Mermaid) renders as legible line-pre
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'Codeblock fixture',
-      content: ['# Codeblock fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '```'].join('\n'),
+      content: ['# Codeblock fixture', '', '```python', 'def cost(alpha):', '    return alpha * 10', '```'].join('\n'),
     }),
   );
   try {
@@ -528,12 +528,93 @@ test('regression: a fenced code block (e.g. Mermaid) renders as legible line-pre
       'the literal ``` fence markers must never be drawn as visible text',
     );
     assert.ok(
-      tokens.includes('pie title Cost'),
+      tokens.includes('def cost(alpha):'),
       "expected the code line to be drawn whole (line-preserving), not word-flattened into surrounding paragraph text",
     );
     assert.ok(
-      tokens.includes('    "Alpha" : 10'),
+      tokens.includes('    return alpha * 10'),
       "expected the indented code line's internal whitespace to be preserved exactly",
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+// A ```mermaid fence is the one language that does NOT follow the
+// legible-text path above — see drawMermaidBlock in mif-to-pdf.mjs. These
+// two tests spawn the real converter (not a mock), which launches a real
+// headless Chromium via Puppeteer to render the diagram — slower than the
+// rest of this suite, but a mocked renderer would not have caught either
+// of the two real defects this feature already went through (see
+// mermaidConfig.quadrantChart.chartWidth in mif-to-pdf.mjs): both were
+// only visible in actual rendered pixel output.
+function pageHasEmbeddedImage(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const resources = doc.context.lookup(page.node.get(PDFName.of('Resources')));
+  const xObjectDict = resources && doc.context.lookup(resources.get(PDFName.of('XObject')));
+  if (!xObjectDict) return false;
+  return xObjectDict.keys().some((key) => {
+    const xObject = doc.context.lookup(xObjectDict.get(key));
+    return xObject?.dict?.get(PDFName.of('Subtype'))?.toString() === '/Image';
+  });
+}
+
+test('regression: a ```mermaid fence renders as a real embedded diagram image, not literal source text', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-graphic',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Mermaid graphic fixture',
+      content: ['# Mermaid graphic fixture', '', '```mermaid', 'pie title Cost', '    "Alpha" : 10', '    "Beta" : 20', '```'].join(
+        '\n',
+      ),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    assert.ok(
+      pageHasEmbeddedImage(doc, 0),
+      'expected the mermaid diagram to be embedded as a real PDF image XObject',
+    );
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.some((t) => t.includes('pie title') || t.includes('```')),
+      'the mermaid source text must not also be drawn as literal text once it renders as an image',
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression: a ```mermaid fence with invalid diagram syntax falls back to legible source text instead of crashing the whole conversion', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:mermaid-fallback',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Mermaid fallback fixture',
+      content: ['# Mermaid fallback fixture', '', '```mermaid', 'this is not valid mermaid syntax at all', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.includes('this is not valid mermaid syntax at all'),
+      'expected the unrenderable mermaid source to fall back to legible literal text rather than being silently dropped',
     );
   } finally {
     rmSync(tmp, { recursive: true, force: true });

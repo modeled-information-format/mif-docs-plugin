@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-15T23:00:01.718Z'
+modified: '2026-07-16T13:20:54.050Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -32,7 +32,7 @@ provenance:
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.211
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,29 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.0] - 2026-07-16
+
+### Added
+
+- `mif-to-pdf`: a ```` ```mermaid ```` fence now renders as a real diagram
+  image instead of legible source text. A live Mermaid layout engine (a
+  headless Chromium launched via `@mermaid-js/mermaid-cli` + Puppeteer, one
+  browser per document, shared across every diagram in it, launched only
+  when a document actually contains a mermaid fence) renders the diagram to
+  PNG and embeds it exactly as any other figure. On any render failure
+  (malformed Mermaid syntax, a rendering-engine error) the fence falls back
+  to the previous legible-source-text rendering rather than aborting the
+  whole document. `quadrantChart`'s label overflow (Mermaid's own quadrant
+  renderer does not wrap long labels) is worked around with an explicit
+  `mermaidConfig.quadrantChart.chartWidth/chartHeight`, verified against a
+  real 48-character label that was previously clipped mid-word.
+
+  This is a real new dependency, not a drop-in: Puppeteer downloads its own
+  Chromium binary at install time (a few hundred MB, one time, regardless
+  of whether a given document uses mermaid). No network calls happen at
+  conversion time — rendering is fully local — but every install of this
+  plugin now carries that binary.
 
 ## [0.6.3] - 2026-07-15
 

@@ -19,18 +19,43 @@
 // losslessly: h1-h3, paragraphs, flat bullet lists, tables, inline code,
 // bold, links/autolinks, plus image embeds (`![alt](path)` /
 // `<img src="path" alt="...">`) since svg-charts and every genre that uses
-// it produce those. Two constructs outside that round-trip-safe subset are
+// it produce those. Constructs outside that round-trip-safe subset are
 // still handled defensively, since real documents (e.g. the default
 // embedded-Mermaid convention most genres use for charts) contain them:
-// fenced code blocks render as a literal monospace block (including Mermaid
-// source — this converter does not render Mermaid diagrams as graphics, only
-// as their literal text) and single-level blockquotes render with their `>`
-// marker stripped. Nested lists, footnotes, and raw HTML beyond `<img>` are
-// still out of scope.
+// fenced code blocks render as a literal monospace block, EXCEPT a
+// ```mermaid fence, which renders as a real diagram image via a live
+// Mermaid layout engine (a Puppeteer-controlled headless Chromium — see
+// renderMermaidToPng); on any render failure it falls back to the same
+// literal-source-text rendering as every other language. Single-level
+// blockquotes render with their `>` marker stripped. Nested lists,
+// footnotes, and raw HTML beyond `<img>` are still out of scope.
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename, extname, dirname, resolve as resolvePath } from "node:path";
 import { pathToFileURL } from "node:url";
 import { PDFDocument, PDFName, PDFString, PDFRawStream, StandardFonts, rgb } from "pdf-lib";
+import puppeteer from "puppeteer";
+import { renderMermaid } from "@mermaid-js/mermaid-cli";
+
+// Renders one Mermaid diagram to PNG bytes using a real Mermaid layout
+// engine running in a Puppeteer-controlled browser (see main() for the
+// shared browser instance's lifecycle). PNG output is auto-cropped to the
+// diagram's real bounding box, so a generous fixed viewport costs nothing
+// for small diagrams. quadrantChart specifically needs an explicit
+// chartWidth/chartHeight bump too, not just a bigger viewport: it does not
+// wrap long quadrant labels, and its own internal layout (not the
+// screenshot canvas) is what determines whether a long label overlaps a
+// neighboring element or the diagram's own bounding box — verified against
+// a real 48-character quadrant label that was clipped mid-word at the
+// default chart size and rendered fully once chartWidth/chartHeight were
+// widened.
+async function renderMermaidToPng(browser, definition) {
+  const { data } = await renderMermaid(browser, definition, "png", {
+    viewport: { width: 1400, height: 1000, deviceScaleFactor: 2 },
+    backgroundColor: "white",
+    mermaidConfig: { quadrantChart: { chartWidth: 900, chartHeight: 700 } },
+  });
+  return Buffer.from(data);
+}
 
 const PAGE_WIDTH = 612; // US Letter, points
 const PAGE_HEIGHT = 792;
@@ -531,6 +556,24 @@ function makeRenderer(doc, fonts) {
     y -= LINE_HEIGHT / 2;
   }
 
+  // Shared by drawImageBlock (bytes read from a figure file) and
+  // drawMermaidBlock (bytes rendered in-memory by a real Mermaid layout
+  // engine) — both end up with a PNG's raw bytes and need the identical
+  // embed/scale-to-fit/draw/caption sequence.
+  async function drawPngBytes(bytes, alt) {
+    const image = await doc.embedPng(bytes);
+    const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
+    const w = image.width * scale;
+    const h = image.height * scale;
+    ensureSpace(h + LINE_HEIGHT);
+    page.drawImage(image, { x: MARGIN, y: y - h, width: w, height: h });
+    y -= h + 4;
+    if (alt) {
+      drawParagraphRuns([{ text: alt }], { size: BODY_SIZE - 2 });
+    }
+    y -= LINE_HEIGHT / 2;
+  }
+
   async function drawImageBlock(src, alt, baseDir) {
     const resolved = resolvePath(baseDir, src);
     if (!existsSync(resolved)) {
@@ -544,24 +587,47 @@ function makeRenderer(doc, fonts) {
       return;
     }
     const bytes = readFileSync(resolved);
-    let image;
     try {
-      image = ext === ".jpg" || ext === ".jpeg" ? await doc.embedJpg(bytes) : await doc.embedPng(bytes);
+      if (ext === ".jpg" || ext === ".jpeg") {
+        const image = await doc.embedJpg(bytes);
+        const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
+        const w = image.width * scale;
+        const h = image.height * scale;
+        ensureSpace(h + LINE_HEIGHT);
+        page.drawImage(image, { x: MARGIN, y: y - h, width: w, height: h });
+        y -= h + 4;
+        if (alt) drawParagraphRuns([{ text: alt }], { size: BODY_SIZE - 2 });
+        y -= LINE_HEIGHT / 2;
+      } else {
+        await drawPngBytes(bytes, alt);
+      }
     } catch (e) {
       ensureSpace(LINE_HEIGHT);
       drawParagraphRuns([{ text: `[unsupported figure format: ${src} (${e.message})]`, code: true }]);
-      return;
     }
-    const scale = Math.min(1, MAX_WIDTH / image.width, MAX_HEIGHT / image.height);
-    const w = image.width * scale;
-    const h = image.height * scale;
-    ensureSpace(h + LINE_HEIGHT);
-    page.drawImage(image, { x: MARGIN, y: y - h, width: w, height: h });
-    y -= h + 4;
-    if (alt) {
-      drawParagraphRuns([{ text: alt }], { size: BODY_SIZE - 2 });
+  }
+
+  // Renders a fenced ```mermaid block as a real diagram image via a live
+  // Mermaid layout engine (see renderMermaidToPng), instead of legible
+  // source text. `browser` is a shared, already-launched Puppeteer instance
+  // (see main()) — launching one per diagram would cost ~1-2s of Chromium
+  // startup each. On any rendering failure (malformed diagram syntax,
+  // browser crash, etc.) this falls back to the same literal-source-text
+  // rendering used for every other fenced code block, rather than aborting
+  // the whole document — a bad diagram in one block should not lose the
+  // rest of a document's content.
+  async function drawMermaidBlock(lines, browser) {
+    const definition = lines.join("\n");
+    if (browser) {
+      try {
+        const bytes = await renderMermaidToPng(browser, definition);
+        await drawPngBytes(bytes, null);
+        return;
+      } catch (e) {
+        console.warn(`mif-to-pdf: mermaid render failed, falling back to source text: ${e.message}`);
+      }
     }
-    y -= LINE_HEIGHT / 2;
+    drawCodeBlock(lines, "mermaid");
   }
 
   return {
@@ -572,6 +638,7 @@ function makeRenderer(doc, fonts) {
     drawCodeBlock,
     drawBlockquote,
     drawImageBlock,
+    drawMermaidBlock,
     getY: () => y,
     setY: (v) => (y = v),
     ensureSpace,
@@ -951,14 +1018,26 @@ async function main() {
   const leading = blocks[0]?.type === "heading" && blocks[0].level === 1 ? blocks[0] : null;
   const bodyOpensWithTitle = leading && headingRestatesTitle(leading.text, title);
   if (!bodyOpensWithTitle) renderer.drawHeading(title, 1);
-  for (const block of blocks) {
-    if (block.type === "heading") renderer.drawHeading(block.text, block.level);
-    else if (block.type === "paragraph") renderer.drawParagraph(block.text);
-    else if (block.type === "list") renderer.drawList(block.items);
-    else if (block.type === "table") renderer.drawTable(block.rows);
-    else if (block.type === "codeblock") renderer.drawCodeBlock(block.lines, block.lang);
-    else if (block.type === "blockquote") renderer.drawBlockquote(block.text);
-    else if (block.type === "image") await renderer.drawImageBlock(block.src, block.alt, baseDir);
+
+  // A browser is only launched (Chromium startup costs ~1-2s) when the
+  // document actually has a mermaid fence to render; every other document
+  // never pays this cost. Shared across every mermaid block in this
+  // document rather than one browser per diagram.
+  const hasMermaid = blocks.some((b) => b.type === "codeblock" && b.lang === "mermaid");
+  const browser = hasMermaid ? await puppeteer.launch() : null;
+  try {
+    for (const block of blocks) {
+      if (block.type === "heading") renderer.drawHeading(block.text, block.level);
+      else if (block.type === "paragraph") renderer.drawParagraph(block.text);
+      else if (block.type === "list") renderer.drawList(block.items);
+      else if (block.type === "table") renderer.drawTable(block.rows);
+      else if (block.type === "codeblock" && block.lang === "mermaid") await renderer.drawMermaidBlock(block.lines, browser);
+      else if (block.type === "codeblock") renderer.drawCodeBlock(block.lines, block.lang);
+      else if (block.type === "blockquote") renderer.drawBlockquote(block.text);
+      else if (block.type === "image") await renderer.drawImageBlock(block.src, block.alt, baseDir);
+    }
+  } finally {
+    if (browser) await browser.close();
   }
 
   setInfoDictionary(doc, jsonld, title);
