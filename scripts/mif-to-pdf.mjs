@@ -32,7 +32,23 @@
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { basename, extname, dirname, resolve as resolvePath } from "node:path";
 import { pathToFileURL } from "node:url";
-import { PDFDocument, PDFName, PDFString, PDFRawStream, StandardFonts, rgb } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFName,
+  PDFString,
+  PDFHexString,
+  PDFRawStream,
+  StandardFonts,
+  rgb,
+  pushGraphicsState,
+  popGraphicsState,
+  beginText,
+  endText,
+  showText,
+  setFontAndSize,
+  setTextRenderingMode,
+  TextRenderingMode,
+} from "pdf-lib";
 import puppeteer from "puppeteer";
 import { renderMermaid } from "@mermaid-js/mermaid-cli";
 
@@ -325,24 +341,58 @@ const currentPageFont = new WeakMap();
 // actually use.
 //
 // This closes word-level smashing everywhere, but NOT line/row-boundary
-// loss: a multi-line code block or a multi-row table still naive-extracts
-// as one continuous space-separated run, since a naive extractor has no way
-// to distinguish "next word on this line" from "next line entirely" once
-// only spaces separate every call. A `\n` appended to pdf-lib's drawText
-// does not fix this — verified empirically that pdf-lib splits the string
-// on `\n` and draws the pieces as separate Tj operations with the newline
-// character itself discarded, never surviving into the shown content, so a
-// naive extractor still sees nothing between them. Actually preserving
-// line/row boundaries in naive-extracted text needs either hand-built
-// content-stream operators (bypassing drawText) or real Tagged-PDF marked
-// content — tracked separately rather than attempted here under a bugfix
-// PR whose scope is closing the word-smashing defect.
+// loss: only spaces separate every call, and a naive extractor has no way
+// to distinguish "next word on this line" from "next line entirely".
+// Line/row boundaries are restored by drawLineBreak below — see its
+// comment for why drawText itself cannot do it.
 function drawTextTracked(page, text, { x, y, size, font, color }) {
   if (currentPageFont.get(page) !== font) {
     page.setFont(font);
     currentPageFont.set(page, font);
   }
   page.drawText(`${text} `, { x, y, size, color });
+}
+
+// Emits an invisible text-show operation whose shown string is a single
+// literal newline byte into the page's content stream:
+//
+//   q BT /F<key> <size> Tf 3 Tr <0A> Tj ET Q
+//
+// pdf-lib's high-level drawText cannot produce this: it splits its input
+// on `\n` and discards the character itself before it ever reaches the
+// shown content (the newline degrades to an empty `<> Tj`, verified
+// empirically against the real content stream — issue #142). So the
+// operators are pushed directly. Text rendering mode 3 (Invisible)
+// guarantees no glyph is ever painted regardless of how the font maps
+// byte 0x0A, and the q/Q wrapper keeps the mode (and font) change from
+// leaking into subsequent draws — while naive text extractors (copy-paste
+// in most PDF viewers, non-layout pdftotext, screen readers, anything
+// that concatenates shown strings in stream order) see a real line
+// separator. This is what makes multi-line code blocks and multi-row
+// tables distinguishable line-by-line/row-by-row in extracted text, which
+// a trailing space alone cannot do.
+//
+// The explicit Tf matters for validity: a Tj with no font set in the
+// current graphics state is malformed PDF, and drawText's own Tf is
+// wrapped in q/Q so it does not survive into this operation. page.fontKey
+// is pdf-lib-internal state (the resource key page.setFont registered),
+// but it is the only handle to the current font's resource name, and
+// pdf-lib is exact-pinned in package.json. The font/size tracking mirrors
+// drawTextTracked so no duplicate font resources are created.
+function drawLineBreak(page, { size, font }) {
+  if (currentPageFont.get(page) !== font) {
+    page.setFont(font);
+    currentPageFont.set(page, font);
+  }
+  page.pushOperators(
+    pushGraphicsState(),
+    beginText(),
+    setFontAndSize(page.fontKey, size),
+    setTextRenderingMode(TextRenderingMode.Invisible),
+    showText(PDFHexString.of("0A")),
+    endText(),
+    popGraphicsState(),
+  );
 }
 
 function makeRenderer(doc, fonts) {
@@ -472,11 +522,15 @@ function makeRenderer(doc, fonts) {
     if (lang) {
       ensureSpace(lh);
       drawTextTracked(page, `[${lang}]`, { x: MARGIN, y, size: size - 1, font: fonts.bold, color: rgb(0.45, 0.45, 0.45) });
+      drawLineBreak(page, { size: size - 1, font: fonts.bold });
       y -= lh;
     }
     const emit = (text) => {
       ensureSpace(lh);
       drawTextTracked(page, text, { x: indent, y, size, font: fonts.mono, color: rgb(0.2, 0.2, 0.2) });
+      // Each drawn code line ends with a real newline in the extractable
+      // text, so a multi-line block stays line-separable (issue #142).
+      drawLineBreak(page, { size, font: fonts.mono });
       y -= lh;
     };
     for (const raw of lines.length ? lines : [""]) {
@@ -545,6 +599,9 @@ function makeRenderer(doc, fonts) {
           cellY -= cellSize + 4;
         }
       }
+      // Each table row ends with a real newline in the extractable text,
+      // so rows stay separable in naive extraction (issue #142).
+      drawLineBreak(page, { size: cellSize, font: wrappedRow[0]?.[0]?.font ?? cellFont.regular });
       page.drawLine({
         start: { x: MARGIN, y: rowTop - rowHeight },
         end: { x: MARGIN + MAX_WIDTH, y: rowTop - rowHeight },
