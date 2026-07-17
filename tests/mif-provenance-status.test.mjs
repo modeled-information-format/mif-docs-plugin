@@ -138,6 +138,30 @@ test("status: capture on with a matching session_start line exits 0 as healthy",
   }
 });
 
+test("status: capture on with a synthesized session_start line (issue #148) reports healthy and explains the synthesis", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    ledgerLines: [
+      {
+        v: 1,
+        event: "session_start",
+        sessionId: "s1",
+        ts: "2026-01-01T00:00:00Z",
+        synthesizedFrom: "post-tool-use:non-git-launch-cwd",
+      },
+    ],
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /hooks are wired and witnessing this session/);
+    assert.match(r.stdout, /synthesized by PostToolUse/);
+    assert.match(r.stdout, /not a wiring problem/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
 test("status: capture on with a session_start for a DIFFERENT session still exits 1", () => {
   const { base, home, cwd, ledgerFile } = fixture({
     captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
