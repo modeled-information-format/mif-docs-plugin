@@ -40,14 +40,17 @@ const REAL_HOOKS_HASH = `sha256:${createHash("sha256")
   .update(readFileSync(join(root, "hooks", "hooks.json")))
   .digest("hex")}`;
 
-function fixture({ captureSetting, ledgerLines } = {}) {
+function fixture({ captureSetting, projectLocalSetting, ledgerLines } = {}) {
   const base = mkdtempSync(join(tmpdir(), "prov-status-"));
   const home = join(base, "home");
   const cwd = join(base, "project");
   mkdirSync(join(home, ".claude"), { recursive: true });
-  mkdirSync(cwd, { recursive: true });
+  mkdirSync(join(cwd, ".claude"), { recursive: true });
   if (captureSetting !== undefined) {
     writeFileSync(join(home, ".claude", "settings.json"), JSON.stringify(captureSetting));
+  }
+  if (projectLocalSetting !== undefined) {
+    writeFileSync(join(cwd, ".claude", "settings.local.json"), JSON.stringify(projectLocalSetting));
   }
   const ledgerFile = join(base, "session.jsonl");
   if (ledgerLines) {
@@ -84,6 +87,38 @@ test("status: capture on but no session_start line exits 1 with the restart mess
     assert.equal(r.status, 1, r.stderr);
     assert.match(r.stdout, /no session_start line found/);
     assert.match(r.stdout, /restart your Claude Code session/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: stamp explicitly off with no session_start line exits 0 with the working-as-designed message (issue #121)", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "off" } },
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.doesNotMatch(r.stdout, /no session_start line found/);
+    assert.match(r.stdout, /no session_start line is expected/);
+    assert.match(r.stdout, /stamping is disabled by configuration/);
+    assert.doesNotMatch(r.stdout, /hooks have not fired/);
+    assert.doesNotMatch(r.stdout, /restart your Claude Code session/);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("status: project-local settings.local.json stamp off (the issue #121 scenario) beats a user-scope enable and exits 0", () => {
+  const { base, home, cwd, ledgerFile } = fixture({
+    captureSetting: { mifProvenance: { capture: true, stamp: "auto" } },
+    projectLocalSetting: { mifProvenance: { stamp: "off" } },
+  });
+  try {
+    const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /stamping is disabled by configuration/);
+    assert.doesNotMatch(r.stdout, /hooks have not fired/);
   } finally {
     rmSync(base, { recursive: true, force: true });
   }
