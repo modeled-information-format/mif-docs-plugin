@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-16T13:20:54.050Z'
+modified: '2026-07-17T05:32:58.630Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,12 +27,12 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
+    '@id': urn:mif:activity:claude-code-session:7fd4dd25-8796-4998-b2db-713660c032f9
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.211
+  agentVersion: 2.1.212
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,25 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.1] - 2026-07-17
+
+### Fixed
+
+- `mif-provenance status` now distinguishes a deliberately-disabled stamp
+  (`mifProvenance.stamp` resolves to `"off"` with capture on) from actually-
+  broken hook wiring: a missing `session_start` line is working-as-designed
+  in the former case and now reports non-alarmingly with exit 0, instead of
+  the broken-hooks restart message and exit 1 both cases previously shared
+  (#121, #144).
+- `mif-to-pdf`'s naive PDF text extraction lost line and table-row
+  boundaries in multi-line code blocks and table rows: `pdf-lib`'s
+  `drawText` splits on `\n` and discards the character itself, so no line
+  separator ever reached the extracted content. A new `drawLineBreak` pushes
+  a low-level invisible-newline content-stream operator after every drawn
+  code-block line and table row, so naive extractors that concatenate shown
+  strings in stream order now see the same line/row boundaries a real
+  reader would (#145).
 
 ## [0.7.0] - 2026-07-16
 
