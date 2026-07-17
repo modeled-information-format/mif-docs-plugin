@@ -22,8 +22,11 @@
 // witnessed touching the document, so cross-session attribution is
 // structurally impossible.
 //
-// Exit codes: 0 stamped/match (status: healthy); 1 verify drift (status:
-// capture is on but this session's hooks have not witnessed anything yet, or
+// Exit codes: 0 stamped/match (status: healthy, capture off, or stamp
+// deliberately "off" by configuration — issue #121: a missing session_start
+// under stamp:"off" is working-as-designed, not broken wiring); 1 verify
+// drift (status: capture is on, stamp enabled, but this session's hooks have
+// not witnessed anything yet, or
 // this plugin's hooks.json has changed since this session's session_start —
 // confirmed by direct repro (issue #90) to mean the running session may still
 // be dispatching a stale hook set); 2 usage/environment error (also covers:
@@ -123,6 +126,16 @@ if (verb === "status") {
     process.exit(0);
   }
   console.log("no session_start line found for this session in the ledger.");
+  if (cfg.stamp === "off") {
+    // Issue #121: with stamping deliberately off by configuration, the hooks
+    // were never supposed to write anything for this session — the missing
+    // line is working-as-designed, not #90's silently-broken-wiring failure.
+    console.log(
+      'stamping is disabled by configuration (mifProvenance.stamp: "off") - no session_start ' +
+        "line is expected for this session.",
+    );
+    process.exit(0);
+  }
   console.log(
     "hooks have not fired for this session yet - if you just enabled capture or updated " +
       "this plugin, restart your Claude Code session.",
