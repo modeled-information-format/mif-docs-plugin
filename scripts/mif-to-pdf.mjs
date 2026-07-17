@@ -379,15 +379,25 @@ function drawTextTracked(page, text, { x, y, size, font, color }) {
 // but it is the only handle to the current font's resource name, and
 // pdf-lib is exact-pinned in package.json. The font/size tracking mirrors
 // drawTextTracked so no duplicate font resources are created.
+//
+// The resource key is snapshotted into a local `fontKey` and guarded before
+// use: the setFont() call above populates it in every path that runs today,
+// but rather than depend on that internal contract holding forever, a
+// falsy key skips the invisible break entirely instead of emitting a
+// malformed `<> Tf` / `Tj`. Text is never smashed even then — the trailing
+// space from drawTextTracked still separates tokens; only the extra
+// line/row separator is dropped.
 function drawLineBreak(page, { size, font }) {
   if (currentPageFont.get(page) !== font) {
     page.setFont(font);
     currentPageFont.set(page, font);
   }
+  const fontKey = page.fontKey;
+  if (!fontKey) return;
   page.pushOperators(
     pushGraphicsState(),
     beginText(),
-    setFontAndSize(page.fontKey, size),
+    setFontAndSize(fontKey, size),
     setTextRenderingMode(TextRenderingMode.Invisible),
     showText(PDFHexString.of("0A")),
     endText(),
