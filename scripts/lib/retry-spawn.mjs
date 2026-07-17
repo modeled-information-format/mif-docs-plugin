@@ -56,11 +56,20 @@ function defaultSleep(ms) {
  */
 export function spawnSyncWithRetry(spawnFn, spawnArgs, opts = {}) {
   const {
-    maxAttempts = 3,
-    retryDelayMs = 50,
+    maxAttempts: rawMaxAttempts = 3,
+    retryDelayMs: rawRetryDelayMs = 50,
     sleepFn = defaultSleep,
     isTransient = isTransientSpawnError,
   } = opts;
+
+  // Guard against bad inputs (0, negative, non-integer, NaN) so a
+  // misconfigured caller gets a well-defined single spawn attempt instead of
+  // spawnFn never being called and `res` surfacing as `undefined` — which
+  // would otherwise turn into a confusing TypeError deeper in the caller.
+  const maxAttempts =
+    Number.isInteger(rawMaxAttempts) && rawMaxAttempts >= 1 ? rawMaxAttempts : 1;
+  const retryDelayMs =
+    Number.isFinite(rawRetryDelayMs) && rawRetryDelayMs >= 0 ? rawRetryDelayMs : 0;
 
   let res;
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {

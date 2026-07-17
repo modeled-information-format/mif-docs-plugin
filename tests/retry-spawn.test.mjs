@@ -141,6 +141,45 @@ test('isTransientSpawnError recognizes exactly the documented resource-exhaustio
   assert.equal(isTransientSpawnError(fakeResult({ status: 0 })), false, 'no error at all is not transient');
 });
 
+test('maxAttempts: 0 (or any non-positive/non-integer value) still calls spawnFn at least once instead of returning undefined', () => {
+  const success = fakeResult({ status: 0, stdout: 'ok' });
+  for (const bad of [0, -1, 1.5, NaN, 'nope', undefined, null]) {
+    let calls = 0;
+    const res = spawnSyncWithRetry(
+      () => {
+        calls += 1;
+        return success;
+      },
+      [],
+      { maxAttempts: bad, sleepFn: () => {} },
+    );
+    assert.equal(res, success, `maxAttempts=${bad} must not surface as undefined`);
+    assert.equal(calls, 1, `maxAttempts=${bad} must still invoke spawnFn exactly once`);
+  }
+});
+
+test('retryDelayMs: a negative/non-finite value is normalized to 0 instead of passed through to sleepFn', () => {
+  const transient = fakeResult({ error: Object.assign(new Error('resource'), { code: 'EAGAIN' }) });
+  const success = fakeResult({ status: 0 });
+  // `undefined` deliberately excluded: it triggers the opts destructuring
+  // default (50), which is correct pass-through behavior, not the bad-input
+  // case this test targets.
+  for (const bad of [-50, NaN, 'nope', null]) {
+    let calls = 0;
+    const delays = [];
+    const res = spawnSyncWithRetry(
+      () => {
+        calls += 1;
+        return calls < 2 ? transient : success;
+      },
+      [],
+      { maxAttempts: 2, retryDelayMs: bad, sleepFn: (ms) => delays.push(ms) },
+    );
+    assert.equal(res, success);
+    assert.deepEqual(delays, [0], `retryDelayMs=${bad} must normalize to a non-negative delay`);
+  }
+});
+
 test('scripts/lib/retry-spawn.mjs stays dependency-free (no imports)', () => {
   // Same discipline as scripts/lib/mif-identity-signal-keys.mjs: this module
   // backs a hook that fires on every Write/Edit tool call, so it must not
