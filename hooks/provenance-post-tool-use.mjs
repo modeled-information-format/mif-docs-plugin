@@ -114,6 +114,13 @@ async function main() {
       tool: "claude-code",
       toolVersion: toolVersionFrom(),
       model: modelFromTranscript(strOrNull(payload?.transcript_path)),
+      // PostToolUse's payload carries neither field a real SessionStart
+      // witnesses (`source`, `session_title`) — set explicitly to null
+      // rather than omitted, so a synthesized line has the identical key
+      // shape as a real session_start and no consumer can depend on key
+      // presence to distinguish them (only `synthesizedFrom` below does).
+      source: null,
+      sessionTitle: null,
       permissionMode: strOrNull(payload?.permission_mode),
       effort: strOrNull(payload?.effort) ?? strOrNull(process.env.CLAUDE_EFFORT),
       promptId: strOrNull(payload?.prompt_id),

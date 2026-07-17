@@ -432,6 +432,14 @@ test("issue #148: PostToolUse synthesizes a session_start line when the session'
     assert.equal(start.promptId, "p-1");
     assert.match(start.ts, /^\d{4}-\d{2}-\d{2}T/);
     assert.ok(start.git, "the repo's own git facts are witnessed, same as a real session_start");
+    assert.ok(
+      Object.hasOwn(start, "source") && start.source === null,
+      "synthesized lines keep the same key shape as a real session_start: source present, explicitly null",
+    );
+    assert.ok(
+      Object.hasOwn(start, "sessionTitle") && start.sessionTitle === null,
+      "synthesized lines keep the same key shape as a real session_start: sessionTitle present, explicitly null",
+    );
     assert.equal(touch.event, "file_touch");
     assert.equal(touch.sessionId, "s-nongit");
   } finally {
