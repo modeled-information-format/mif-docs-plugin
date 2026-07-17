@@ -29,6 +29,15 @@ import {
   isAdrCarveout,
   splitFrontmatter,
 } from '../scripts/lib/mif-genre-signal.mjs';
+// spawnSync does not throw when the OS transiently fails to launch a child
+// process (EAGAIN/ENOMEM/EMFILE/ENFILE under concurrent load — issue #146);
+// it returns a result with `.error` set and `.status` null, which used to
+// fall straight through to the generic "NOT MIF-conformant" block below,
+// fail-closed BLOCKING a perfectly conformant document over a momentary
+// resource hiccup rather than a real conformance problem. Retrying absorbs
+// that without weakening the fail-closed guarantee: a real spawn failure
+// (e.g. ENOENT) or an actual non-conformant verdict still blocks immediately.
+import { spawnSyncWithRetry } from '../scripts/lib/retry-spawn.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const pluginRoot = resolve(here, '..');
@@ -80,14 +89,26 @@ if (!split || !hasGenreSignal(front)) allow();
 // 4. Validate, fail closed.
 let res;
 try {
-  res = spawnSync('node', [validator, file, '--level', '1'], {
-    cwd: pluginRoot,
-    encoding: 'utf8',
-    timeout: 55_000,
-  });
+  res = spawnSyncWithRetry(spawnSync, [
+    'node',
+    [validator, file, '--level', '1'],
+    { cwd: pluginRoot, encoding: 'utf8', timeout: 55_000 },
+  ]);
 } catch (err) {
   block(
     `MIF fail-closed guard could not run the validator for ${file}: ${err.message}\n` +
+      `Cannot confirm MIF conformance, so the write is blocked. Run \`npm ci\` in the mif-docs plugin and retry.`,
+  );
+}
+
+// spawnSync itself doesn't throw for a failed launch (see the import
+// comment above) — after retries are exhausted, a still-unlaunched
+// validator is a real environment/tooling gap, not a conformance verdict,
+// so it gets the same "could not run" message as the throw-based catch
+// above rather than the generic non-conformance message below.
+if (res.error) {
+  block(
+    `MIF fail-closed guard could not run the validator for ${file}: ${res.error.message}\n` +
       `Cannot confirm MIF conformance, so the write is blocked. Run \`npm ci\` in the mif-docs plugin and retry.`,
   );
 }
