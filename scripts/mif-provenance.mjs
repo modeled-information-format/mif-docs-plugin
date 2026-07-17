@@ -125,17 +125,18 @@ if (verb === "status") {
     console.log("hooks are wired and witnessing this session.");
     process.exit(0);
   }
-  console.log("no session_start line found for this session in the ledger.");
   if (cfg.stamp === "off") {
     // Issue #121: with stamping deliberately off by configuration, the hooks
     // were never supposed to write anything for this session — the missing
-    // line is working-as-designed, not #90's silently-broken-wiring failure.
+    // line is working-as-designed, not #90's silently-broken-wiring failure,
+    // so don't emit the alarming "not found" wording at all.
     console.log(
       'stamping is disabled by configuration (mifProvenance.stamp: "off") - no session_start ' +
         "line is expected for this session.",
     );
     process.exit(0);
   }
+  console.log("no session_start line found for this session in the ledger.");
   console.log(
     "hooks have not fired for this session yet - if you just enabled capture or updated " +
       "this plugin, restart your Claude Code session.",

@@ -99,7 +99,8 @@ test("status: stamp explicitly off with no session_start line exits 0 with the w
   try {
     const r = runStatus({ home, cwd, ledgerFile, session: "s1" });
     assert.equal(r.status, 0, r.stderr);
-    assert.match(r.stdout, /no session_start line found/);
+    assert.doesNotMatch(r.stdout, /no session_start line found/);
+    assert.match(r.stdout, /no session_start line is expected/);
     assert.match(r.stdout, /stamping is disabled by configuration/);
     assert.doesNotMatch(r.stdout, /hooks have not fired/);
     assert.doesNotMatch(r.stdout, /restart your Claude Code session/);
