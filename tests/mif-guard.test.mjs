@@ -115,3 +115,29 @@ test('genre-signal detection derives from ONE shared predicate, not separately-m
     'scripts/lib/mif-identity-signal-keys.mjs must stay dependency-free (no imports)',
   );
 });
+
+test('the guard retries a transiently-failed validator spawn rather than blocking outright (#146)', () => {
+  // #146: under concurrent full-suite test runs, spawnSync launching the
+  // inner validator subprocess could itself transiently fail to start
+  // (EAGAIN/ENOMEM/etc. — the OS briefly out of headroom, not a real
+  // conformance problem). spawnSync doesn't throw for that; it returns
+  // `.error` set and `.status` null, which used to fall straight through to
+  // the guard's generic "NOT MIF-conformant" block. The fix must route the
+  // validator spawn through the retry wrapper, not a bare spawnSync call.
+  const guardSource = readFileSync(hook, 'utf8');
+  assert.match(
+    guardSource,
+    /from\s*['"]\.\.\/scripts\/lib\/retry-spawn\.mjs['"]/,
+    'hooks/mif-guard.mjs must import spawnSyncWithRetry from scripts/lib/retry-spawn.mjs',
+  );
+  assert.match(
+    guardSource,
+    /spawnSyncWithRetry\(\s*spawnSync\s*,/,
+    'the inner validator launch must go through spawnSyncWithRetry, not a bare spawnSync(...) call',
+  );
+  assert.ok(
+    guardSource.includes('res.error'),
+    'a still-unlaunched validator after retries must be treated as an environment/tooling gap ' +
+      '(the "could not run the validator" message), not a conformance verdict',
+  );
+});
