@@ -39,6 +39,24 @@ test('blocks a non-MIF genre document (legacy diataxis_type, no L1 floor)', () =
   assert.match(r.stderr, /NOT MIF-conformant/);
 });
 
+test('the generic non-conformance block message is well-formed, not garbled (#151)', () => {
+  // #151: the `npm ci` fallback clause was spliced onto a duplicated fragment
+  // of the earlier templates/good.md sentence, producing a dangling `)` and a
+  // repeated clause in the exact stderr text fed back to the model on block.
+  const r = runGuard(join(root, 'tests/fixtures/lightweight-non-mif.md'));
+  assert.equal(r.status, 2, 'a non-conformant genre doc must be blocked fail-closed');
+  const goodMdFragment = 'templates/good.md';
+  const occurrences = r.stderr.split(goodMdFragment).length - 1;
+  assert.equal(
+    occurrences,
+    1,
+    `the "${goodMdFragment}" fragment must appear exactly once in the block message, not duplicated`,
+  );
+  const opens = (r.stderr.match(/\(/g) || []).length;
+  const closes = (r.stderr.match(/\)/g) || []).length;
+  assert.equal(opens, closes, 'parentheses in the block message must be balanced');
+});
+
 test('ignores plain markdown with no genre frontmatter', () => {
   const r = runGuard(join(root, 'tests/fixtures/plain-no-frontmatter.md'));
   assert.equal(r.status, 0, `expected allow, got exit ${r.status}: ${r.stderr}`);
