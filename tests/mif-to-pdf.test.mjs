@@ -387,6 +387,69 @@ test('regression: naive text extraction (concatenating every drawn string with n
   }
 });
 
+test('regression: naive extraction preserves line boundaries in code blocks and row boundaries in tables (#142)', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:line-boundaries',
+      conceptType: 'semantic',
+      created: '2026-07-16T12:00:00Z',
+      title: 'Line boundary fixture',
+      content: [
+        '# Line boundary fixture',
+        '',
+        '```js',
+        'firstCodeLine();',
+        'secondCodeLine();',
+        'thirdCodeLine();',
+        '```',
+        '',
+        '| Name | Share |',
+        '| --- | --- |',
+        '| AlphaRow | 22% |',
+        '| BetaRow | 18% |',
+      ].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+    // The same consumer class as the smashed-words regression above: shown
+    // strings concatenated in content-stream order, no geometric
+    // reconstruction. drawLineBreak's invisible `<0A> Tj` markers are what
+    // put real newlines into this view — pdf-lib's drawText itself discards
+    // any `\n` before it reaches the shown content.
+    const naive = rawDecodedTextTokens(doc, 0).join('');
+    const lines = naive.split('\n').map((l) => l.trim());
+
+    // (a) a 3-line fenced code block extracts as 3 distinguishable lines
+    for (const expected of ['firstCodeLine();', 'secondCodeLine();', 'thirdCodeLine();']) {
+      assert.ok(
+        lines.includes(expected),
+        `expected ${JSON.stringify(expected)} to be its own naive-extracted line, got lines: ${JSON.stringify(lines)}`,
+      );
+    }
+
+    // (b) table rows are separable: no naive-extracted line carries two rows
+    const alphaLine = lines.find((l) => l.includes('AlphaRow'));
+    const betaLine = lines.find((l) => l.includes('BetaRow'));
+    assert.ok(alphaLine && betaLine, `expected both table data rows in naive extraction, got lines: ${JSON.stringify(lines)}`);
+    assert.notEqual(alphaLine, betaLine, 'expected the two table rows on distinct naive-extracted lines');
+    assert.ok(!alphaLine.includes('BetaRow'), `expected a row boundary between table rows, got: ${JSON.stringify(alphaLine)}`);
+    assert.equal(alphaLine, 'AlphaRow 22%', 'expected the row to read as its own cells, space-separated');
+    assert.equal(betaLine, 'BetaRow 18%', 'expected the row to read as its own cells, space-separated');
+    // header row separable from data rows too
+    const headerLine = lines.find((l) => l.includes('Name') && l.includes('Share'));
+    assert.ok(headerLine && !headerLine.includes('AlphaRow'), `expected the header row on its own line, got: ${JSON.stringify(headerLine)}`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('regression: no duplicate title when the body opens with an H1 matching the frontmatter title', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
   const input = join(tmp, 'doc.json');
