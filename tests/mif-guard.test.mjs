@@ -52,9 +52,23 @@ test('the generic non-conformance block message is well-formed, not garbled (#15
     1,
     `the "${goodMdFragment}" fragment must appear exactly once in the block message, not duplicated`,
   );
-  const opens = (r.stderr.match(/\(/g) || []).length;
-  const closes = (r.stderr.match(/\)/g) || []).length;
-  assert.equal(opens, closes, 'parentheses in the block message must be balanced');
+  // Scope the parentheses-balance check to the guard's own guidance
+  // paragraph, not the whole stderr — r.stderr also embeds mif-validate's
+  // `detail` output verbatim (see hooks/mif-guard.mjs), and that upstream
+  // text is free to contain its own unrelated (and not necessarily
+  // balanced) parentheses. Checking the full stderr would make this
+  // regression test brittle to unrelated changes in mif-validate's error
+  // formatting.
+  const guidanceMarker = 'This document was produced';
+  const guidanceStart = r.stderr.indexOf(guidanceMarker);
+  assert.ok(
+    guidanceStart !== -1,
+    `expected the guard's guidance paragraph ("${guidanceMarker}...") to appear in the block message`,
+  );
+  const guidance = r.stderr.slice(guidanceStart);
+  const opens = (guidance.match(/\(/g) || []).length;
+  const closes = (guidance.match(/\)/g) || []).length;
+  assert.equal(opens, closes, 'parentheses in the guard\'s guidance paragraph must be balanced');
 });
 
 test('ignores plain markdown with no genre frontmatter', () => {
