@@ -29,24 +29,34 @@
 
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
-import { dirname, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { resolveProvenanceConfig } from "../scripts/lib/provenance-config.mjs";
 import {
   appendLedgerLine,
   canonicalPath,
+  envFacts,
   findGitDir,
   gitFacts,
+  hooksManifestHash,
   ledgerPath,
   modelFromTranscript,
   readLedger,
   sessionStartOf,
   strOrNull,
+  sysFacts,
   toolVersionFrom,
   SESSION_ENV_VAR,
 } from "../scripts/lib/provenance-ledger.mjs";
 import { isMifGenreText } from "../scripts/lib/mif-genre-signal.mjs";
 
 const CAPTURED_TOOLS = new Set(["Write", "Edit", "MultiEdit"]);
+
+// This file's own directory is always where this plugin's hooks.json lives —
+// resolved from import.meta.url the same way provenance-session-start.mjs
+// does, so the drift hash synthesized below (issue #148) matches what the
+// real SessionStart hook would have hashed.
+const HOOKS_JSON_PATH = join(dirname(fileURLToPath(import.meta.url)), "hooks.json");
 
 // CI detection for the ask-mode degradation: the conventional CI variable,
 // but not the explicit "this is NOT CI" spellings some toolchains export.
@@ -74,6 +84,54 @@ async function main() {
   if (!gitDir) return; // outside a git repository, capture disables — no alternative store
 
   const sessionId = strOrNull(payload?.session_id) ?? strOrNull(process.env[SESSION_ENV_VAR]);
+  const ledgerFile = ledgerPath(gitDir);
+
+  // Issue #148: the SessionStart hook resolves ITS git dir from the
+  // session's own launch cwd, not from any touched file. When that launch
+  // cwd is not itself inside a git repository — the common shape of a bare
+  // multi-repo workspace root (clones under repos/, worktrees under
+  // worktrees/) — findGitDir(cwd) there returns null and SessionStart writes
+  // nothing, anywhere: no ledger this session ever touches can get a
+  // session_start line from it, which is indistinguishable from broken hook
+  // wiring (issue #90) to `mif-provenance status` or the wiring warning
+  // below. That is a genuinely different, unrecoverable-by-restart case from
+  // the already-documented "session parked in repo A, editing repo B" shape
+  // (docs/reference/provenance-ledger.md's "Which repository" section),
+  // where a real session_start DID land somewhere, just not in every ledger
+  // this session touches — so this check is deliberately narrow: only when
+  // the launch cwd is confirmed non-git. Detected and replayed here, at the
+  // first touch to THIS repo's ledger, rather than warned about — it is
+  // expected topology, not a defect to restart away.
+  const sessionLaunchedOutsideGit = sessionId ? !findGitDir(cwd) : false;
+  let ledgerLines = null; // lazily read at most once per invocation
+  const readLedgerOnce = () => (ledgerLines ??= readLedger(ledgerFile));
+
+  if (sessionLaunchedOutsideGit && !sessionStartOf(readLedgerOnce(), sessionId)) {
+    appendLedgerLine(gitDir, {
+      event: "session_start",
+      sessionId,
+      ts: new Date().toISOString(),
+      tool: "claude-code",
+      toolVersion: toolVersionFrom(),
+      model: modelFromTranscript(strOrNull(payload?.transcript_path)),
+      permissionMode: strOrNull(payload?.permission_mode),
+      effort: strOrNull(payload?.effort) ?? strOrNull(process.env.CLAUDE_EFFORT),
+      promptId: strOrNull(payload?.prompt_id),
+      agentId: strOrNull(payload?.agent_id),
+      agentType: strOrNull(payload?.agent_type),
+      transcriptPath: strOrNull(payload?.transcript_path),
+      cwd,
+      env: envFacts(),
+      sys: sysFacts(),
+      git: gitFacts(gitDir),
+      hooksHash: hooksManifestHash(HOOKS_JSON_PATH),
+      // Marks this line as replayed by PostToolUse rather than witnessed by
+      // the real SessionStart hook, and why — `status` reads this to explain
+      // the line instead of just reporting it as ordinarily healthy.
+      synthesizedFrom: "post-tool-use:non-git-launch-cwd",
+    });
+    ledgerLines = null; // force a fresh read below so it sees the line just appended
+  }
 
   // Read BEFORE this touch is appended below: a missing session_start for
   // this session, even though a capture hook is running right now, is a
@@ -84,11 +142,13 @@ async function main() {
   // surface downstream when stamping is enabled (the "off" early-return
   // below never reaches it), so skip this extra full-ledger read entirely
   // on the capture-only path — that's the path this file's header promises
-  // stays as light as mif-guard's.
+  // stays as light as mif-guard's. (The synthesis above already forced one
+  // read when the launch cwd is non-git; this reuses it instead of reading
+  // twice.)
   const sessionStartMissing =
     cfg.stamp !== "off" &&
     !!sessionId &&
-    !sessionStartOf(readLedger(ledgerPath(gitDir)), sessionId);
+    !sessionStartOf(sessionLaunchedOutsideGit ? readLedgerOnce() : readLedger(ledgerFile), sessionId);
 
   // One read serves the hash, the size, and the genre check.
   let contentBuf = null;

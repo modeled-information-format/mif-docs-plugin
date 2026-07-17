@@ -373,8 +373,128 @@ test("a touch is witnessed in the FILE's repository ledger, not the session cwd'
     assert.equal(r.status, 0, r.stderr);
     const ledger = join(repo, ".git", "ai-provenance", "session.jsonl");
     assert.ok(existsSync(ledger), "the witness lives where the lookup happens: the file's repo");
-    const line = JSON.parse(readFileSync(ledger, "utf8").trim());
-    assert.equal(line.event, "file_touch");
+    // `project` (the session cwd here) is itself outside any git repository -
+    // issue #148's exact shape - so this ledger also gets a synthesized
+    // session_start ahead of the file_touch; see the dedicated #148 tests
+    // below for that behavior on its own.
+    const lines = ledgerLines(repo);
+    const touch = lines.find((l) => l.event === "file_touch");
+    assert.ok(touch, "the touch itself is still witnessed");
+    assert.equal(touch.sessionId, "s-abc");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+// Issue #148: a session launched from a cwd that is not itself inside any git
+// repository (the modeled-information-format workspace's own layout: a bare
+// root, clones under repos/, worktrees under worktrees/) means the real
+// SessionStart hook — which resolves its git dir from that launch cwd — has
+// nowhere to write and writes nothing, anywhere. Every per-repo ledger the
+// session later touches via PostToolUse would otherwise carry captures for a
+// session whose session_start was never recorded anywhere, indistinguishable
+// from the issue #90 broken-wiring signal. PostToolUse now detects that
+// specific, narrow condition and synthesizes/replays a session_start line
+// into the touched file's own repo ledger before the file_touch it precedes.
+test("issue #148: PostToolUse synthesizes a session_start line when the session's launch cwd is outside any git repository", () => {
+  const { base, home, project } = fixture({ settings: ENABLED, withGit: false });
+  try {
+    const repo = join(base, "sibling-repo");
+    mkdirSync(join(repo, ".git"), { recursive: true });
+    const doc = join(repo, "doc.md");
+    writeFileSync(doc, "# in the sibling repo\n");
+    const r = runHook(
+      HOOKS.post,
+      {
+        session_id: "s-nongit",
+        cwd: project,
+        tool_name: "Write",
+        tool_input: { file_path: doc },
+        prompt_id: "p-1",
+        permission_mode: "acceptEdits",
+      },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const lines = ledgerLines(repo);
+    assert.equal(lines.length, 2, "a synthesized session_start precedes the file_touch");
+    const [start, touch] = lines;
+    assert.equal(start.event, "session_start");
+    assert.equal(start.sessionId, "s-nongit");
+    assert.equal(start.tool, "claude-code");
+    assert.equal(start.cwd, project, "the session's real launch cwd is recorded, even though it isn't this repo");
+    assert.equal(
+      start.synthesizedFrom,
+      "post-tool-use:non-git-launch-cwd",
+      "readers must be able to tell this apart from a real SessionStart witness",
+    );
+    assert.equal(start.permissionMode, "acceptEdits");
+    assert.equal(start.promptId, "p-1");
+    assert.match(start.ts, /^\d{4}-\d{2}-\d{2}T/);
+    assert.ok(start.git, "the repo's own git facts are witnessed, same as a real session_start");
+    assert.equal(touch.event, "file_touch");
+    assert.equal(touch.sessionId, "s-nongit");
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("issue #148: no duplicate session_start synthesized across repeated touches in the same session", () => {
+  const { base, home, project } = fixture({ settings: ENABLED, withGit: false });
+  try {
+    const repo = join(base, "sibling-repo");
+    mkdirSync(join(repo, ".git"), { recursive: true });
+    const doc = join(repo, "doc.md");
+    writeFileSync(doc, "# first\n");
+    for (const body of ["# first\n", "# second\n"]) {
+      writeFileSync(doc, body);
+      const r = runHook(
+        HOOKS.post,
+        { session_id: "s-nongit", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+        { home },
+      );
+      assert.equal(r.status, 0, r.stderr);
+    }
+    const lines = ledgerLines(repo);
+    const starts = lines.filter((l) => l.event === "session_start");
+    const touches = lines.filter((l) => l.event === "file_touch");
+    assert.equal(starts.length, 1, "exactly one synthesized session_start, however many touches followed");
+    assert.equal(touches.length, 2);
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
+test("issue #148: no synthesis (and the ordinary #90 wiring warning still fires) when the session's launch cwd IS inside a git repository", () => {
+  // Same missing-session_start shape as the #90 test above, but pinning that
+  // the #148 synthesis path is genuinely narrow: it must never fire, and the
+  // pre-existing wiring warning must still, when the session cwd is itself a
+  // real git repo (the ENABLED fixture's default withGit: true) rather than
+  // outside one entirely.
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "auto" } },
+  });
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-gitcwd-nostart", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const lines = ledgerLines(project);
+    assert.ok(
+      !lines.some((l) => l.event === "session_start"),
+      "no session_start is synthesized when the launch cwd is a real git repo",
+    );
+    assert.ok(lines.some((l) => l.event === "file_touch" && l.via === "Write"));
+    const parsed = JSON.parse(r.stdout.trim());
+    assert.match(
+      parsed.hookSpecificOutput.additionalContext,
+      /no session_start entry/,
+      "the #90 wiring warning still applies to this different, genuinely-broken-wiring shape",
+    );
   } finally {
     rmSync(base, { recursive: true, force: true });
   }

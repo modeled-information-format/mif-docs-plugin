@@ -2,7 +2,7 @@
 id: reference-provenance-ledger
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-17T12:43:05.439Z'
 namespace: reference/provenance
 title: 'The session ledger: format contract'
 summary: The append-only JSONL contract the mif-provenance capture hooks write and every witnessed-provenance consumer reads.
@@ -20,17 +20,18 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:510bf739-31a0-4ce7-a88a-aa51484ddbbd
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
+  agentVersion: 2.1.212
 citations:
   - '@type': Citation
     citationType: documentation
@@ -88,6 +89,17 @@ consider both consumer families**, not just the verbs in this repository.
   the touch where the lookup happens (which is why `file_touch` carries its
   own `toolVersion` and `model`: the touched repo's ledger may never see a
   `session_start`).
+- **Non-git launch cwd (issue #148):** when the session's own launch cwd is
+  not itself inside a git repository at all (a bare multi-repo workspace
+  root, for example — clones under `repos/`, worktrees under `worktrees/`),
+  the real SessionStart hook has no git dir to resolve and writes nothing,
+  anywhere. The PostToolUse hook detects that specific case at the first
+  touch to each repo's ledger and synthesizes/replays a `session_start` line
+  there itself, marked with `synthesizedFrom` (see below) so a reader can
+  tell it apart from one the real SessionStart hook wrote. This is narrower
+  than the "session parked in repo A, editing repo B" case just above: there,
+  a real `session_start` did land somewhere, just not in every ledger the
+  session touches, so nothing is synthesized.
 - Outside a git repository, capture disables; no alternative store is
   invented.
 - **Append-only** semantics: writers add whole lines and never rewrite or
@@ -158,6 +170,7 @@ own files carried is recorded as `null`.
 | `env` | object | The allow-listed runtime environment map (see above). |
 | `sys` | object | `platform`, `arch`, `nodeVersion`, `osRelease`, `hostname`, `username`. |
 | `git` | object | `branch`, `headSha` at session start. |
+| `synthesizedFrom` | string, absent when real | Present only when this line was replayed by PostToolUse rather than the real SessionStart hook (issue #148, non-git launch cwd) — currently always `post-tool-use:non-git-launch-cwd`. |
 
 ### `file_touch`
 

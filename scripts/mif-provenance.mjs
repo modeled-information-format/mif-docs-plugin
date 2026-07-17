@@ -104,6 +104,21 @@ if (verb === "status") {
   console.log(`ledger file:           ${ledger}`);
   if (start) {
     console.log(`session_start witnessed at: ${start.ts ?? "(no timestamp field)"}`);
+    if (start.synthesizedFrom) {
+      // Issue #148: this line was never written by the real SessionStart
+      // hook (its own git-dir resolution comes from the session's launch
+      // cwd, which was not inside a git repository) — it was replayed here
+      // by PostToolUse at the first touch to this ledger instead. Say so
+      // explicitly rather than reporting it as an ordinary witnessed start,
+      // so this expected non-git-workspace-root topology is never confused
+      // with the broken-wiring case this command otherwise checks for.
+      console.log(
+        `note: synthesized by PostToolUse (${start.synthesizedFrom}), not recorded by the real ` +
+          "SessionStart hook - this session's launch cwd is not inside a git repository, so " +
+          "SessionStart had no ledger to write to. This is expected for a non-git workspace root, " +
+          "not a wiring problem.",
+      );
+    }
     if (start.hooksHash) {
       const currentHooksHash = hooksManifestHash(HOOKS_JSON_PATH);
       if (!currentHooksHash) {
