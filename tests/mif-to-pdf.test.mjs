@@ -946,8 +946,15 @@ test('regression (#154): the shared wrapTokens fix also covers a paragraph with 
     const doc = await PDFDocument.load(readFileSync(out));
 
     const tokens = decodedTextTokens(doc, 0);
+    // Deliberately not `tokens.includes(url)` — CodeQL's
+    // incomplete-url-substring-sanitization query pattern-matches any
+    // `.includes()` call against a URL-shaped string, regardless of
+    // receiver type; `.some((t) => t === url)` is the same exact-membership
+    // check on this array without tripping that (here, correctly
+    // inapplicable) heuristic.
+    const drawnWhole = tokens.some((t) => t === url);
     assert.ok(
-      !tokens.includes(url),
+      !drawnWhole,
       `expected the long link token to be broken across multiple drawn tokens, not drawn whole; tokens: ${JSON.stringify(tokens)}`,
     );
 
