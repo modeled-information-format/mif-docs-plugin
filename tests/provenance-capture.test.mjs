@@ -508,6 +508,40 @@ test("issue #148: no synthesis (and the ordinary #90 wiring warning still fires)
   }
 });
 
+// Issue #155: the #90 wiring warning's suggested `status` command used a bare
+// `scripts/mif-provenance.mjs` literal, relative to the plugin root — but the
+// hook fires (and the message is read) in the CONSUMING project's cwd, where
+// that relative path cannot resolve (MODULE_NOT_FOUND). It must carry the
+// same CLAUDE_PLUGIN_ROOT prefix the "ask"/"auto" messages already use.
+test("issue #155: the #90 wiring warning's suggested status command is CLAUDE_PLUGIN_ROOT-prefixed, not a bare relative path", () => {
+  const { base, home, project } = fixture({
+    settings: { mifProvenance: { capture: true, stamp: "auto" } },
+  });
+  try {
+    const doc = join(project, "doc.md");
+    writeFileSync(doc, MIF_DOC);
+    const r = runHook(
+      HOOKS.post,
+      { session_id: "s-gitcwd-nostart-155", cwd: project, tool_name: "Write", tool_input: { file_path: doc } },
+      { home, env: { CLAUDE_PLUGIN_ROOT: "/fake/plugin/root" } },
+    );
+    assert.equal(r.status, 0, r.stderr);
+    const parsed = JSON.parse(r.stdout.trim());
+    assert.match(
+      parsed.hookSpecificOutput.additionalContext,
+      /\/fake\/plugin\/root\/scripts\/mif-provenance\.mjs status/,
+      "the suggested command must be resolvable from the consumer project's cwd, not a bare relative path",
+    );
+    assert.doesNotMatch(
+      parsed.hookSpecificOutput.additionalContext,
+      /run `node scripts\/mif-provenance\.mjs status`/,
+      "the un-prefixed bare-relative-path form of the command must not remain",
+    );
+  } finally {
+    rmSync(base, { recursive: true, force: true });
+  }
+});
+
 test("a relative payload file_path is normalized against the payload cwd at capture", () => {
   const { base, home, project } = fixture({ settings: ENABLED });
   try {
