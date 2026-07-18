@@ -94,6 +94,80 @@ const DC_NS = "http://purl.org/dc/elements/1.1/";
 const XMP_CORE_NS = "http://ns.adobe.com/xap/1.0/";
 const RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#";
 
+// ---------------------------------------------------------------------------
+// WinAnsi encoding safety net (issue #153): pdf-lib's StandardFonts embed a
+// WinAnsi (cp1252-ish) font whose 256-codepoint repertoire cannot represent
+// most Unicode symbols — an arrow ("→", U+2192), a check mark, non-Latin
+// scripts, etc. Both font.widthOfTextAtSize (used for wrapping/measurement)
+// and page.drawText (used for the actual glyph draw, via drawTextTracked)
+// throw synchronously the instant they hit one, which previously aborted the
+// ENTIRE PDF render over a single unencodable character in otherwise-ordinary
+// prose. Every place raw markdown-derived text reaches a font — tokenize()
+// for paragraphs/headings/lists/blockquotes/table cells, drawCodeBlock() for
+// fenced code, drawSvgFigure() for embedded SVG figure text/alt — runs the
+// text through sanitizeForFont first, so the wrapping math and the actual
+// draw always agree on the same (possibly-transliterated) string and neither
+// call can throw.
+const WINANSI_FALLBACKS = new Map([
+  ["→", "->"], // → RIGHTWARDS ARROW
+  ["←", "<-"], // ← LEFTWARDS ARROW
+  ["↔", "<->"], // ↔ LEFT RIGHT ARROW
+  ["⇒", "=>"], // ⇒ RIGHTWARDS DOUBLE ARROW
+  ["⇐", "<="], // ⇐ LEFTWARDS DOUBLE ARROW
+  ["⇔", "<=>"], // ⇔ LEFT RIGHT DOUBLE ARROW
+  ["✓", "[x]"], // ✓ CHECK MARK
+  ["✔", "[x]"], // ✔ HEAVY CHECK MARK
+  ["✗", "[ ]"], // ✗ BALLOT X
+  ["✘", "[ ]"], // ✘ HEAVY BALLOT X
+]);
+
+// Per-font cache of which individual characters that font's encoding can
+// represent, so repeated characters (the overwhelmingly common case in real
+// prose) only ever pay for one throwing/non-throwing widthOfTextAtSize probe
+// each, not one per occurrence.
+const fontEncodableCache = new WeakMap();
+
+function canEncode(font, ch) {
+  let cache = fontEncodableCache.get(font);
+  if (!cache) {
+    cache = new Map();
+    fontEncodableCache.set(font, cache);
+  }
+  if (cache.has(ch)) return cache.get(ch);
+  let ok;
+  try {
+    font.widthOfTextAtSize(ch, 1);
+    ok = true;
+  } catch {
+    ok = false;
+  }
+  cache.set(ch, ok);
+  return ok;
+}
+
+// Rewrites `text` so every character `font` can actually encode. The whole
+// string is tried first (the common case — ordinary ASCII/Latin-1 prose
+// encodes in one call, no per-character walk needed); only a string that
+// fails that probe pays for the character-by-character pass, and only
+// characters `font` truly cannot encode are replaced: known common symbols
+// via WINANSI_FALLBACKS, anything else with "?" — so a single unsupported
+// character degrades that one glyph instead of the encode failure
+// propagating up and aborting the whole document render.
+export function sanitizeForFont(font, text) {
+  if (text === "") return text;
+  try {
+    font.widthOfTextAtSize(text, 1);
+    return text;
+  } catch {
+    // fall through to the per-character pass below
+  }
+  let out = "";
+  for (const ch of text) {
+    out += canEncode(font, ch) ? ch : (WINANSI_FALLBACKS.get(ch) ?? "?");
+  }
+  return out;
+}
+
 function usageExit(code) {
   console.error("usage: mif-to-pdf <doc.json> [--output out.pdf]");
   process.exit(code);
@@ -429,7 +503,7 @@ function makeRenderer(doc, fonts) {
     for (const run of runs) {
       const font = fontFor(run);
       for (const word of run.text.split(/\s+/).filter(Boolean)) {
-        tokens.push({ text: word, font, size, link: run.link, code: run.code });
+        tokens.push({ text: sanitizeForFont(font, word), font, size, link: run.link, code: run.code });
       }
     }
     return tokens;
@@ -593,7 +667,12 @@ function makeRenderer(doc, fonts) {
       drawLineBreak(page, { size, font: fonts.mono });
       y -= lh;
     };
-    for (const raw of lines.length ? lines : [""]) {
+    // Code lines are drawn/measured against fonts.mono directly (not via
+    // tokenize()'s own sanitization), so unencodable characters are
+    // sanitized here up front — see the WinAnsi safety-net comment above
+    // sanitizeForFont (issue #153).
+    const safeLines = (lines.length ? lines : [""]).map((l) => sanitizeForFont(fonts.mono, l));
+    for (const raw of safeLines) {
       if (fonts.mono.widthOfTextAtSize(raw, size) <= width) {
         emit(raw);
         continue;
@@ -938,7 +1017,11 @@ function drawSvgFigure(doc, fonts, getPage, ensureSpace, getY, setY, filePath, a
     const useFont = weight && Number(weight) >= 600 ? boldFont : font;
     const fillAttr = attrs.fill ?? cls.fill;
     const color = svgColor(fillAttr) ?? rgb(0, 0, 0);
-    const content = stripXmlTags(tm[2]).trim();
+    // Sanitized against useFont (the font this content actually draws with,
+    // chosen above by font-weight) so an embedded SVG figure's own text
+    // (e.g. a diagram label) can't hit the same WinAnsi encode crash as
+    // markdown prose — issue #153.
+    const content = sanitizeForFont(useFont, stripXmlTags(tm[2]).trim());
     if (!content) continue;
     // Uses groupStack2 (rebuilt in document order for this pass), not the
     // shape pass's groupStack — the two passes run independently.
@@ -954,7 +1037,7 @@ function drawSvgFigure(doc, fonts, getPage, ensureSpace, getY, setY, filePath, a
   setY(topY - boxHeight - 4);
   if (alt) {
     const y2 = getY();
-    drawTextTracked(page, alt, { x: MARGIN, y: y2, size: BODY_SIZE - 2, font, color: rgb(0.4, 0.4, 0.4) });
+    drawTextTracked(page, sanitizeForFont(font, alt), { x: MARGIN, y: y2, size: BODY_SIZE - 2, font, color: rgb(0.4, 0.4, 0.4) });
     setY(y2 - LINE_HEIGHT);
   }
   setY(getY() - LINE_HEIGHT / 2);
