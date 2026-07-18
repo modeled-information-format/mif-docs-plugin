@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { PDFDocument, PDFName, PDFArray, StandardFonts } from 'pdf-lib';
-import { parseBlocks, parseInline } from '../scripts/mif-to-pdf.mjs';
+import { parseBlocks, parseInline, sanitizeForFont } from '../scripts/mif-to-pdf.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const converter = join(root, 'scripts', 'mif-to-pdf.mjs');
@@ -271,6 +271,32 @@ test('parseInline: bold, inline code, links, and autolinks all parse to distinct
       { text: 'https://y.test', bold: false, code: false, link: 'https://y.test' },
     ],
   );
+});
+
+test('sanitizeForFont: text a font can already encode passes through unchanged', async () => {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  assert.equal(sanitizeForFont(font, 'ordinary ASCII prose'), 'ordinary ASCII prose');
+  assert.equal(sanitizeForFont(font, ''), '');
+});
+
+test('sanitizeForFont (#153): a known symbol outside WinAnsi (the arrow "→") is transliterated to a readable ASCII equivalent instead of throwing', async () => {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  // Before the fix, font.widthOfTextAtSize('→', ...) itself throws
+  // "WinAnsi cannot encode" — calling sanitizeForFont must never throw, and
+  // the result must itself be safely encodable.
+  assert.equal(sanitizeForFont(font, 'A → B → C'), 'A -> B -> C');
+  assert.doesNotThrow(() => font.widthOfTextAtSize(sanitizeForFont(font, 'A → B → C'), 11));
+});
+
+test('sanitizeForFont: an unmapped Unicode character with no ASCII fallback degrades to "?" per character rather than throwing', async () => {
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  // U+65E5 ("日") is outside WINANSI_FALLBACKS' table entirely — this is the
+  // generic "anything else unencodable" path, not one of the named symbols.
+  assert.equal(sanitizeForFont(font, '日'), '?');
+  assert.doesNotThrow(() => font.widthOfTextAtSize(sanitizeForFont(font, '日'), 11));
 });
 
 // ---------------------------------------------------------------------------
@@ -1060,6 +1086,127 @@ test('regression (#154): a table row with a wrapped multi-line cell grows to fit
       codespanRowHeight > plainRowHeight,
       `expected the multi-line cell's row to be taller than a plain single-line row (${codespanRowHeight} vs ${plainRowHeight})`,
     );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#153): a paragraph containing an arrow (U+2192, outside WinAnsi) converts successfully instead of crashing the whole render', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:winansi-arrow',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'WinAnsi arrow fixture',
+      content: ['# WinAnsi arrow fixture', '', 'A pipeline described as A → B → C.'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    // Before the fix this exited 1 with an unhandled "WinAnsi cannot encode"
+    // exception from pdf-lib's Encoding.js and wrote no PDF at all.
+    assert.equal(r.status, 0, `expected success, got exit ${r.status}: ${r.stderr}`);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    // The arrow is transliterated to "->" (see WINANSI_FALLBACKS), not
+    // silently dropped — the surrounding prose must still read correctly.
+    assert.ok(
+      tokens.some((t) => t.includes('->')),
+      `expected the unencodable arrow to be transliterated to "->" in the drawn text, got tokens: ${JSON.stringify(tokens)}`,
+    );
+    assert.ok(tokens.includes('pipeline'), 'expected the rest of the paragraph to still be drawn');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#153): a fenced code block containing an unencodable character converts successfully, preserving surrounding line-preserving formatting', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:winansi-arrow-codeblock',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'WinAnsi arrow codeblock fixture',
+      content: ['# WinAnsi arrow codeblock fixture', '', '```', 'input → transform → output', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, `expected success, got exit ${r.status}: ${r.stderr}`);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.includes('input -> transform -> output'),
+      `expected the code line to draw whole with the arrow transliterated, got tokens: ${JSON.stringify(tokens)}`,
+    );
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#153): a fenced code block whose info string (the [lang] label) contains an unencodable character converts successfully instead of crashing', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:winansi-arrow-fence-lang',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'WinAnsi arrow fence-lang fixture',
+      // The fence info string itself is unencodable (```→). The [lang] label
+      // is drawn separately from the code body, so it must be sanitized too —
+      // otherwise the whole render still crashes on the label alone.
+      content: ['# WinAnsi arrow fence-lang fixture', '', '```→', 'plain code', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, `expected success, got exit ${r.status}: ${r.stderr}`);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.some((t) => t.includes('[->]')),
+      `expected the unencodable fence-lang label to be transliterated to "[->]", got tokens: ${JSON.stringify(tokens)}`,
+    );
+    assert.ok(tokens.includes('plain code'), 'expected the code body to still be drawn');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#153): a character with no known ASCII fallback (outside WINANSI_FALLBACKS entirely) still converts successfully', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:winansi-unmapped-char',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'WinAnsi unmapped character fixture',
+      // U+65E5 has no entry in WINANSI_FALLBACKS — exercises the generic
+      // per-character "?" degradation path, not a named symbol mapping.
+      content: ['# WinAnsi unmapped character fixture', '', 'Unsupported glyph: 日 stays readable around it.'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, `expected success, got exit ${r.status}: ${r.stderr}`);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(tokens.includes('glyph:'), 'expected the surrounding prose to still be drawn');
+    assert.ok(tokens.includes('readable'), 'expected the prose after the unencodable character to still be drawn');
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
