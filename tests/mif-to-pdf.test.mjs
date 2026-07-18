@@ -23,6 +23,14 @@ const converter = join(root, 'scripts', 'mif-to-pdf.mjs');
 const fixture = join(root, 'tests', 'fixtures', 'mif-to-pdf-l3.json');
 const richFixture = join(root, 'tests', 'fixtures', 'mif-to-pdf-rich.json');
 
+// Mirrors mif-to-pdf.mjs's own page-geometry constants (MARGIN, MAX_WIDTH =
+// PAGE_WIDTH(612) - MARGIN*2) — kept here, not imported, since those are
+// module-private to the renderer; tests that check real drawn geometry
+// against expected column/page boundaries share these two values so they
+// don't drift independently of each other.
+const MARGIN = 54;
+const MAX_WIDTH_FOR_TEST = 504;
+
 function runConverter(input, output) {
   return spawnSync('node', [converter, input, '--output', output], { encoding: 'utf8' });
 }
@@ -105,7 +113,12 @@ function rawContentStream(doc, pageIndex) {
 // content.
 function textPositions(doc, pageIndex) {
   const raw = rawContentStream(doc, pageIndex);
-  const re = /1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm\s*\r?\n<([0-9A-Fa-f]+)>\s*Tj/g;
+  // Whitespace between operators is matched loosely (any run of whitespace,
+  // not specifically "\s*\r?\n") since pdf-lib's own serialization is an
+  // implementation detail this test shouldn't be brittle against — a future
+  // pdf-lib version emitting `Tm` and `Tj` on the same line must not
+  // silently make this helper (and everything built on it) stop matching.
+  const re = /1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm\s+<([0-9A-Fa-f]+)>\s*Tj/g;
   return [...raw.matchAll(re)].map((m) => ({
     x: Number(m[1]),
     y: Number(m[2]),
@@ -113,15 +126,19 @@ function textPositions(doc, pageIndex) {
   }));
 }
 
-// drawTable's per-row horizontal separator (`page.drawLine` at
-// `y = rowTop - rowHeight`) is the only horizontal line the renderer draws,
-// so its y-coordinates, in order, mark each row's bottom edge — letting a
-// test compute real row heights (rowTop_n - rowBottom_n) from the rendered
-// PDF instead of re-deriving drawTable's own rowHeight formula by hand.
+// drawTable's per-row horizontal separator is a page.drawLine call from
+// MARGIN to MARGIN + MAX_WIDTH (x 54 to 558) at `y = rowTop - rowHeight`;
+// matching the full `m ... l ... S` segment and filtering to that exact
+// x-span (rather than any `l`/`S` pair) keeps this from accidentally
+// picking up an unrelated stroke — e.g. a link's underline, which is also
+// drawn as a short horizontal line — and loose whitespace matching keeps it
+// from depending on pdf-lib emitting each operator on its own line.
 function horizontalLineYs(doc, pageIndex) {
   const raw = rawContentStream(doc, pageIndex);
-  const re = /(-?[\d.]+) (-?[\d.]+) l\s*\r?\nS/g;
-  return [...raw.matchAll(re)].map((m) => Number(m[2]));
+  const re = /(-?[\d.]+) (-?[\d.]+) m\s+(?:-?[\d.]+ -?[\d.]+ m\s+)?(-?[\d.]+) (-?[\d.]+) l\s+S/g;
+  return [...raw.matchAll(re)]
+    .filter((m) => Number(m[1]) === MARGIN && Number(m[3]) === MARGIN + MAX_WIDTH_FOR_TEST)
+    .map((m) => Number(m[2]));
 }
 
 function extractRawDocument(xml) {
@@ -961,8 +978,7 @@ test('regression (#154): the shared wrapTokens fix also covers a paragraph with 
     const positions = textPositions(doc, 0);
     const helper = await PDFDocument.create();
     const regular = await helper.embedFont(StandardFonts.Helvetica);
-    const MARGIN = 54;
-    const MAX_X = 54 + 504; // MARGIN + MAX_WIDTH
+    const MAX_X = MARGIN + MAX_WIDTH_FOR_TEST;
     const BODY_SIZE = 11;
     const trim = (t) => (t.endsWith(' ') ? t.slice(0, -1) : t);
     // Scoped to the tokens that are actually pieces of the split URL (not

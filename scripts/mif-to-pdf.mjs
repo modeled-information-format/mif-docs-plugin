@@ -439,9 +439,13 @@ function makeRenderer(doc, fonts) {
   // own (e.g. an unbroken code span or a long URL used as link text) —
   // mirrors the character-break fallback drawCodeBlock already uses one
   // level up for whole overlong lines. Iterates with for...of (not indexing
-  // the string) so multi-code-point characters are never split mid-character.
-  // Every returned piece keeps the original token's font/size/link/code so
-  // rendering (color, link annotations) stays correct across the break.
+  // the string) so a break never lands inside a surrogate pair (a single
+  // Unicode code point spanning two UTF-16 code units, e.g. many emoji);
+  // a user-perceived character built from multiple code points (combining
+  // marks, ZWJ sequences) can still be split, same as drawCodeBlock's own
+  // per-line fallback above. Every returned piece keeps the original
+  // token's font/size/link/code so rendering (color, link annotations)
+  // stays correct across the break.
   function splitTokenText(tok, maxWidth) {
     const chars = [...tok.text];
     const chunks = [];
