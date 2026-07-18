@@ -198,16 +198,21 @@ async function main() {
   if (cfg.stamp === "ask" && inCi()) return; // no interactive surface: behave as "off"
   if (!isMifGenreText(contentBuf.toString("utf8"))) return;
 
-  // issue #90: a missing session_start for this session, even while a
+  // issue #90 / #155: a missing session_start for this session, even while a
   // capture hook is running right now, means hook wiring may be incomplete
   // (e.g. only some of a mid-session plugin update's hooks got wired in).
   // Fail-loud, never fail-closed: this only adds a message, it never changes
-  // whether stamping proceeds below.
+  // whether stamping proceeds below. The suggested `status` command must be
+  // resolvable from wherever this message is actually read (the consuming
+  // project's cwd, not the plugin root) — same CLAUDE_PLUGIN_ROOT-prefixed
+  // shape the "ask"/"auto" messages below already use (issue #109's review
+  // finding), computed here so the wiring warning is never the odd one out.
+  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT ?? ".";
   const wiringWarning = sessionStartMissing
     ? `mif-provenance: this session's ledger has no session_start entry for ${sessionId}, even though ` +
       `a capture hook just ran for ${filePath}. If you enabled capture or updated this plugin mid-session, ` +
-      `hook wiring may be incomplete - run \`node scripts/mif-provenance.mjs status\` to check, or restart ` +
-      `your Claude Code session to be sure.`
+      `hook wiring may be incomplete - run \`node ${pluginRoot}/scripts/mif-provenance.mjs status\` to check, ` +
+      `or restart your Claude Code session to be sure.`
     : null;
 
   if (cfg.stamp === "ask") {
@@ -216,7 +221,7 @@ async function main() {
     const askMessage =
       `mif-provenance: stamp mode is "ask" and this session's ledger witnessed ${filePath}. ` +
       `To approve stamping witnessed provenance into it, run: ` +
-      `node ${process.env.CLAUDE_PLUGIN_ROOT ?? "."}/scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}. ` +
+      `node ${pluginRoot}/scripts/mif-provenance.mjs stamp "${filePath}" --session ${sessionId}. ` +
       `This requires the human user's explicit approval in this conversation; ` +
       `in an unattended run, treat it as denied.`;
     process.stdout.write(
@@ -239,7 +244,6 @@ async function main() {
   // already established for hook-wiring gaps; this closes the matching gap
   // for stamp-call failures that occur even when wiring is fully correct.
   let declineWarning = null;
-  const pluginRoot = process.env.CLAUDE_PLUGIN_ROOT ?? ".";
   try {
     const { stampFile } = await import("../scripts/lib/provenance-stamp.mjs");
     const result = stampFile({ filePath, ledgerFile: ledgerPath(gitDir), sessionId });
