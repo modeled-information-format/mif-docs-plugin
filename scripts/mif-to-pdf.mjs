@@ -655,7 +655,12 @@ function makeRenderer(doc, fonts) {
     const width = MAX_WIDTH - 10;
     if (lang) {
       ensureSpace(lh);
-      drawTextTracked(page, `[${lang}]`, { x: MARGIN, y, size: size - 1, font: fonts.bold, color: rgb(0.45, 0.45, 0.45) });
+      // The fence info string is markdown-derived text (`(\S*)` accepts any
+      // non-whitespace, including non-WinAnsi characters), so it goes through
+      // the same sanitizer as every other text-to-font site — otherwise a
+      // fence like ```→ would crash the whole render on the label alone,
+      // defeating the issue #153 safety net just below.
+      drawTextTracked(page, sanitizeForFont(fonts.bold, `[${lang}]`), { x: MARGIN, y, size: size - 1, font: fonts.bold, color: rgb(0.45, 0.45, 0.45) });
       drawLineBreak(page, { size: size - 1, font: fonts.bold });
       y -= lh;
     }

@@ -1152,6 +1152,38 @@ test('regression (#153): a fenced code block containing an unencodable character
   }
 });
 
+test('regression (#153): a fenced code block whose info string (the [lang] label) contains an unencodable character converts successfully instead of crashing', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:winansi-arrow-fence-lang',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'WinAnsi arrow fence-lang fixture',
+      // The fence info string itself is unencodable (```→). The [lang] label
+      // is drawn separately from the code body, so it must be sanitized too —
+      // otherwise the whole render still crashes on the label alone.
+      content: ['# WinAnsi arrow fence-lang fixture', '', '```→', 'plain code', '```'].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, `expected success, got exit ${r.status}: ${r.stderr}`);
+    const doc = await PDFDocument.load(readFileSync(out));
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      tokens.some((t) => t.includes('[->]')),
+      `expected the unencodable fence-lang label to be transliterated to "[->]", got tokens: ${JSON.stringify(tokens)}`,
+    );
+    assert.ok(tokens.includes('plain code'), 'expected the code body to still be drawn');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test('regression (#153): a character with no known ASCII fallback (outside WINANSI_FALLBACKS entirely) still converts successfully', async () => {
   const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
   const input = join(tmp, 'doc.json');
