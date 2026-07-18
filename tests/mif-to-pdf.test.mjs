@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import { inflateSync } from 'node:zlib';
-import { PDFDocument, PDFName, PDFArray } from 'pdf-lib';
+import { PDFDocument, PDFName, PDFArray, StandardFonts } from 'pdf-lib';
 import { parseBlocks, parseInline } from '../scripts/mif-to-pdf.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -71,6 +71,57 @@ function rawDecodedTextTokens(doc, pageIndex) {
 
 function decodedTextTokens(doc, pageIndex) {
   return rawDecodedTextTokens(doc, pageIndex).map((t) => (t.endsWith(' ') ? t.slice(0, -1) : t));
+}
+
+// Returns the page's fully decompressed content stream as one string, in
+// stream order — the same decompression rawDecodedTextTokens performs, but
+// without restricting the result to Tj operands, so callers can also pull
+// positioning (Tm) and path (m/l) operators out of it.
+function rawContentStream(doc, pageIndex) {
+  const page = doc.getPage(pageIndex);
+  const contentsObj = doc.context.lookup(page.node.get(PDFName.of('Contents')));
+  const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
+  return streamRefs
+    .map((ref) => {
+      const s = doc.context.lookup(ref);
+      let bytes = Buffer.from(s.contents);
+      try {
+        bytes = inflateSync(bytes);
+      } catch {
+        // already-uncompressed stream; use raw bytes as-is
+      }
+      return bytes.toString('latin1');
+    })
+    .join('\n');
+}
+
+// Every drawn text token is preceded, in the same `BT ... Tm <hex> Tj ... ET`
+// block drawTextTracked emits, by an absolute-position `1 0 0 1 x y Tm` (see
+// mif-to-pdf.mjs's page.drawText usage — it never uses relative Td/T*
+// advances for shown text, only for the invisible line-break marker). This
+// pairs each decoded string with the (x, y) it was actually drawn at, in
+// content-stream order, so tests can check real geometry (e.g. that no
+// table cell's drawn text crosses into the next column) instead of only
+// content.
+function textPositions(doc, pageIndex) {
+  const raw = rawContentStream(doc, pageIndex);
+  const re = /1 0 0 1 (-?[\d.]+) (-?[\d.]+) Tm\s*\r?\n<([0-9A-Fa-f]+)>\s*Tj/g;
+  return [...raw.matchAll(re)].map((m) => ({
+    x: Number(m[1]),
+    y: Number(m[2]),
+    text: Buffer.from(m[3], 'hex').toString('latin1'),
+  }));
+}
+
+// drawTable's per-row horizontal separator (`page.drawLine` at
+// `y = rowTop - rowHeight`) is the only horizontal line the renderer draws,
+// so its y-coordinates, in order, mark each row's bottom edge — letting a
+// test compute real row heights (rowTop_n - rowBottom_n) from the rendered
+// PDF instead of re-deriving drawTable's own rowHeight formula by hand.
+function horizontalLineYs(doc, pageIndex) {
+  const raw = rawContentStream(doc, pageIndex);
+  const re = /(-?[\d.]+) (-?[\d.]+) l\s*\r?\nS/g;
+  return [...raw.matchAll(re)].map((m) => Number(m[2]));
 }
 
 function extractRawDocument(xml) {
@@ -776,6 +827,216 @@ test('regression: a blockquote renders without leaking its literal > marker as v
       'the literal > blockquote marker must never be drawn as visible text',
     );
     assert.ok(tokens.includes('Zzyzxquote'), "expected the blockquote's own text to still be drawn");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#154): a long inline code span in a table cell wraps within its column instead of overprinting the next column', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const identifier = 'research-add-dimensions-workflow-configuration.js';
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:codespan-table-overflow',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'Codespan table overflow fixture',
+      content: [
+        '# Codespan table overflow fixture',
+        '',
+        '| Script | Purpose |',
+        '| --- | --- |',
+        `| \`${identifier}\` | Widen the dimension set |`,
+        '| plain | text cell |',
+      ].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+
+    // (a) the identifier is no longer drawn as one unbroken Tj token —
+    // proves the character-break fallback actually fired, not just that
+    // the page happens to render without error.
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.includes(identifier),
+      `expected the long code span to be broken across multiple drawn tokens, not drawn whole; tokens: ${JSON.stringify(tokens)}`,
+    );
+
+    // (b) the pieces that make it up, read back in content-stream order,
+    // reconstruct the original identifier exactly — nothing dropped or
+    // duplicated by the break. Scoped to column 0's own x-position (58) so
+    // an incidental substring match in column 1's unrelated prose (e.g.
+    // "dimension" also occurring inside the identifier) can't corrupt the
+    // reconstruction.
+    const positions = textPositions(doc, 0);
+    const COL0_X = 58; // MARGIN(54) + cellPad(4)
+    const COL1_X = 310; // MARGIN(54) + colWidth(252) + cellPad(4), numCols=2
+    const CELL_SIZE = 10; // BODY_SIZE(11) - 1
+    // Column 0 also draws "Script" (header) and "plain" (the other data
+    // row) at this same x — scope down to the tokens that are actually
+    // pieces of the identifier (neither of those is a substring of it).
+    const trim = (t) => (t.endsWith(' ') ? t.slice(0, -1) : t);
+    const identifierTokens = positions.filter((p) => p.x === COL0_X && identifier.includes(trim(p.text)));
+    assert.ok(
+      identifierTokens.length >= 2,
+      `expected the identifier split across >=2 column-0 tokens, got ${identifierTokens.length}: ${JSON.stringify(identifierTokens.map((p) => p.text))}`,
+    );
+    assert.equal(
+      identifierTokens.map((p) => trim(p.text)).join(''),
+      identifier,
+      `expected the split pieces to reconstruct the identifier exactly, got: ${JSON.stringify(identifierTokens.map((p) => p.text))}`,
+    );
+
+    // (c) the direct regression check: no column-0 token's drawn extent
+    // (x + rendered width, using the same Courier metrics the renderer
+    // itself uses for code spans, on the logical text with the
+    // naive-extraction trailing space trimmed — see decodedTextTokens'
+    // own comment on why that space isn't part of the real content) crosses
+    // into column 1 — this is what "overprints the neighboring column"
+    // means concretely, and is false before the fix (the whole identifier
+    // was one token drawn at full width from x=58, ending far past column
+    // 1's start at x=310).
+    const helper = await PDFDocument.create();
+    const mono = await helper.embedFont(StandardFonts.Courier);
+    for (const p of identifierTokens) {
+      const w = mono.widthOfTextAtSize(trim(p.text), CELL_SIZE);
+      assert.ok(
+        p.x + w <= COL1_X,
+        `expected column-0 text ${JSON.stringify(p.text)} at x=${p.x} to stay within the column (end=${p.x + w} must be <= ${COL1_X})`,
+      );
+    }
+
+    // (d) the neighboring column's own text is unshifted and intact —
+    // column 0 wrapping to multiple lines must not displace column 1.
+    const wide = positions.find((p) => (p.text.endsWith(' ') ? p.text.slice(0, -1) : p.text) === 'Widen');
+    assert.ok(wide, 'expected "Widen" (column 1 of the same row) to still be drawn');
+    assert.equal(wide.x, COL1_X, `expected column 1's text to start at its usual x=${COL1_X}, unshifted by column 0's wrapping`);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#154): the shared wrapTokens fix also covers a paragraph with a long unbreakable link token, not just table cells', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  // 120 chars, no whitespace — a single autolink token wider than MAX_WIDTH
+  // (504pt) at Helvetica 11pt (~610pt), the same "one oversized token" shape
+  // as the table-cell case, just via drawParagraphRuns instead of drawTable.
+  const url = 'https://example.com/reports/architecture/deep-dive-on-the-wrap-tokens-engine-shared-by-tables-paragraphs-and-blockquotes';
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:paragraph-long-link',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'Paragraph long link fixture',
+      content: ['# Paragraph long link fixture', '', `See <${url}> for details.`].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+
+    const tokens = decodedTextTokens(doc, 0);
+    assert.ok(
+      !tokens.includes(url),
+      `expected the long link token to be broken across multiple drawn tokens, not drawn whole; tokens: ${JSON.stringify(tokens)}`,
+    );
+
+    const positions = textPositions(doc, 0);
+    const helper = await PDFDocument.create();
+    const regular = await helper.embedFont(StandardFonts.Helvetica);
+    const MARGIN = 54;
+    const MAX_X = 54 + 504; // MARGIN + MAX_WIDTH
+    const BODY_SIZE = 11;
+    const trim = (t) => (t.endsWith(' ') ? t.slice(0, -1) : t);
+    // Scoped to the tokens that are actually pieces of the split URL (not
+    // every drawn token on the page, e.g. the heading, which is a
+    // different font/size this check doesn't model) — these are exactly
+    // the ones exercising the character-split fallback under test.
+    const urlPieces = positions.filter((p) => {
+      const t = trim(p.text);
+      return t.length > 3 && url.includes(t);
+    });
+    assert.ok(urlPieces.length >= 2, `expected the link split across >=2 drawn tokens, got ${urlPieces.length}: ${JSON.stringify(urlPieces.map((p) => p.text))}`);
+    assert.equal(
+      urlPieces.map((p) => trim(p.text)).join(''),
+      url,
+      `expected the split pieces to reconstruct the link exactly, got: ${JSON.stringify(urlPieces.map((p) => p.text))}`,
+    );
+    for (const p of urlPieces) {
+      const w = regular.widthOfTextAtSize(trim(p.text), BODY_SIZE);
+      assert.ok(
+        p.x + w <= MAX_X,
+        `expected drawn text ${JSON.stringify(p.text)} at x=${p.x} to stay within the page's text width (end=${p.x + w} must be <= ${MAX_X})`,
+      );
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('regression (#154): a table row with a wrapped multi-line cell grows to fit it instead of clipping or overprinting', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  const identifier = 'research-add-dimensions-workflow-configuration.js';
+  writeFileSync(
+    input,
+    JSON.stringify({
+      '@id': 'urn:mif:concept:test:table-row-height',
+      conceptType: 'semantic',
+      created: '2026-07-18T12:00:00Z',
+      title: 'Table row height fixture',
+      content: [
+        '# Table row height fixture',
+        '',
+        '| Script | Purpose |',
+        '| --- | --- |',
+        `| \`${identifier}\` | Widen the dimension set |`,
+        '| plain | text cell |',
+      ].join('\n'),
+    }),
+  );
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+    const doc = await PDFDocument.load(readFileSync(out));
+
+    // drawTable draws exactly one horizontal separator per row, at
+    // y = rowTop - rowHeight; consecutive separator y-values are therefore
+    // consecutive rows' bottom edges, so the gap between them is that row's
+    // real, rendered height — computed from the PDF itself, not by
+    // re-deriving drawTable's own rowHeight formula.
+    const ys = horizontalLineYs(doc, 0);
+    assert.equal(ys.length, 3, `expected one separator per table row (header + 2 data rows), got ${ys.length}: ${JSON.stringify(ys)}`);
+    const [headerBottom, codespanRowBottom, plainRowBottom] = ys;
+    const codespanRowHeight = headerBottom - codespanRowBottom;
+    const plainRowHeight = codespanRowBottom - plainRowBottom;
+
+    const CELL_SIZE = 10; // BODY_SIZE(11) - 1
+    const CELL_PAD = 4;
+    const singleLineHeight = 1 * (CELL_SIZE + 4) + CELL_PAD * 2; // 22
+    const twoLineHeight = 2 * (CELL_SIZE + 4) + CELL_PAD * 2; // 36
+
+    assert.equal(plainRowHeight, singleLineHeight, `expected the plain single-line row to use the 1-line row height (${singleLineHeight})`);
+    assert.equal(
+      codespanRowHeight,
+      twoLineHeight,
+      `expected the row with the wrapped 2-line code-span cell to grow to the 2-line row height (${twoLineHeight}), not stay clipped at the 1-line height`,
+    );
+    assert.ok(
+      codespanRowHeight > plainRowHeight,
+      `expected the multi-line cell's row to be taller than a plain single-line row (${codespanRowHeight} vs ${plainRowHeight})`,
+    );
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

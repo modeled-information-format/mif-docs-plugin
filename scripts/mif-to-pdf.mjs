@@ -435,12 +435,58 @@ function makeRenderer(doc, fonts) {
     return tokens;
   }
 
+  // Character-level fallback for a single token wider than maxWidth on its
+  // own (e.g. an unbroken code span or a long URL used as link text) —
+  // mirrors the character-break fallback drawCodeBlock already uses one
+  // level up for whole overlong lines. Iterates with for...of (not indexing
+  // the string) so multi-code-point characters are never split mid-character.
+  // Every returned piece keeps the original token's font/size/link/code so
+  // rendering (color, link annotations) stays correct across the break.
+  function splitTokenText(tok, maxWidth) {
+    const chars = [...tok.text];
+    const chunks = [];
+    let cur = "";
+    for (const ch of chars) {
+      const candidate = cur + ch;
+      if (cur && tok.font.widthOfTextAtSize(candidate, tok.size) > maxWidth) {
+        chunks.push(cur);
+        cur = ch;
+      } else {
+        cur = candidate;
+      }
+    }
+    if (cur) chunks.push(cur);
+    return chunks.map((text) => ({ ...tok, text }));
+  }
+
   function wrapTokens(tokens, maxWidth) {
     const lines = [];
     let cur = [];
     let curWidth = 0;
     for (const tok of tokens) {
       const w = tok.font.widthOfTextAtSize(tok.text, tok.size);
+      // A single token that doesn't fit within maxWidth even on a line by
+      // itself (issue #154: a long inline code span in a narrow table
+      // column) previously fell through to the plain "does it fit on the
+      // current line" check below, which is always false for an empty
+      // `cur` — so the oversized token got drawn at full width and
+      // overprinted whatever followed it. Break it at the character level
+      // instead, same idea drawCodeBlock uses for overlong literal lines.
+      if (maxWidth > 0 && w > maxWidth) {
+        if (cur.length) {
+          lines.push(cur);
+          cur = [];
+          curWidth = 0;
+        }
+        const pieces = splitTokenText(tok, maxWidth);
+        for (let i = 0; i < pieces.length - 1; i++) {
+          lines.push([pieces[i]]);
+        }
+        const last = pieces[pieces.length - 1];
+        cur = [last];
+        curWidth = last.font.widthOfTextAtSize(last.text, last.size);
+        continue;
+      }
       const addW = cur.length ? tok.font.widthOfTextAtSize(" ", tok.size) + w : w;
       if (cur.length && curWidth + addW > maxWidth) {
         lines.push(cur);
