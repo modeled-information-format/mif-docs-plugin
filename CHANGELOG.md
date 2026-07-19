@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-17T05:32:58.630Z'
+modified: '2026-07-19T21:41:36.149Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,12 +27,12 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:7fd4dd25-8796-4998-b2db-713660c032f9
+    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.212
+  agentVersion: 2.1.215
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,38 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.7.2] - 2026-07-19
+
+### Fixed
+
+- `mif-provenance`'s `SessionStart` hook resolves its git dir from the
+  session's own launch cwd; when that cwd is not itself inside a git
+  repository (a bare multi-repo workspace root, clones under `repos/`,
+  worktrees under `worktrees/`), `session_start` was silently never
+  recorded for that session, in any repository it went on to touch. The
+  `PostToolUse` capture hook now synthesizes the missing `session_start`
+  line into the touched file's own repository ledger on first qualifying
+  touch, tagged `synthesizedFrom` so `status` and other consumers can tell
+  it apart from a real `SessionStart`-witnessed line (#148, #150).
+- The `#90` hook-wiring warning's suggested `mif-provenance status` command
+  is now prefixed with `CLAUDE_PLUGIN_ROOT`; the bare relative path could
+  not resolve from the consuming project's own cwd, where the message is
+  actually read (#157).
+- `mif-guard`'s inner validator spawn now retries a transient launch
+  failure instead of blocking the write outright; under concurrent
+  full-suite test runs `spawnSync` could itself transiently fail to start
+  the validator subprocess (#146, #149).
+- Removed a garbled, duplicated clause from `mif-guard`'s generic
+  non-conformance block message (#151, #152).
+- `mif-to-pdf`: `wrapTokens` (shared by `drawTable`, `drawParagraphRuns`,
+  and `drawBlockquote`) only ever broke lines between tokens; a single
+  token wider than the available width overprinted the next column instead
+  of being character-broken (#154, #156).
+- `mif-to-pdf`: unencodable Unicode characters (e.g. an arrow, U+2192) now
+  transliterate or degrade instead of crashing the whole PDF render —
+  `pdf-lib`'s `StandardFonts` embed a WinAnsi-encoded font whose
+  256-codepoint repertoire cannot represent them (#153, #158).
 
 ## [0.7.1] - 2026-07-17
 
