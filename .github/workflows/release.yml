@@ -28,7 +28,7 @@ jobs:
   # Fail-closed: a published release must carry a non-empty CHANGELOG entry for
   # its version. Skips cleanly on a workflow_dispatch dry-run (no release tag).
   changelog-check:
-    uses: modeled-information-format/.github/.github/workflows/reusable-changelog-check.yml@05b13774259a17140419556a45a48ba6a3e36e0c
+    uses: modeled-information-format/.github/.github/workflows/reusable-changelog-check.yml@667ee7b3bc93a8789c65cb9b4fedc6d827fcd36a
     with:
       version: ${{ github.event.release.tag_name }}
 
