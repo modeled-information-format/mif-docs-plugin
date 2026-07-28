@@ -94,20 +94,6 @@ all from structured fields, not by reading the body.
 
 ### The L1 → L3 climb
 
-#### Authoring strategy (when to attempt each level)
-
-Aim for the highest level your current evidence can honestly support, and grade
-down when context is missing. If you have concrete review timing, trustworthy
-provenance, verifiable prior art, and known cross-proposal links, author at L3.
-If you have a real review cadence but not full provenance/citation/relationship
-data yet, ship L2. If those structured inputs are not available, publish a valid
-L1 RFC now rather than inventing metadata.
-
-Grade-down principle: **never fabricate fields to satisfy a higher level**.
-Record only what you can justify today, then upgrade L1 → L2 → L3 as evidence
-arrives (for example, after review dates, sources, or relationships are made
-explicit).
-
 - **L1 floor** — `templates/good-l1.md`: `id`, `type`, `created` + body. A
   complete, valid RFC, but opaque to a machine — none of the questions above are
   answerable. Gate with `mif-validate --level 1`.
@@ -120,8 +106,11 @@ explicit).
   Gate with `mif-validate --level 3`. The document projects losslessly to
   JSON-LD and back.
 
-See `templates/good-l1.md` (the floor; gate with `mif-validate --level 1`) and
-`templates/good.md` (the complete nine-section RFC at L3; gate with
-`mif-validate --level 3`) for the climb, and `templates/bad.md` (an RFC that
+Author at the **highest level the drafting context supports** (grade down rather
+than fabricate) — publish a valid L1 RFC now rather than inventing metadata, and
+upgrade L1 → L2 → L3 as review dates, sources, and relationships become explicit.
+
+See `templates/good-l1.md` (the floor) and `templates/good.md` (the complete
+nine-section RFC at L3) for the climb, and `templates/bad.md` (an RFC that
 dropped Drawbacks and Alternatives and hand-waves its Motivation — the genre's
 defining failure).
