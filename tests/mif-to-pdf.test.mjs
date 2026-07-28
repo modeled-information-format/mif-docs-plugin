@@ -74,6 +74,9 @@ function rawContentStream(doc, pageIndex) {
   const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
   return streamRefs
     .map((ref) => {
+      // context.lookup() itself checks `instanceof PDFRef` and passes an
+      // already-resolved object through unchanged, so it's safe to call
+      // unconditionally — no need for a constructor.name string check.
       const s = doc.context.lookup(ref);
       let bytes = Buffer.from(s.contents);
       try {
