@@ -2,7 +2,7 @@
 id: reference-skills-by-purpose
 type: semantic
 created: '2026-06-30T11:00:00Z'
-modified: '2026-07-15T19:31:42.459Z'
+modified: '2026-07-28T19:29:33.015Z'
 namespace: reference/skills
 title: mif-docs skills by purpose
 tags:
@@ -24,14 +24,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: tool
@@ -512,7 +512,8 @@ SemVer.
 - **Reach for it when:** recording notable changes per version for human readers.
 - **Not this when:** writing a forward-looking roadmap, a marketing announcement,
   or dumping raw git log lines.
-- **MIF level / type:** L2, `semantic`.
+- **MIF level / type:** L2, `episodic` (each entry is anchored to a released
+  version, so L2 is the honest ceiling).
 
 ## Scholarly & scientific writing
 
