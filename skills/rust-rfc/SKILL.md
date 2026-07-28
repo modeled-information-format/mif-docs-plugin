@@ -120,8 +120,8 @@ explicit).
   Gate with `mif-validate --level 3`. The document projects losslessly to
   JSON-LD and back.
 
-See `templates/good-l1.md` (the floor; Gate with `mif-validate --level 1`) and
-`templates/good.md` (the complete nine-section RFC at L3; Gate with
+See `templates/good-l1.md` (the floor; gate with `mif-validate --level 1`) and
+`templates/good.md` (the complete nine-section RFC at L3; gate with
 `mif-validate --level 3`) for the climb, and `templates/bad.md` (an RFC that
 dropped Drawbacks and Alternatives and hand-waves its Motivation — the genre's
 defining failure).
