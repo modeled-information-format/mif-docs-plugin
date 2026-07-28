@@ -114,7 +114,11 @@ export function maskCode(content) {
   return maskInlineCode(maskFencedBlocks(content));
 }
 
-const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---[ \t]*\r?\n/;
+// The trailing newline after the closing `---` is optional -- a file whose
+// frontmatter ends at EOF (an editor that omits the final newline) still
+// splits correctly, matching scripts/lib/mif-genre-signal.mjs's own
+// splitFrontmatter(), which allows the same thing.
+const FRONTMATTER_RE = /^---\r?\n[\s\S]*?\r?\n---[ \t]*(?:\r?\n|$)/;
 
 export function splitFrontmatter(content) {
   const m = content.match(FRONTMATTER_RE);

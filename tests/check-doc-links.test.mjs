@@ -24,6 +24,7 @@ import {
   resolveTarget,
   classify,
   checkAll,
+  splitFrontmatter,
 } from '../scripts/lib/doc-links.mjs';
 
 function withScratchDocs(files, fn) {
@@ -217,6 +218,14 @@ test('buildRouteSet + listDocFiles fail closed when docs/ is empty', () => {
   withScratchDocs({}, () => {
     assert.throws(() => listDocFiles(), /no doc files found/);
   });
+});
+
+test('splitFrontmatter still splits a file whose frontmatter ends at EOF with no trailing newline (Copilot review, PR #176)', () => {
+  const content = '---\ntitle: X\n---';
+  const { frontmatter, body, bodyOffset } = splitFrontmatter(content);
+  assert.equal(frontmatter, '---\ntitle: X\n---');
+  assert.equal(body, '');
+  assert.equal(bodyOffset, content.length);
 });
 
 test('buildRouteSet produces exactly one route per doc file', () => {
