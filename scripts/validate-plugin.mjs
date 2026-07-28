@@ -46,7 +46,21 @@ const MARKETPLACE_SCHEMA = {
       items: {
         type: "object",
         required: ["name", "source", "description"],
-        properties: { source: { type: "object", additionalProperties: true } },
+        // The inner `source` key is NOT a self-reference — it is the Claude Code
+        // plugin-source TYPE DISCRIMINATOR, a string naming the fetch mechanism
+        // ("github", "git", "git-subdir", …) alongside its mechanism-specific
+        // fields: { source: "github", repo: "owner/name" },
+        // { source: "git-subdir", url: "…", path: "…" }. Requiring it is
+        // deliberate; dropping it would let a `source` object that never names
+        // its fetch mechanism pass the gate. Do not "simplify" this away.
+        properties: {
+          source: {
+            type: "object",
+            required: ["source"],
+            properties: { source: { type: "string", minLength: 1 } },
+            additionalProperties: true,
+          },
+        },
         additionalProperties: true,
       },
     },
