@@ -13,115 +13,27 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import { load as yamlLoad } from "js-yaml";
+import {
+  PLUGIN_SCHEMA,
+  MARKETPLACE_SCHEMA,
+  SKILL_FRONTMATTER_SCHEMA,
+  MCP_SCHEMA,
+  EVALS_SCHEMA,
+} from "./lib/plugin-schemas.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 
-const PLUGIN_SCHEMA = {
-  type: "object",
-  required: ["name", "version", "description"],
-  properties: {
-    name: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
-    version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+" },
-    description: { type: "string", minLength: 1 },
-    author: { type: "object" },
-    homepage: { type: "string" },
-    repository: { type: "string" },
-    license: { type: "string" },
-    keywords: { type: "array", items: { type: "string" } },
-  },
-  additionalProperties: true,
-};
-
-const MARKETPLACE_SCHEMA = {
-  type: "object",
-  required: ["name", "owner", "plugins"],
-  properties: {
-    name: { type: "string" },
-    description: { type: "string" },
-    owner: { type: "object", required: ["name"] },
-    plugins: {
-      type: "array",
-      minItems: 1,
-      items: {
-        type: "object",
-        required: ["name", "source", "description"],
-        properties: { source: { type: "object", required: ["source"] } },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
-
-const SKILL_FRONTMATTER_SCHEMA = {
-  type: "object",
-  required: ["name", "description"],
-  properties: {
-    name: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
-    description: { type: "string", minLength: 20 },
-  },
-  additionalProperties: true,
-};
-
-// .mcp.json declares optional MCP servers (the mif-rs mif-mcp binary). The
-// config's shape is validated; the binary's presence never is — the server is
-// an optional enhancement and this check must stay deterministic on machines
-// (and CI runners) that do not have it installed.
-const MCP_SCHEMA = {
-  type: "object",
-  required: ["mcpServers"],
-  properties: {
-    mcpServers: {
-      type: "object",
-      minProperties: 1,
-      additionalProperties: {
-        type: "object",
-        required: ["command"],
-        properties: {
-          command: { type: "string", minLength: 1 },
-          args: { type: "array", items: { type: "string" } },
-          env: { type: "object", additionalProperties: { type: "string" } },
-        },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
-
-// Every skill must ship evals/evals.json (3-12 cases, >=2 expectations each).
-const EVALS_SCHEMA = {
-  type: "object",
-  required: ["skill_name", "evals"],
-  properties: {
-    skill_name: { type: "string" },
-    evals: {
-      type: "array",
-      minItems: 3,
-      maxItems: 12,
-      items: {
-        type: "object",
-        required: ["id", "prompt", "expected_output", "expectations"],
-        properties: {
-          id: { type: "integer" },
-          prompt: { type: "string", minLength: 1 },
-          expected_output: { type: "string", minLength: 1 },
-          files: { type: "array" },
-          expectations: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
-        },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
+const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
+const validateMarketplaceSchema = ajv.compile(MARKETPLACE_SCHEMA);
+const validateSkillFrontmatterSchema = ajv.compile(SKILL_FRONTMATTER_SCHEMA);
+const validateMcpSchema = ajv.compile(MCP_SCHEMA);
+const validateEvalsSchema = ajv.compile(EVALS_SCHEMA);
 
 const errors = [];
 const ok = [];
 
-function check(label, schema, data) {
-  const validate = ajv.compile(schema);
+function check(label, validate, data) {
   if (validate(data)) {
     ok.push(label);
   } else {
@@ -150,20 +62,20 @@ if (!existsSync(pluginPath)) {
 } else {
   const plugin = readJson(pluginPath);
   pluginName = plugin.name;
-  check(".claude-plugin/plugin.json", PLUGIN_SCHEMA, plugin);
+  check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
 }
 
 // 2. marketplace.json (optional but validated when present)
 const marketPath = join(ROOT, ".claude-plugin", "marketplace.json");
 if (existsSync(marketPath)) {
-  check(".claude-plugin/marketplace.json", MARKETPLACE_SCHEMA, readJson(marketPath));
+  check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
 }
 
 // 3. .mcp.json (optional but validated when present)
 const mcpPath = join(ROOT, ".mcp.json");
 if (existsSync(mcpPath)) {
   try {
-    check(".mcp.json", MCP_SCHEMA, readJson(mcpPath));
+    check(".mcp.json", validateMcpSchema, readJson(mcpPath));
   } catch (e) {
     errors.push(`.mcp.json: ${e.message}`);
   }
@@ -184,7 +96,7 @@ if (existsSync(skillsDir)) {
     skillCount++;
     try {
       const fm = parseFrontmatter(skillMd);
-      check(label, SKILL_FRONTMATTER_SCHEMA, fm);
+      check(label, validateSkillFrontmatterSchema, fm);
       if (fm.name && fm.name !== entry.name) {
         errors.push(`${label}: frontmatter name "${fm.name}" != dir "${entry.name}"`);
       }
@@ -200,7 +112,7 @@ if (existsSync(skillsDir)) {
     } else {
       try {
         const evalsDoc = readJson(evalsPath);
-        check(evalsLabel, EVALS_SCHEMA, evalsDoc);
+        check(evalsLabel, validateEvalsSchema, evalsDoc);
         if (evalsDoc.skill_name && evalsDoc.skill_name !== entry.name) {
           errors.push(`${evalsLabel}: skill_name "${evalsDoc.skill_name}" != dir "${entry.name}"`);
         }
