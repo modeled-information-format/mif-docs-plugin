@@ -56,24 +56,7 @@ async function extractXmpText(pdfBytes) {
 // token, not that implementation detail. rawDecodedTextTokens below
 // preserves it, for tests that need to check the separator itself exists.
 function rawDecodedTextTokens(doc, pageIndex) {
-  const page = doc.getPage(pageIndex);
-  const contentsObj = doc.context.lookup(page.node.get(PDFName.of('Contents')));
-  const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
-  const raw = streamRefs
-    .map((ref) => {
-      // context.lookup() itself checks `instanceof PDFRef` and passes an
-      // already-resolved object through unchanged, so it's safe to call
-      // unconditionally — no need for a constructor.name string check.
-      const s = doc.context.lookup(ref);
-      let bytes = Buffer.from(s.contents);
-      try {
-        bytes = inflateSync(bytes);
-      } catch {
-        // already-uncompressed stream; use raw bytes as-is
-      }
-      return bytes.toString('latin1');
-    })
-    .join('\n');
+  const raw = rawContentStream(doc, pageIndex);
   return [...raw.matchAll(/<([0-9A-Fa-f]+)>\s*Tj/g)].map((m) => Buffer.from(m[1], 'hex').toString('latin1'));
 }
 
@@ -91,6 +74,9 @@ function rawContentStream(doc, pageIndex) {
   const streamRefs = contentsObj instanceof PDFArray ? contentsObj.asArray() : [contentsObj];
   return streamRefs
     .map((ref) => {
+      // context.lookup() itself checks `instanceof PDFRef` and passes an
+      // already-resolved object through unchanged, so it's safe to call
+      // unconditionally — no need for a constructor.name string check.
       const s = doc.context.lookup(ref);
       let bytes = Buffer.from(s.contents);
       try {
@@ -534,6 +520,13 @@ test('regression: naive extraction preserves line boundaries in code blocks and 
     assert.ok(alphaLine && betaLine, `expected both table data rows in naive extraction, got lines: ${JSON.stringify(lines)}`);
     assert.notEqual(alphaLine, betaLine, 'expected the two table rows on distinct naive-extracted lines');
     assert.ok(!alphaLine.includes('BetaRow'), `expected a row boundary between table rows, got: ${JSON.stringify(alphaLine)}`);
+    // Canonical naive-extraction form for a table row in this renderer is:
+    // "cell1 cell2" (single inter-cell space, no trailing space after trim()).
+    // Keep exact equality here intentionally so spacing/concatenation changes
+    // in drawTextTracked/rawDecodedTextTokens are treated as visible
+    // regressions. (rawDecodedTextTokens, not decodedTextTokens: this view
+    // is built from the former, whose preserved trailing space is exactly
+    // what makes two adjacent cell tokens concatenate as "cell1 cell2".)
     assert.equal(alphaLine, 'AlphaRow 22%', 'expected the row to read as its own cells, space-separated');
     assert.equal(betaLine, 'BetaRow 18%', 'expected the row to read as its own cells, space-separated');
     // header row separable from data rows too
@@ -918,9 +911,13 @@ test('regression (#154): a long inline code span in a table cell wraps within it
     // "dimension" also occurring inside the identifier) can't corrupt the
     // reconstruction.
     const positions = textPositions(doc, 0);
-    const COL0_X = 58; // MARGIN(54) + cellPad(4)
-    const COL1_X = 310; // MARGIN(54) + colWidth(252) + cellPad(4), numCols=2
-    const CELL_SIZE = 10; // BODY_SIZE(11) - 1
+    const CELL_PAD = 4;
+    const NUM_COLS = 2;
+    const COL_WIDTH = MAX_WIDTH_FOR_TEST / NUM_COLS;
+    const COL0_X = MARGIN + CELL_PAD;
+    const COL1_X = MARGIN + COL_WIDTH + CELL_PAD;
+    const BODY_SIZE_FOR_TABLE = 11;
+    const CELL_SIZE = BODY_SIZE_FOR_TABLE - 1;
     // Column 0 also draws "Script" (header) and "plain" (the other data
     // row) at this same x — scope down to the tokens that are actually
     // pieces of the identifier (neither of those is a substring of it).
@@ -1011,6 +1008,16 @@ test('regression (#154): the shared wrapTokens fix also covers a paragraph with 
     // every drawn token on the page, e.g. the heading, which is a
     // different font/size this check doesn't model) — these are exactly
     // the ones exercising the character-split fallback under test.
+    //
+    // The substring test is deliberately loose on its own; the exact join
+    // equality asserted just below is what actually guards it. A stray
+    // token that merely happens to be a substring of the URL would corrupt
+    // the reconstruction and fail that assertion loudly, so the filter does
+    // not need to be tight. Do not narrow it by y-position: the whole point
+    // of the fixture is that the URL wraps, so its pieces legitimately sit
+    // on more than one baseline, and any single-line restriction would drop
+    // real pieces. Bounding y by the min/max of this same set is worse than
+    // useless — it is satisfied by construction and filters nothing.
     const urlPieces = positions.filter((p) => {
       const t = trim(p.text);
       return t.length > 3 && url.includes(t);
