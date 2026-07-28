@@ -520,7 +520,10 @@ test('regression: naive extraction preserves line boundaries in code blocks and 
     // Canonical naive-extraction form for a table row in this renderer is:
     // "cell1 cell2" (single inter-cell space, no trailing space after trim()).
     // Keep exact equality here intentionally so spacing/concatenation changes
-    // in drawTextTracked/decodedTextTokens are treated as visible regressions.
+    // in drawTextTracked/rawDecodedTextTokens are treated as visible
+    // regressions. (rawDecodedTextTokens, not decodedTextTokens: this view
+    // is built from the former, whose preserved trailing space is exactly
+    // what makes two adjacent cell tokens concatenate as "cell1 cell2".)
     assert.equal(alphaLine, 'AlphaRow 22%', 'expected the row to read as its own cells, space-separated');
     assert.equal(betaLine, 'BetaRow 18%', 'expected the row to read as its own cells, space-separated');
     // header row separable from data rows too
@@ -1002,22 +1005,19 @@ test('regression (#154): the shared wrapTokens fix also covers a paragraph with 
     // every drawn token on the page, e.g. the heading, which is a
     // different font/size this check doesn't model) — these are exactly
     // the ones exercising the character-split fallback under test.
-    const candidatePieces = positions.filter((p) => {
-      const t = trim(p.text);
-      return t.length > 3 && url.includes(t);
-    });
-    const ys = candidatePieces.map((p) => p.y);
-    const minY = Math.min(...ys);
-    const maxY = Math.max(...ys);
-    const Y_EPS = 0.5;
+    //
+    // The substring test is deliberately loose on its own; the exact join
+    // equality asserted just below is what actually guards it. A stray
+    // token that merely happens to be a substring of the URL would corrupt
+    // the reconstruction and fail that assertion loudly, so the filter does
+    // not need to be tight. Do not narrow it by y-position: the whole point
+    // of the fixture is that the URL wraps, so its pieces legitimately sit
+    // on more than one baseline, and any single-line restriction would drop
+    // real pieces. Bounding y by the min/max of this same set is worse than
+    // useless — it is satisfied by construction and filters nothing.
     const urlPieces = positions.filter((p) => {
       const t = trim(p.text);
-      return (
-        t.length > 3 &&
-        url.includes(t) &&
-        p.y >= minY - Y_EPS &&
-        p.y <= maxY + Y_EPS
-      );
+      return t.length > 3 && url.includes(t);
     });
     assert.ok(urlPieces.length >= 2, `expected the link split across >=2 drawn tokens, got ${urlPieces.length}: ${JSON.stringify(urlPieces.map((p) => p.text))}`);
     assert.equal(
