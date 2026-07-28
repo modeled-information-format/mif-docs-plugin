@@ -23,7 +23,10 @@ what level a document can claim, explaining the L1 floor, or drafting
 frontmatter — state the `type` enum explicitly (see the L1 row below). It's a
 hard constraint on an L1 field, not an implementation detail to leave
 implicit, so surface it every time L1 is discussed, not only when actually
-writing the YAML.
+writing the YAML. For what distinguishes the three values and how to choose
+one before drafting, see
+[Documentation Taxonomy](../../docs/explanation/documentation-taxonomy.md) —
+the canonical source for this enum; don't restate its definitions here.
 
 ## Level floors (attempt the highest the context supports)
 
@@ -37,9 +40,10 @@ writing the YAML.
 
 - `id` -> `@id` (auto-prefixed `urn:mif:` if not already a URN)
 - `type` -> `conceptType`; MUST be one of `semantic`, `episodic`, `procedural`
-  (declarative knowledge / time-bound record / how-to). `@type` is always
-  `Concept`. The document *genre* (adr, tutorial, runbook…) lives in
-  `namespace`/`tags`, **not** in `type`.
+  (see [Documentation Taxonomy](../../docs/explanation/documentation-taxonomy.md)
+  for what each means and how to pick one). `@type` is always `Concept`. The
+  document *genre* (adr, tutorial, runbook…) lives in `namespace`/`tags`,
+  **not** in `type`.
 - `created` -> `created` (ISO-8601 date-time)
 - body -> `content`
 - every other field passes through verbatim (it must be a valid MIF property or

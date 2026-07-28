@@ -59,7 +59,8 @@ Action), organized in the Diataxis quadrants:
   [Witness your documents' provenance](docs/how-to/witness-document-provenance.md)
 - **Reference** — [Genre & CLI catalog](docs/reference/genre-and-cli-catalog.md)
 - **Explanation** — [One artifact, two readers](docs/explanation/one-artifact-two-readers.md) ·
-  [Understanding witnessed provenance](docs/explanation/witnessed-provenance.md)
+  [Understanding witnessed provenance](docs/explanation/witnessed-provenance.md) ·
+  [The documentation taxonomy](docs/explanation/documentation-taxonomy.md)
 - **Architecture** — [arc42](docs/architecture/arc42.md) · [C4 model](docs/architecture/c4.md)
 - **Decisions** — [Architecture Decision Records](docs/adr/)
 - **Runbooks** — [Cut an attested release](docs/runbooks/cut-an-attested-release.md) ·
