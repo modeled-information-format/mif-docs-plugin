@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-19T21:41:36.149Z'
+modified: '2026-07-28T23:30:44.531Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,12 +27,12 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b749de23-4698-4ce0-817a-dff265cce3e2
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.215
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,55 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.8.0] - 2026-07-28
+
+### Added
+
+- A canonical `docs/explanation/documentation-taxonomy.md` explaining the
+  three MIF `conceptType` buckets (semantic/episodic/procedural), grounded
+  in this plugin's own genre catalog, plus a new `SessionStart` hook
+  (`hooks/taxonomy-session-start.mjs`) that injects a short pointer to it
+  on every session start (#172).
+- `scripts/check-doc-links.mjs`, a CI gate that fails when a `docs/` page
+  links to another `docs/` page whose target doesn't resolve to a real
+  site route — closes the gap left by #10, whose link-resolution half
+  never shipped (#173, #176).
+- `rust-rfc`: an authoring-strategy note and the grade-down principle,
+  matching the pattern already present in 26 sibling genre skills (#179).
+
+### Fixed
+
+- `docs/reference/genre-and-cli-catalog.md` and two linked pages listed
+  the `changelog` genre's `conceptType` as `semantic`; `skills/changelog/SKILL.md`
+  has always documented it as `episodic` (#171).
+- `hydrate-schema.mjs` rewrote `schema/VENDOR.lock`'s `hydratedAt` — and
+  touched every cached schema file — on every run, even when the resolved
+  version and fetched content were byte-identical to what was already on
+  disk; a repeat run against an unchanged upstream schema is now a true
+  no-op (#175).
+- `site/`'s pinned Astro 6 dependency tree carried 7 known vulnerabilities
+  (3 high) across `astro`, `postcss`, `sharp`, `svgo`, and `dompurify`;
+  upgraded to Astro 7.1.5 / Starlight 0.41.5, which resolves all of them
+  transitively (#174).
+- `mif-guard`'s generic non-conformance block message hardcoded the MIF
+  `type` enum in its remediation text; a blocked write is now told the
+  schema's actual allowed values, read live from the hydrated schema, so
+  the guidance can't drift from the canonical enum (#177).
+- `MARKETPLACE_SCHEMA`'s `source` property had lost its `required: ["source"]`
+  constraint (the `source` key is the plugin-source type discriminator,
+  not a self-reference) — a `source` of `{}` was passing validation (#178).
+- `tests/mif-to-pdf.test.mjs`: a "tightened" URL-piece filter was a
+  provable no-op (the y-band it added was derived from the same set it
+  filtered, so every candidate satisfied it by construction), and a
+  renamed constant referenced the wrong token variable in its own comment
+  (#181).
+
+### Changed
+
+- `validate-plugin.mjs` now pre-compiles its AJV validators once at
+  module load instead of on every `check()` call, and its five inline
+  schemas moved to `scripts/lib/plugin-schemas.mjs` (#178).
 
 ## [0.7.2] - 2026-07-19
 
