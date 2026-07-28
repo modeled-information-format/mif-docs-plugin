@@ -2,7 +2,7 @@
 id: arch-arc42-mif-docs
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-15T19:53:39.074Z'
+modified: '2026-07-28T21:41:27.384Z'
 namespace: architecture/mif-docs
 title: mif-docs Plugin — Architecture Document (arc42)
 tags:
@@ -30,14 +30,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://arc42.org/
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: documentation

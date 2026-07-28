@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-15T19:31:02.093Z'
+modified: '2026-07-28T21:47:04.573Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -23,14 +23,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: tool
@@ -52,6 +52,8 @@ relationships:
     target: urn:mif:how-to-validate-and-author
   - type: relates-to
     target: urn:mif:explanation-one-artifact-two-readers
+  - type: relates-to
+    target: urn:mif:explanation-documentation-taxonomy
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -90,7 +92,7 @@ Each genre ships `good-l1.md` (L1 floor), `good.md` (target level), `bad.md`, an
 | `adr` | Architectural Decision Record (Structured MADR) | `semantic` | 3 |
 | `rust-rfc` | Rust-style RFC / enhancement proposal | `semantic` | 3 |
 | `python-pep` | Python Enhancement Proposal | `semantic` | 3 |
-| `changelog` | Keep a Changelog 1.x version history | `semantic` | 2 |
+| `changelog` | Keep a Changelog 1.x version history | `episodic` | 2 |
 | `sre-runbook` | Tactical step-by-step incident runbook | `procedural` | 2 |
 | `playbook` | Strategic multi-incident operations playbook | `procedural` | 3 |
 | `prd` | Product Requirements Document | `semantic` | 3 |

@@ -4,9 +4,11 @@ import starlightLlmsTxt from "starlight-llms-txt";
 import astroMermaid from "astro-mermaid";
 
 // mif-docs plugin documentation site — Astro + Starlight, modeled on the org's
-// doc-site (same versions, same llms.txt + Mermaid + mif-brand wiring). Deployed
-// to project Pages at /mif-docs-plugin; the repo docs/ tree (the suite's own
-// MIF-validated self-documentation) is sourced via the src/content/docs symlink.
+// doc-site (same llms.txt + Mermaid + mif-brand wiring; this site pins Astro 7 /
+// Starlight 0.41 — a different major than doc-site's Astro 6 / Starlight 0.40).
+// Deployed to project Pages at /mif-docs-plugin; the repo docs/ tree (the
+// suite's own MIF-validated
+// self-documentation) is sourced via the src/content/docs symlink.
 export default defineConfig({
   site: "https://modeled-information-format.github.io",
   base: "/mif-docs-plugin",
