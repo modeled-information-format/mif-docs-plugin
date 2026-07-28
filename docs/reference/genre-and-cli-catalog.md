@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T19:39:30.098Z'
+modified: '2026-07-28T19:49:30.704Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -52,6 +52,8 @@ relationships:
     target: urn:mif:how-to-validate-and-author
   - type: relates-to
     target: urn:mif:explanation-one-artifact-two-readers
+  - type: relates-to
+    target: urn:mif:explanation-documentation-taxonomy
 ontology:
   '@type': OntologyReference
   id: mif-docs
