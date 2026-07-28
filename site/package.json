@@ -2,6 +2,7 @@
   "name": "mif-docs-site",
   "private": true,
   "type": "module",
+  "engines": { "node": ">=22.12.0" },
   "scripts": { "dev": "astro dev", "build": "astro build", "preview": "astro preview" },
   "dependencies": { "astro": "7.1.5", "@astrojs/starlight": "0.41.5", "astro-mermaid": "2.1.0" },
   "overrides": { "esbuild": "0.28.1", "starlight-llms-txt": { "astro": "$astro" } },
