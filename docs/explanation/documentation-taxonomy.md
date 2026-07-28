@@ -83,7 +83,7 @@ architecture instead of telling the operator what to do next.
 
 This piece explains what distinguishes the three kinds, grounds each in
 genres this plugin actually ships (see the full mapping in the
-[genre and CLI catalog](../reference/genre-and-cli-catalog.md)), and gives the
+[genre and CLI catalog](../../reference/genre-and-cli-catalog/)), and gives the
 rule for correcting a document once it exists.
 
 ## The three kinds
@@ -160,7 +160,7 @@ Before reaching for a genre skill, decide which question the document is
 actually answering — "how does this work," "what changed and when," or
 "what do I do now." That answer fixes the `type` (see the register table
 above), and the `type` in turn narrows which genre skills are a fit: check
-the [genre and CLI catalog](../reference/genre-and-cli-catalog.md) for the
+the [genre and CLI catalog](../../reference/genre-and-cli-catalog/) for the
 full skill-to-`conceptType` mapping before picking one that doesn't match
 the question being answered.
 
@@ -172,6 +172,6 @@ correction rule. Deciding which question is being answered before drafting
 — not after, while filling in frontmatter — is what keeps a document's
 register consistent from its first line to its last. For the full
 genre-to-type mapping, see the
-[genre and CLI catalog](../reference/genre-and-cli-catalog.md); for how the
+[genre and CLI catalog](../../reference/genre-and-cli-catalog/); for how the
 `type` field projects into MIF's machine view, see
-[One Artifact, Two Readers](one-artifact-two-readers.md).
+[One Artifact, Two Readers](../one-artifact-two-readers/).
