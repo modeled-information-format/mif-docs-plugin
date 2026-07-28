@@ -28,6 +28,15 @@ if (!file) {
 const isJson = /\.jsonl?d?$|\.json$/.test(file);
 const failures = [];
 
+// Render an ajv enum error's permitted values as a trailing hint. Non-enum
+// errors, and enum errors ajv reported without a usable allowedValues array,
+// render as the empty string so their message is left exactly as it was.
+function allowedValuesHint(e) {
+  const allowed = e.keyword === "enum" ? e.params?.allowedValues : undefined;
+  if (!Array.isArray(allowed) || allowed.length === 0) return "";
+  return ` (allowed: ${allowed.join(", ")})`;
+}
+
 let jsonld;
 try {
   const text = readFileSync(file, "utf8");
@@ -44,7 +53,15 @@ try {
   resolvedVersion = v.resolvedVersion;
   if (!v.validate(jsonld)) {
     for (const e of v.validate.errors) {
-      failures.push(`schema: ${e.instancePath || "(root)"} ${e.message}`);
+      // ajv's default enum message ("must be equal to one of the allowed
+      // values") never names the values — they live in params.allowedValues.
+      // Naming them matters because this text is not just read by a human:
+      // the fail-closed guard embeds it verbatim as the remediation
+      // instruction fed back to the model (hooks/mif-guard.mjs), which is
+      // useless for an enum violation if it never says what to choose from.
+      // Sourced from the hydrated canonical schema at validation time, so it
+      // cannot drift from the enum the way a hardcoded copy of it would.
+      failures.push(`schema: ${e.instancePath || "(root)"} ${e.message}${allowedValuesHint(e)}`);
     }
   }
 } catch (e) {

@@ -7,10 +7,11 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readFileSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
-import { MIF_IDENTITY_SIGNAL_KEYS } from '../scripts/lib/projection.mjs';
+import { MIF_IDENTITY_SIGNAL_KEYS, loadValidator } from '../scripts/lib/projection.mjs';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const hook = join(root, 'hooks', 'mif-guard.mjs');
@@ -69,6 +70,59 @@ test('the generic non-conformance block message is well-formed, not garbled (#15
   const opens = (guidance.match(/\(/g) || []).length;
   const closes = (guidance.match(/\)/g) || []).length;
   assert.equal(opens, closes, 'parentheses in the guard\'s guidance paragraph must be balanced');
+});
+
+test('the block message names the schema\'s allowed conceptType values (#177)', () => {
+  // #177 dropped the block message's hardcoded `type[semantic|episodic|procedural]`
+  // hint, on the grounds that a hardcoded enum silently drifts from the canonical
+  // schema. That is only safe while the values still reach the model some other
+  // way: this stderr IS the remediation instruction a blocked agent acts on (see
+  // this file's header and hooks/mif-guard.mjs:5-9), and ajv's bare "must be equal
+  // to one of the allowed values" is unactionable without them. mif-validate
+  // therefore renders ajv's params.allowedValues into the detail the guard embeds.
+  //
+  // The expected values are READ FROM THE SCHEMA rather than written out here, so
+  // this test pins the property the removal was meant to protect — the message
+  // tracks the canonical enum — instead of re-hardcoding the enum #177 removed.
+  const allowed = loadValidator().validate.schema?.properties?.conceptType?.enum;
+  assert.ok(
+    Array.isArray(allowed) && allowed.length > 0,
+    'expected the canonical schema to define a conceptType enum to assert against',
+  );
+
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-guard-test-'));
+  try {
+    // Genre-signalled (bare `@id`/`conceptType` keys) and L1-complete, so the
+    // out-of-enum conceptType is the ONLY thing that makes it non-conformant.
+    const doc = join(scratch, 'bad-concept-type.md');
+    writeFileSync(
+      doc,
+      [
+        '---',
+        '"@id": urn:uuid:7b3c1e90-5a2f-4c8d-9e10-2f6a4b8c1d3e',
+        'conceptType: not-a-concept-type',
+        'created: 2026-01-15T10:30:00Z',
+        '---',
+        '',
+        '# Bad conceptType',
+        '',
+        'Body.',
+        '',
+      ].join('\n'),
+    );
+
+    const r = runGuard(doc);
+    assert.equal(r.status, 2, `an out-of-enum conceptType must be blocked: ${r.stderr}`);
+    for (const value of allowed) {
+      assert.ok(
+        r.stderr.includes(value),
+        `the block message must name the allowed conceptType "${value}" so the blocked ` +
+          `model knows what to choose from; got:\n${r.stderr}`,
+      );
+    }
+  } finally {
+    rmSync(scratch, { recursive: true, force: true });
+  }
 });
 
 test('ignores plain markdown with no genre frontmatter', () => {
