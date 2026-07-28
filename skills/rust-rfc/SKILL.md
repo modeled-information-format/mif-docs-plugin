@@ -106,6 +106,10 @@ all from structured fields, not by reading the body.
   Gate with `mif-validate --level 3`. The document projects losslessly to
   JSON-LD and back.
 
+Author at the **highest level the drafting context supports** (grade down rather
+than fabricate) — publish a valid L1 RFC now rather than inventing metadata, and
+upgrade L1 → L2 → L3 as review dates, sources, and relationships become explicit.
+
 See `templates/good-l1.md` (the floor) and `templates/good.md` (the complete
 nine-section RFC at L3) for the climb, and `templates/bad.md` (an RFC that
 dropped Drawbacks and Alternatives and hand-waves its Motivation — the genre's
