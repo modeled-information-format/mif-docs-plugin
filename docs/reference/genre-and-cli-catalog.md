@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T19:49:30.704Z'
+modified: '2026-07-28T21:47:04.573Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:

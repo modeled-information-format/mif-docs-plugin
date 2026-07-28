@@ -2,7 +2,7 @@
 id: reference-skill-changelog
 type: semantic
 created: '2026-06-30T12:00:00Z'
-modified: '2026-06-30T12:00:00Z'
+modified: '2026-07-28T19:29:51.406Z'
 namespace: reference/skills
 title: 'Skill reference: changelog'
 tags:
@@ -19,19 +19,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:changelog
       '@type': prov:Entity
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: specification
@@ -63,7 +64,7 @@ entity:
   entity_type: reference-document
 extensions:
   x-skill: changelog
-  x-genre-conceptType: semantic
+  x-genre-conceptType: episodic
   x-target-level: 2
   x-purpose-group: release-history
 ---
@@ -79,7 +80,7 @@ earns its place, and the provenance and sources behind it.
 | --- | --- |
 | Authors | A Keep a Changelog CHANGELOG |
 | Purpose group | Release history |
-| MIF `conceptType` | `semantic` |
+| MIF `conceptType` | `episodic` |
 | Target MIF level | 2 |
 | Primary source | [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) |
 
@@ -119,8 +120,9 @@ result is at once a readable history and a machine-conformant unit.
   `bad.md` (a counter-example), and `evals/evals.json`. The `check-exemplars`
   gate proves `good-l1.md` validates at L1 and `good.md` at its target level.
 - **MIF projection.** The document is authored with MIF frontmatter (via the
-  shared `mif-frontmatter` substrate) and a `conceptType` of `semantic`,
-  reflecting that a changelog asserts facts about what each version changed.
+  shared `mif-frontmatter` substrate) and a `conceptType` of `episodic`,
+  reflecting that every entry records what happened in a released version rather
+  than asserting a standing fact about the present.
   `mif-validate` proves the Markdown to JSON-LD round-trip is lossless before the
   document is considered done.
 
