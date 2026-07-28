@@ -46,7 +46,7 @@ const MARKETPLACE_SCHEMA = {
       items: {
         type: "object",
         required: ["name", "source", "description"],
-        properties: { source: { type: "object", required: ["source"] } },
+        properties: { source: { type: "object", additionalProperties: true } },
         additionalProperties: true,
       },
     },
@@ -117,11 +117,16 @@ const EVALS_SCHEMA = {
   additionalProperties: true,
 };
 
+const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
+const validateMarketplaceSchema = ajv.compile(MARKETPLACE_SCHEMA);
+const validateSkillFrontmatterSchema = ajv.compile(SKILL_FRONTMATTER_SCHEMA);
+const validateMcpSchema = ajv.compile(MCP_SCHEMA);
+const validateEvalsSchema = ajv.compile(EVALS_SCHEMA);
+
 const errors = [];
 const ok = [];
 
-function check(label, schema, data) {
-  const validate = ajv.compile(schema);
+function check(label, validate, data) {
   if (validate(data)) {
     ok.push(label);
   } else {
@@ -150,20 +155,20 @@ if (!existsSync(pluginPath)) {
 } else {
   const plugin = readJson(pluginPath);
   pluginName = plugin.name;
-  check(".claude-plugin/plugin.json", PLUGIN_SCHEMA, plugin);
+  check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
 }
 
 // 2. marketplace.json (optional but validated when present)
 const marketPath = join(ROOT, ".claude-plugin", "marketplace.json");
 if (existsSync(marketPath)) {
-  check(".claude-plugin/marketplace.json", MARKETPLACE_SCHEMA, readJson(marketPath));
+  check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
 }
 
 // 3. .mcp.json (optional but validated when present)
 const mcpPath = join(ROOT, ".mcp.json");
 if (existsSync(mcpPath)) {
   try {
-    check(".mcp.json", MCP_SCHEMA, readJson(mcpPath));
+    check(".mcp.json", validateMcpSchema, readJson(mcpPath));
   } catch (e) {
     errors.push(`.mcp.json: ${e.message}`);
   }
@@ -184,7 +189,7 @@ if (existsSync(skillsDir)) {
     skillCount++;
     try {
       const fm = parseFrontmatter(skillMd);
-      check(label, SKILL_FRONTMATTER_SCHEMA, fm);
+      check(label, validateSkillFrontmatterSchema, fm);
       if (fm.name && fm.name !== entry.name) {
         errors.push(`${label}: frontmatter name "${fm.name}" != dir "${entry.name}"`);
       }
@@ -200,7 +205,7 @@ if (existsSync(skillsDir)) {
     } else {
       try {
         const evalsDoc = readJson(evalsPath);
-        check(evalsLabel, EVALS_SCHEMA, evalsDoc);
+        check(evalsLabel, validateEvalsSchema, evalsDoc);
         if (evalsDoc.skill_name && evalsDoc.skill_name !== entry.name) {
           errors.push(`${evalsLabel}: skill_name "${evalsDoc.skill_name}" != dir "${entry.name}"`);
         }
