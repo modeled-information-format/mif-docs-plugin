@@ -41,8 +41,16 @@ async function fetchText(url) {
   return await res.text();
 }
 
+// Any read failure — missing file, permission error, or a race where the
+// file disappears between existsSync and readFileSync — is treated as
+// "nothing there," never thrown. Both the idempotency check and the
+// error-path lock lookup below depend on this never throwing.
 function readExisting(path) {
-  return existsSync(path) ? readFileSync(path, "utf8") : null;
+  try {
+    return existsSync(path) ? readFileSync(path, "utf8") : null;
+  } catch {
+    return null;
+  }
 }
 
 async function main() {
@@ -88,7 +96,7 @@ async function main() {
   };
 
   if (!shouldWriteLock(fileStates, existingLock, meta)) {
-    console.log(`up to date: MIF schema ${resolved} (channel: ${channel}) — no changes, nothing written`);
+    console.log(`up to date: MIF schema ${resolved} (channel: ${channel}) — VENDOR.lock unchanged`);
     return;
   }
 

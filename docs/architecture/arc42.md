@@ -2,7 +2,7 @@
 id: arch-arc42-mif-docs
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T21:33:14.126Z'
+modified: '2026-07-28T21:41:27.384Z'
 namespace: architecture/mif-docs
 title: mif-docs Plugin — Architecture Document (arc42)
 tags:
@@ -235,7 +235,7 @@ Quality tree (goal → scenario):
 
 | Risk / debt | Impact | Mitigation |
 | --- | --- | --- |
-| Schema drift between cache and `mif-spec.dev` | Stale conformance verdicts | `hydrate-schema` re-resolves against `mif-spec.dev` on each CI run, and re-locks `VENDOR.lock` when the resolved identity or the cached bytes differ. |
+| Schema drift between cache and `mif-spec.dev` | Stale conformance verdicts | `hydrate-schema` re-resolves and re-locks `VENDOR.lock` on each CI run. |
 | Ontology lives in a separate repo | A breaking ontology change can fail validation | `validate-ontology` gates the hydrated copy; the release vendors a pinned copy. |
 | Offline schema fallback | Validation may use an outdated copy | The fallback emits a warning so the staleness is visible. |
 
