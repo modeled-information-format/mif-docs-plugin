@@ -7,29 +7,27 @@
 // #173 originally enumerated.
 //
 //   node scripts/check-doc-links.mjs
-import { readFileSync } from "node:fs";
-import { checkKebabCase, listDocFiles, buildRouteSet, checkFile } from "./lib/doc-links.mjs";
+import { listDocFiles, checkAll } from "./lib/doc-links.mjs";
 
+// Delegates the whole listDocFiles -> checkKebabCase -> buildRouteSet ->
+// checkFile sequence to lib/doc-links.mjs's own checkAll() -- the exact
+// sequence tests/check-doc-links.test.mjs exercises -- so this CLI and the
+// test suite can never independently drift on the actual checking logic;
+// this file is reporting/exit-code plumbing only.
 let files;
+let findings;
 try {
   files = listDocFiles();
+  findings = checkAll(files);
 } catch (e) {
-  console.error(`check-doc-links: ${e.message}`);
+  if (e.kebabProblems) {
+    console.error("check-doc-links: non-kebab-case doc path segment(s) found -- the route model");
+    console.error("(file path under docs/ -> Starlight route) cannot be trusted while these exist:");
+    for (const p of e.kebabProblems) console.error(`  - ${p}`);
+  } else {
+    console.error(`check-doc-links: ${e.message}`);
+  }
   process.exit(1);
-}
-
-const kebabProblems = checkKebabCase(files);
-if (kebabProblems.length > 0) {
-  console.error("check-doc-links: non-kebab-case doc path segment(s) found -- the route model");
-  console.error("(file path under docs/ -> Starlight route) cannot be trusted while these exist:");
-  for (const p of kebabProblems) console.error(`  - ${p}`);
-  process.exit(1);
-}
-
-const routeSet = buildRouteSet(files);
-const findings = [];
-for (const file of files) {
-  findings.push(...checkFile(file, readFileSync(file, "utf8"), routeSet));
 }
 
 if (findings.length === 0) {
