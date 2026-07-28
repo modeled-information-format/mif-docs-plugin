@@ -5,9 +5,9 @@ import astroMermaid from "astro-mermaid";
 
 // mif-docs plugin documentation site — Astro + Starlight, modeled on the org's
 // doc-site (same llms.txt + Mermaid + mif-brand wiring; this site pins Astro 7 /
-// Starlight 0.41, doc-site stays on Astro 6 / Starlight 0.40 — different majors,
-// see the workspace CLAUDE.md's repo table). Deployed to project Pages at
-// /mif-docs-plugin; the repo docs/ tree (the suite's own MIF-validated
+// Starlight 0.41 — a different major than doc-site's Astro 6 / Starlight 0.40).
+// Deployed to project Pages at /mif-docs-plugin; the repo docs/ tree (the
+// suite's own MIF-validated
 // self-documentation) is sourced via the src/content/docs symlink.
 export default defineConfig({
   site: "https://modeled-information-format.github.io",
