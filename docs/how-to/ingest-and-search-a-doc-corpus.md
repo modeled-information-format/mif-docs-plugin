@@ -2,7 +2,7 @@
 id: how-to-ingest-and-search
 type: procedural
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-05T12:00:00Z'
+modified: '2026-07-28T22:29:27.455Z'
 namespace: how-to/corpus
 title: How to Ingest and Search a MIF Doc Corpus
 tags:
@@ -28,17 +28,18 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-rs
       '@type': prov:Entity
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: repository
@@ -64,7 +65,7 @@ candidates, "which doc covers X?".
 
 - The optional mif-rs tooling: either the `mif-mcp` MCP server connected in
   your session, or the `mif-cli` binary on `PATH`. The
-  [install how-to](./install-the-optional-mif-mcp-server.md) covers both
+  [install how-to](../install-the-optional-mif-mcp-server/) covers both
   routes — attested release binaries verified with `gh attestation verify`,
   or `cargo install mif-cli mif-mcp`.
 - Network access for the first run only — the embedding model downloads into

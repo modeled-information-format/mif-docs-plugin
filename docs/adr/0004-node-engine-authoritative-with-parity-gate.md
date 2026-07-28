@@ -2,7 +2,7 @@
 id: adr-0004-node-engine-authoritative
 type: semantic
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-05T12:00:00Z'
+modified: '2026-07-28T22:28:30.021Z'
 namespace: adr/mif-docs
 title: 'ADR-0004: Node Engine Stays Authoritative, Convergence Proven by a Parity Gate'
 summary: The plugin's node validation engine remains the authoritative MIF conformance gate; the mif-rs Rust engine is compared against it by a non-required nightly parity job with an explicit expected-disagreement ledger, and no engine substitution happens until that ledger is empty and the upstream capability gaps are closed.
@@ -21,17 +21,18 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-rs
       '@type': prov:Entity
+  agentVersion: 2.1.220
 relationships:
   - type: relates-to
     target: urn:mif:adr-0001-align-adr-to-smadr
@@ -278,6 +279,6 @@ docs, 94 agreements, 4 expected disagreements (all mif-rs#38), 0 unexpected,
 **Action Required:** Prune the ledger as upstream fixes land; supersede this
 ADR before any engine substitution in the gates.
 
-[adr-0001]: 0001-align-adr-genre-to-structured-madr.md
-[adr-0003]: 0003-attested-delivery-release-pattern.md
+[adr-0001]: ../0001-align-adr-genre-to-structured-madr/
+[adr-0003]: ../0003-attested-delivery-release-pattern/
 [mif-rs]: https://github.com/modeled-information-format/mif-rs

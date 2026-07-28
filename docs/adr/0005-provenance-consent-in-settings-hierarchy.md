@@ -2,7 +2,7 @@
 id: adr-0005-provenance-consent
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-28T22:28:45.539Z'
 namespace: adr/mif-docs
 title: 'ADR-0005: Provenance Consent Rides the Settings Hierarchy, and Refusal Wins'
 summary: The mif-provenance helper's consent surface is one namespaced key (mifProvenance) in Claude Code's own settings hierarchy, with the plugin-local settings file pattern as the documented fallback carrier; precedence orders only non-refusal values, an explicit disable at any scope defeats enablement at every other scope, and configuration errors fail closed to disabled.
@@ -21,17 +21,18 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
+  agentVersion: 2.1.220
 relationships:
   - type: relates-to
     target: urn:mif:adr-0004-node-engine-authoritative
@@ -293,6 +294,6 @@ consulting the resolver before any observation I/O.
 scopes (an enterprise layer would need an explicit place in the refusal
 ordering — which, per this decision, is "refusal wins from there too").
 
-[adr-0004]: 0004-node-engine-authoritative-with-parity-gate.md
-[ledger]: ../reference/provenance-ledger.md
-[skill-ref]: ../reference/skills/mif-provenance.md
+[adr-0004]: ../0004-node-engine-authoritative-with-parity-gate/
+[ledger]: ../../reference/provenance-ledger/
+[skill-ref]: ../../reference/skills/mif-provenance/

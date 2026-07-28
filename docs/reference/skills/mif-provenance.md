@@ -2,7 +2,7 @@
 id: reference-skill-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-12T15:46:27.731Z'
+modified: '2026-07-28T22:29:59.646Z'
 namespace: reference/skills
 title: 'Skill reference: mif-provenance'
 tags:
@@ -25,14 +25,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:mif-provenance
       '@type': prov:Entity
-  agentVersion: 2.1.207
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: specification
@@ -92,8 +92,8 @@ The `mif-provenance` skill is the suite's **witnessed-provenance helper** — th
 fifth authoring helper. It stamps hook-observed session facts into a MIF
 document's `provenance` block and verifies existing blocks against those
 observations. The distinction it adds to the suite is the witness itself:
-[`mif-frontmatter`](mif-frontmatter.md) writes provenance *asserted* from
-drafting context, [`mif-validate`](mif-validate.md) passes any schema-valid
+[`mif-frontmatter`](../mif-frontmatter/) writes provenance *asserted* from
+drafting context, [`mif-validate`](../mif-validate/) passes any schema-valid
 block regardless of who actually authored the document, and only this skill
 proves the named session **touched the file** — the model being described is
 never the source of the facts describing it.
@@ -104,7 +104,7 @@ never the source of the facts describing it.
 | Purpose group | Authoring helpers |
 | MIF `conceptType` | `substrate` |
 | Target MIF level | 1 (operates on documents at any level, preserving it) |
-| Primary source | The capture hooks' [session ledger](../provenance-ledger.md) |
+| Primary source | The capture hooks' [session ledger](../../provenance-ledger/) |
 
 ## The helper versus the hooks
 
@@ -121,7 +121,7 @@ document's `provenance` block, or checks a block against it.
 Capture is implemented entirely on Claude Code's own plugin hook events
 (`SessionStart`, `PostToolUse`, `SessionEnd` — see `hooks/hooks.json`), so
 witnessed provenance is only available for sessions run through Claude Code
-today. The [ledger contract](../provenance-ledger.md) itself is a generic,
+today. The [ledger contract](../../provenance-ledger/) itself is a generic,
 append-only "session touched file" log with no Claude-Code-specific
 assumption in its shape; extending capture to another coding agent or tool
 would mean that tool appending to the same kind of ledger, which is real,
@@ -208,7 +208,7 @@ impossible, not merely discouraged.
 ## Consent model
 
 Everything is opt-in and fail-closed, per
-[ADR-0005](../../adr/0005-provenance-consent-in-settings-hierarchy.md): the
+[ADR-0005](../../../adr/0005-provenance-consent-in-settings-hierarchy/): the
 `mifProvenance` settings key (`capture`, `stamp`) defaults to off at every
 scope, an explicit disable at any scope defeats an enable at every other, and
 a malformed settings file disables rather than enables. The hook-mediated

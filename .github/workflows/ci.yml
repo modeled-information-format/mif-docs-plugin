@@ -108,6 +108,8 @@ jobs:
         run: node scripts/check-exemplars.mjs
       - name: Doc-set planner recipes are link-complete
         run: node scripts/planner-check.mjs
+      - name: Internal doc links resolve to real page routes
+        run: node scripts/check-doc-links.mjs
       - name: Witnessed-vs-asserted provenance coverage (idempotent at the telemetry boundary)
         run: |
           # The report itself never gates; what IS gated is its idempotency
