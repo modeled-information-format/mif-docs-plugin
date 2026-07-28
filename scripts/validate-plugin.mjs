@@ -13,123 +13,16 @@ import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import { load as yamlLoad } from "js-yaml";
+import {
+  PLUGIN_SCHEMA,
+  MARKETPLACE_SCHEMA,
+  SKILL_FRONTMATTER_SCHEMA,
+  MCP_SCHEMA,
+  EVALS_SCHEMA,
+} from "./lib/plugin-schemas.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
-
-const PLUGIN_SCHEMA = {
-  type: "object",
-  required: ["name", "version", "description"],
-  properties: {
-    name: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
-    version: { type: "string", pattern: "^\\d+\\.\\d+\\.\\d+" },
-    description: { type: "string", minLength: 1 },
-    author: { type: "object" },
-    homepage: { type: "string" },
-    repository: { type: "string" },
-    license: { type: "string" },
-    keywords: { type: "array", items: { type: "string" } },
-  },
-  additionalProperties: true,
-};
-
-const MARKETPLACE_SCHEMA = {
-  type: "object",
-  required: ["name", "owner", "plugins"],
-  properties: {
-    name: { type: "string" },
-    description: { type: "string" },
-    owner: { type: "object", required: ["name"] },
-    plugins: {
-      type: "array",
-      minItems: 1,
-      items: {
-        type: "object",
-        required: ["name", "source", "description"],
-        // The inner `source` key is NOT a self-reference — it is the Claude Code
-        // plugin-source TYPE DISCRIMINATOR, a string naming the fetch mechanism
-        // ("github", "git", "git-subdir", …) alongside its mechanism-specific
-        // fields: { source: "github", repo: "owner/name" },
-        // { source: "git-subdir", url: "…", path: "…" }. Requiring it is
-        // deliberate; dropping it would let a `source` object that never names
-        // its fetch mechanism pass the gate. Do not "simplify" this away.
-        properties: {
-          source: {
-            type: "object",
-            required: ["source"],
-            properties: { source: { type: "string", minLength: 1 } },
-            additionalProperties: true,
-          },
-        },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
-
-const SKILL_FRONTMATTER_SCHEMA = {
-  type: "object",
-  required: ["name", "description"],
-  properties: {
-    name: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
-    description: { type: "string", minLength: 20 },
-  },
-  additionalProperties: true,
-};
-
-// .mcp.json declares optional MCP servers (the mif-rs mif-mcp binary). The
-// config's shape is validated; the binary's presence never is — the server is
-// an optional enhancement and this check must stay deterministic on machines
-// (and CI runners) that do not have it installed.
-const MCP_SCHEMA = {
-  type: "object",
-  required: ["mcpServers"],
-  properties: {
-    mcpServers: {
-      type: "object",
-      minProperties: 1,
-      additionalProperties: {
-        type: "object",
-        required: ["command"],
-        properties: {
-          command: { type: "string", minLength: 1 },
-          args: { type: "array", items: { type: "string" } },
-          env: { type: "object", additionalProperties: { type: "string" } },
-        },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
-
-// Every skill must ship evals/evals.json (3-12 cases, >=2 expectations each).
-const EVALS_SCHEMA = {
-  type: "object",
-  required: ["skill_name", "evals"],
-  properties: {
-    skill_name: { type: "string" },
-    evals: {
-      type: "array",
-      minItems: 3,
-      maxItems: 12,
-      items: {
-        type: "object",
-        required: ["id", "prompt", "expected_output", "expectations"],
-        properties: {
-          id: { type: "integer" },
-          prompt: { type: "string", minLength: 1 },
-          expected_output: { type: "string", minLength: 1 },
-          files: { type: "array" },
-          expectations: { type: "array", minItems: 2, items: { type: "string", minLength: 1 } },
-        },
-        additionalProperties: true,
-      },
-    },
-  },
-  additionalProperties: true,
-};
 
 const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
 const validateMarketplaceSchema = ajv.compile(MARKETPLACE_SCHEMA);
