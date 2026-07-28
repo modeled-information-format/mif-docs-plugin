@@ -2,7 +2,7 @@
 id: runbook-cut-attested-release
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T23:46:35.942Z'
+modified: '2026-07-28T23:51:23.410Z'
 namespace: runbook/mif-docs-release
 title: 'mif-docs: Cut an Attested Release'
 tags:
@@ -221,16 +221,21 @@ Verify it actually happened rather than assuming the dispatch landed:
 
 ```bash
 gh pr list --repo modeled-information-format/claude-code-plugins \
-  --search "re-pin mif-docs in:title" --state all --limit 3
+  --search "re-pin mif-docs in:title" --state all --limit 3 \
+  --json number,title,state,autoMergeRequest
 ```
 
 Expected result: a `chore(catalog): re-pin mif-docs to v0.2.0`-shaped PR,
 either already `MERGED` (auto-merge cleared it) or `OPEN` with
-`autoMergeRequest` set and its checks running. If a check on that PR fails
-for a reason unrelated to the re-pin itself (e.g. a pre-existing dependency
-vulnerability in that repo's own site), fix it there — auto-merge will not
-clear a red required check on its own, and the PR will sit stuck
-indefinitely without the failure being obviously connected to this release.
+`autoMergeRequest` non-`null` in the JSON output and its checks running. If
+a check on that PR fails for a reason unrelated to the re-pin itself (e.g.
+a pre-existing dependency vulnerability in that repo's own site), fix it
+there — auto-merge will not clear a red required check on its own, and the
+PR will sit stuck indefinitely without the failure being obviously
+connected to this release. Also note that pushing a fix commit to the
+auto-generated branch dismisses the hub's own pre-approval (standard
+branch-protection behavior on new commits) — merge with `--admin` rather
+than waiting for a fresh approval that has to come from a human anyway.
 
 **Fallback — only if 20+ minutes pass with no PR appearing at all** (the
 dispatch failed, or the hub run itself errored): trigger it by hand —
