@@ -2,7 +2,7 @@
 id: how-to-witness-document-provenance
 type: procedural
 created: '2026-07-11T20:00:00Z'
-modified: '2026-07-12T15:41:31.586Z'
+modified: '2026-07-28T22:29:33.962Z'
 namespace: how-to/provenance
 title: How to Witness Your Documents' Provenance
 tags:
@@ -37,14 +37,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:3eeb65b8-4027-4e9e-afbe-ccfe2ae33a26
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://diataxis.fr/how-to-guides/
       '@type': prov:Entity
-  agentVersion: 2.1.207
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: documentation
@@ -106,7 +106,7 @@ caveat applies after any `/plugin` update that changes this plugin's
 `hooks/hooks.json`. If you want to check whether hooks are actually wired for
 your current session without restarting first, run `node
 scripts/mif-provenance.mjs status` — see [the mif-provenance
-reference](../reference/skills/mif-provenance/) for what it reports.
+reference](../../reference/skills/mif-provenance/) for what it reports.
 
 **Where you put it decides who it affects:**
 

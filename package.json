@@ -16,6 +16,7 @@
     "mif-provenance": "node scripts/mif-provenance.mjs",
     "provenance-corpus-check": "node scripts/provenance-corpus-check.mjs",
     "doctor": "node scripts/doctor.mjs",
+    "check-doc-links": "node scripts/check-doc-links.mjs",
     "test:hook": "node --test tests/*.test.mjs",
     "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
   },

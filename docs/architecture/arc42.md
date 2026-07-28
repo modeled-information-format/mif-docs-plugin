@@ -2,7 +2,7 @@
 id: arch-arc42-mif-docs
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T21:41:27.384Z'
+modified: '2026-07-28T22:28:58.886Z'
 namespace: architecture/mif-docs
 title: mif-docs Plugin — Architecture Document (arc42)
 tags:
@@ -140,7 +140,7 @@ Level 1 decomposes mif-docs into four black boxes:
   three Kiro skills, five scholarly/scientific-writing genres, six
   regulated/compliance-report genres, four research/market-intelligence
   genres, one business-planning genre, and two business-communication
-  genres — see [skills by purpose](../reference/skills-by-purpose/) for the
+  genres — see [skills by purpose](../../reference/skills-by-purpose/) for the
   full grouping) plus 7 substrate skills (mif-frontmatter L1–L3,
   ears-acceptance-criteria, mif-validate, mif-corpus, mif-provenance,
   svg-charts, mif-to-pdf) and `doc-set-planner` (engine plus the diataxis, ai-spec,

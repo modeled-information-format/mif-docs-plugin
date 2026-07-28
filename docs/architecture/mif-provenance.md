@@ -2,7 +2,7 @@
 id: arch-mif-provenance
 type: semantic
 created: '2026-07-11T12:00:00Z'
-modified: '2026-07-11T12:00:00Z'
+modified: '2026-07-28T22:29:19.827Z'
 namespace: architecture/mif-docs
 title: mif-provenance — Witnessed Provenance Architecture Specification
 summary: Composite architecture spec for the mif-provenance helper — arc42/C4-style building blocks, EARS non-functional requirements, and the decision log for witnessed (hook-observed) provenance stamping over an append-only session ledger.
@@ -20,17 +20,18 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin/issues/63
       '@type': prov:Entity
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: repository
@@ -114,7 +115,7 @@ Four components, one external store:
 | Capture Hooks | `hooks/provenance-{session-start,post-tool-use,session-end}.mjs` | Append witnessed session facts to the ledger; consult the resolver first; fail open on every operational error. |
 | mif-provenance skill | `skills/mif-provenance/` + `scripts/mif-provenance.mjs` + `scripts/lib/provenance-stamp.mjs` | `stamp` (witnessed-only fields, fixed `user_stated` trust policy, never `confidence`) and `verify` (deterministic drift report, never restamps). |
 | Corpus Check | `scripts/provenance-corpus-check.mjs` | Witnessed-vs-asserted coverage by agent and model; byte-idempotent; wired into CI with a run-twice-and-diff gate. |
-| Session Ledger (store) | `<git-dir>/ai-provenance/session.jsonl` | Append-only JSONL contract ([reference](../reference/provenance-ledger.md)); never committed, never leaves the machine. |
+| Session Ledger (store) | `<git-dir>/ai-provenance/session.jsonl` | Append-only JSONL contract ([reference](../../reference/provenance-ledger/)); never committed, never leaves the machine. |
 
 A `file_touch` is appended to the touched FILE's repository ledger (where
 `stamp`/`verify` later look), while session lines land in the session cwd's
@@ -183,9 +184,9 @@ a hook-scheduling accident.
 
 | # | Decision | Where recorded |
 | --- | --- | --- |
-| 1 | Consent rides the settings hierarchy under one `mifProvenance` key; refusal wins over every precedence rule; config errors fail closed | [ADR-0005](../adr/0005-provenance-consent-in-settings-hierarchy.md) |
-| 2 | Ledger lives under the repo's own git dir, append-only JSONL, shared-contract with a future commit-trailer consumer | [Ledger contract](../reference/provenance-ledger.md) |
-| 3 | Trust ceiling fixed at `user_stated`; `confidence` never written | [Skill reference](../reference/skills/mif-provenance.md) |
+| 1 | Consent rides the settings hierarchy under one `mifProvenance` key; refusal wins over every precedence rule; config errors fail closed | [ADR-0005](../../adr/0005-provenance-consent-in-settings-hierarchy/) |
+| 2 | Ledger lives under the repo's own git dir, append-only JSONL, shared-contract with a future commit-trailer consumer | [Ledger contract](../../reference/provenance-ledger/) |
+| 3 | Trust ceiling fixed at `user_stated`; `confidence` never written | [Skill reference](../../reference/skills/mif-provenance/) |
 | 4 | Capture and mediated stamp share one PostToolUse process to make ordering deterministic | This spec, §3 |
 | 5 | Session selection may only land on a ledger-witnessed toucher; ambiguity errors out | This spec, §4; SKILL.md |
 

@@ -2,7 +2,7 @@
 id: tutorial-getting-started
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-15T21:21:53.806Z'
+modified: '2026-07-28T22:30:12.036Z'
 namespace: tutorials/getting-started
 title: Get Started with mif-docs
 tags:
@@ -41,14 +41,14 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:08717ff4-a47e-4c0a-9fa5-59ce2b2db70a
+    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': https://diataxis.fr/tutorials/
       '@type': prov:Entity
-  agentVersion: 2.1.210
+  agentVersion: 2.1.220
 citations:
   - '@type': Citation
     citationType: documentation
@@ -152,5 +152,5 @@ search over the documents you produce — "which doc covers X?", cross-link
 candidates — install the optional mif-rs tools and meet the `mif-corpus`
 skill. When you want to know that a document's `provenance` block reflects
 what actually happened rather than what the model claims, see [Witness your
-documents' provenance](../how-to/witness-document-provenance/). Each next step
+documents' provenance](../../how-to/witness-document-provenance/). Each next step
 is recorded as a typed `relates-to` edge in this tutorial's `relationships[]`.
