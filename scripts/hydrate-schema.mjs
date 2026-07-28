@@ -6,9 +6,15 @@
 // context) into schema/.cache/<version>/ and records the resolved version in
 // schema/VENDOR.lock for reproducibility. Offline, mif-validate falls back to
 // the last hydrated version and warns; this script surfaces the fetch failure.
+//
+// Idempotent: nothing on disk is touched — not a cache file, not
+// VENDOR.lock, not even hydratedAt — unless the fetched content actually
+// differs from what's already there. A re-run against an unchanged schema
+// is a no-op, so a clean checkout stays clean.
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { lockMetadataChanged } from "./lib/hydrate-schema-lib.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CACHE = join(ROOT, "schema", ".cache");
@@ -33,6 +39,10 @@ async function fetchText(url) {
   return await res.text();
 }
 
+function readExisting(path) {
+  return existsSync(path) ? readFileSync(path, "utf8") : null;
+}
+
 async function main() {
   // Resolve `latest` alias to a concrete version via the catalog index.
   let resolved = channel;
@@ -51,16 +61,34 @@ async function main() {
   mkdirSync(join(outDir, "ontology"), { recursive: true });
 
   const fetched = [];
+  let changed = false;
   for (const rel of FILES) {
     try {
       const text = await fetchText(`${BASE}/${versionSeg}/${rel}`);
-      writeFileSync(join(outDir, rel), text);
+      const dest = join(outDir, rel);
+      if (readExisting(dest) !== text) {
+        writeFileSync(dest, text);
+        changed = true;
+      }
       fetched.push(rel);
     } catch (e) {
       // citation/ontology are not load-bearing for core validation; warn only.
       if (rel === "mif.schema.json") throw e;
       console.warn(`  warn: skipped ${rel} (${e.message})`);
     }
+  }
+
+  const existingLock = existsSync(LOCK) ? JSON.parse(readFileSync(LOCK, "utf8")) : null;
+  const lockMetaChanged = lockMetadataChanged(existingLock, {
+    source: BASE,
+    channel,
+    resolvedVersion: resolved,
+    files: fetched,
+  });
+
+  if (!changed && !lockMetaChanged) {
+    console.log(`up to date: MIF schema ${resolved} (channel: ${channel}) — no changes, nothing written`);
+    return;
   }
 
   const lock = {
