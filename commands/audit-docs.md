@@ -11,9 +11,14 @@ Arguments: `$ARGUMENTS`
 
 ## `--help` / `-h`
 
-If `$ARGUMENTS` contains `--help` or `-h` (anywhere, regardless of other
-flags present), print the block below verbatim and stop — do not resolve
-plugin paths, do not run the elicitation step, do not invoke the Workflow.
+If `$ARGUMENTS` contains a standalone `--help` or `-h` token (not as a
+substring of another argument's value, e.g. not the `-h` inside a path like
+`docs/api-handbook`), print the block below verbatim and stop — do not run
+the elicitation step, do not invoke the Workflow. Note: the
+`${CLAUDE_PLUGIN_ROOT}` path resolutions further down this file are bash
+preprocessing that runs before this instruction is evaluated, so those
+`echo` calls still fire even on `--help` — that's harmless (no side effects
+beyond printing a path) and safe to ignore, just don't act on their output.
 
 ```text
 /audit-docs --path <path>... [options]
@@ -29,15 +34,18 @@ Required:
 
 Options:
   --batch-size N           Targets processed per batch. Default: 5.
-  --mif-level 1|2|3        Target MIF level for frontmatter-schema/mif-level-gap.
-                            Advisory only — never a failing finding.
+  --mif-level 1|2|3        Target level for the mif-level-gap check only —
+                            reported as an advisory upgrade recommendation,
+                            never a failing finding. frontmatter-schema always
+                            validates at level 1 regardless of this flag, and
+                            its violations ARE real findings, not advisory.
   --checks id,id,...        Run only these checks (see the full list below).
                             Default: every check in the registry.
   --fix                    Apply fixes for haiku-tier mechanical findings with
                             one deterministic corrective action. Default: off
                             (report-only). Never applies to judgment-tier
                             findings (voice/taxonomy/relationship-graph/
-                            coverage-gap) — that's permanent, not a v1 gap.
+                            coverage-gaps) — that's permanent, not a v1 gap.
   --file-issues            File confirmed high-severity findings as GitHub
                             issues in their owning repo. Default: off.
   --report-dir <dir>       Where the report is written, relative to the
@@ -45,12 +53,14 @@ Options:
   --help, -h                Show this help and exit.
 
 Check registry (--checks accepts any of these ids):
-  Mechanical / haiku tier (deterministic tools, cheap):
+  Haiku tier, tool-backed (a real CLI/tool is the oracle, not just LLM judgment):
     frontmatter-schema      MIF schema + round-trip conformance (mif-validate CLI)
     mif-level-gap            Current vs. target MIF level (advisory)
     provenance-drift         Witnessed/asserted provenance coverage
     link-integrity            Internal/external links actually resolve
     ontology-reference        MIF ontology term references resolve
+
+  Haiku tier, LLM judgment (routed here for cost, not because a tool verifies them):
     structural-formatting      Heading hierarchy, code fences, table formatting
     temporal-metadata          created/modified field consistency
 
@@ -90,7 +100,7 @@ Examples:
   `--help` block above. Omit entirely if not given.
 - `--fix` (optional flag): apply fixes after the audit, scoped to haiku-tier
   mechanical findings with a single deterministic corrective action —
-  never voice/taxonomy/relationship-graph/coverage-gap findings, those are
+  never voice/taxonomy/relationship-graph/coverage-gaps findings, those are
   permanently out of `--fix` scope. Absent by default — the audit is
   read-only reporting unless this flag is present.
 - `--file-issues` (optional flag): file confirmed findings at or above
@@ -178,7 +188,7 @@ re-invoking or re-asking.
   `recommendation`, and whether it was auto-fixed
 - if `--fix` was set: which findings were fixed vs. left for manual action,
   and why (per-batch, per-doc mechanical fixes only — never voice/taxonomy/
-  relationship-graph/coverage-gap findings, those are permanently out of
+  relationship-graph/coverage-gaps findings, those are permanently out of
   `--fix` scope, not a gap to close later)
 - if `--file-issues` was set: which findings were filed, in which repo, and
   which were skipped as likely duplicates
