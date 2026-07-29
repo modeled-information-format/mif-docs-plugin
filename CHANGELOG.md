@@ -62,6 +62,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-29
+
+### Added
+
+- `/audit-docs --help`/`-h`: prints full usage text (every check id grouped
+  by tier, defaults, examples) and exits before touching plugin paths,
+  elicitation, or the Workflow.
+
+### Fixed
+
+- `/audit-docs`'s `--checks`/`--fix` help text used the non-existent id
+  `coverage-gap` in three places instead of the real registry id
+  `coverage-gaps`.
+- `--mif-level`'s help text incorrectly implied it also targets the
+  `frontmatter-schema` check and that check's violations are advisory;
+  `frontmatter-schema` always validates at level 1 and its violations are
+  real findings, not advisory — only `mif-level-gap` is advisory and level-
+  configurable.
+- The haiku-tier check list was documented as uniformly "deterministic
+  tools" — `structural-formatting` and `temporal-metadata` are plain LLM
+  judgment routed to haiku for cost, not tool-verified; now documented as
+  a separate sub-group.
+
 ## [0.9.0] - 2026-07-29
 
 ### Added
