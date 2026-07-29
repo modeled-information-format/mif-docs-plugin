@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-28T23:30:44.531Z'
+modified: '2026-07-29T22:11:44.764Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,7 +27,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
+    '@id': urn:mif:activity:claude-code-session:b483a7f4-7c2c-4044-b643-bc55641c901c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
@@ -61,6 +61,8 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.0] - 2026-07-29
 
 ### Added
 
