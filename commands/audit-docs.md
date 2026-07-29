@@ -22,8 +22,10 @@ Arguments: `$ARGUMENTS`
   current level with no gap comparison).
 - `--checks` (optional, comma-separated check ids): run only these checks
   from the registry instead of all of them. Omit entirely if not given.
-- `--fix` (optional flag): apply fixes for mechanically-safe findings after
-  the audit (see "Fix scope" below). Absent by default — the audit is
+- `--fix` (optional flag): apply fixes after the audit, scoped to haiku-tier
+  mechanical findings with a single deterministic corrective action —
+  never voice/taxonomy/relationship-graph/coverage-gap findings, those are
+  permanently out of `--fix` scope. Absent by default — the audit is
   read-only reporting unless this flag is present.
 - `--file-issues` (optional flag): file confirmed findings at or above
   `severity: high` as GitHub issues via the `github-bug-capture` search-then-
@@ -45,12 +47,16 @@ not invent criteria on their behalf.
 ## Resolve plugin-relative paths
 
 This plugin's own scripts and this workflow live at a path that differs per
-installation, so resolve both before invoking anything — never assume the
-audited path is inside this plugin's own repo:
+installation, so resolve all four below before invoking anything — never
+assume the audited path is inside this plugin's own repo:
 
 Workflow script path: !`echo ${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs.js`
 
-mif-provenance script path: !`echo ${CLAUDE_PLUGIN_ROOT}/scripts/mif-provenance.mjs`
+mif-provenance corpus-check script path (provenance-drift uses this, not
+`mif-provenance verify` — that tool checks against the CURRENT session, which
+is wrong for auditing a pre-existing document authored in a past session):
+
+!`echo ${CLAUDE_PLUGIN_ROOT}/scripts/provenance-corpus-check.mjs`
 
 mif-validate script path (frontmatter-schema/mif-level-gap use this CLI, never
 the validate_mif_document MCP tool — that tool requires pre-converted JSON-LD
@@ -82,7 +88,7 @@ Workflow({
     fix: <true|false>,
     fileIssues: <true|false>,
     reportDir: "<--report-dir value or 'reports/audit-docs'>",
-    mifProvenanceScript: "<the mif-provenance script path printed above>",
+    mifProvenanceCorpusCheckScript: "<the mif-provenance corpus-check script path printed above>",
     mifValidateScript: "<the mif-validate script path printed above>",
     skillsRoot: "<the skills directory path printed above>",
     customChecks: [<user-supplied criteria strings>],

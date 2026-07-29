@@ -85,11 +85,11 @@ const REPORT_SCHEMA = {
 // the finding schema or the orchestration logic below to add one.
 const CHECKS = [
   { id: 'frontmatter-schema', dimension: 'frontmatter', tier: 'haiku', scope: 'doc',
-    instructions: "Run `node <mifValidateScript> <file> --level 1` — <mifValidateScript> is the absolute path supplied in args.mifValidateScript, resolved by the invoking command from its own installation. Do NOT use the validate_mif_document MCP tool for this — it requires a pre-converted JSON-LD projection and fails on markdown input, which is what real documents actually are; confirmed by direct test. Report every schema/round-trip violation the CLI reports as a finding. If args.mifValidateScript was not supplied, say so explicitly as a finding rather than silently skipping." },
+    instructions: "Run `node <mifValidateScript> <file> --level 1` — <mifValidateScript> is the absolute path supplied in args.mifValidateScript, resolved by the invoking command from its own installation. Do NOT use the validate_mif_document MCP tool for this — it requires a pre-converted JSON-LD projection and fails on markdown input, which is what real documents actually are; confirmed by direct test. The CLI exits 3 (not 1) when its schema cache isn't hydrated locally — that is an environment/tooling gap, not a document defect; report it as a single low-severity 'audit environment not hydrated (run npm run hydrate-schema)' note, never as a schema/conformance finding. Only exit 1 (with its numbered failure list) represents real document violations — report those. If args.mifValidateScript was not supplied, say so explicitly as a finding rather than silently skipping." },
   { id: 'mif-level-gap', dimension: 'frontmatter', tier: 'haiku', scope: 'doc',
-    instructions: "Using the same `node <mifValidateScript> <file> --level <target>` run (re-run at the target level if one was given, otherwise at level 1), compare the document's current passing level to the target level. Advisory only: report a gap as an upgrade recommendation with severity 'low' or 'medium', never as a failing/high-severity finding." },
+    instructions: "Using the same `node <mifValidateScript> <file> --level <target>` run (re-run at the target level if one was given, otherwise at level 1), compare the document's current passing level to the target level — same exit-3-vs-exit-1 distinction as frontmatter-schema applies here too. Advisory only: report a gap as an upgrade recommendation with severity 'low' or 'medium', never as a failing/high-severity finding." },
   { id: 'provenance-drift', dimension: 'provenance', tier: 'haiku', scope: 'doc',
-    instructions: "Run `node <mifProvenanceScript> verify <file>` — <mifProvenanceScript> is the absolute path supplied in args.mifProvenanceScript, resolved by the invoking command from its own installation, so this works regardless of which repo the document lives in. Report drift between the stated provenance and what the ledger actually observed; do not reimplement the ledger comparison yourself. Skip this check with no finding if args.mifProvenanceScript was not supplied." },
+    instructions: "Run `node <mifProvenanceCorpusCheckScript> --dir <the directory containing this file>` — <mifProvenanceCorpusCheckScript> is the absolute path supplied in args.mifProvenanceCorpusCheckScript, resolved by the invoking command from its own installation. Do NOT use `mif-provenance verify` for this (a different script, args.mifProvenanceScript) — it checks against the CURRENT session, which is wrong for auditing a pre-existing document authored in a past session, and produces false 'unwitnessed' results for exactly that reason. The corpus-check script's output has a 'per file:' section listing every file's status (witnessed/asserted/none) — find this file's row and report based on that: 'none' (no provenance block at all) is worth a low-severity note only if the target MIF level requires provenance; 'asserted' (a provenance block exists but isn't witnessed) is informational, not a defect, unless the document claims witnessed provenance it doesn't have. Skip this check with no finding if args.mifProvenanceCorpusCheckScript was not supplied." },
   { id: 'link-integrity', dimension: 'relationships', tier: 'haiku', scope: 'doc',
     instructions: 'Check every internal and external link in the document actually resolves. Report dangling internal links and dead external links.' },
   { id: 'ontology-reference', dimension: 'relationships', tier: 'haiku', scope: 'doc',
@@ -124,6 +124,12 @@ function resolveChecks(requestedIds, customChecks) {
   const registry = requestedIds && requestedIds.length
     ? CHECKS.filter(c => requestedIds.includes(c.id))
     : CHECKS
+  if (requestedIds && requestedIds.length) {
+    const unknown = requestedIds.filter(id => !CHECKS.some(c => c.id === id))
+    if (unknown.length) {
+      log(`--checks requested ${unknown.length} unknown check id(s), not run (no silent drop): ${JSON.stringify(unknown)}. Known ids: ${JSON.stringify(CHECKS.map(c => c.id))}`)
+    }
+  }
   const custom = (customChecks || []).map((text, i) => ({
     id: `custom-${i + 1}`,
     dimension: 'custom',
@@ -140,13 +146,13 @@ function chunk(list, size) {
   return out
 }
 
-function findingsPrompt(target, relevantChecks, mifLevel, mifProvenanceScript, skillsRoot, mifValidateScript) {
+function findingsPrompt(target, relevantChecks, mifLevel, mifProvenanceCorpusCheckScript, skillsRoot, mifValidateScript) {
   return (
     `Audit exactly one document, ${target}, against these checks:\n` +
     relevantChecks.map(c => `- [${c.id}] ${c.instructions}`).join('\n') +
     (mifLevel ? `\nTarget MIF level for the mif-level-gap check: ${mifLevel}.` : '') +
     (relevantChecks.some(c => c.id === 'provenance-drift')
-      ? `\nmifProvenanceScript for the provenance-drift check: ${mifProvenanceScript || '(not supplied — skip that check)'}`
+      ? `\nmifProvenanceCorpusCheckScript for the provenance-drift check: ${mifProvenanceCorpusCheckScript || '(not supplied — skip that check)'}`
       : '') +
     (relevantChecks.some(c => c.id === 'frontmatter-schema' || c.id === 'mif-level-gap')
       ? `\nmifValidateScript for the frontmatter-schema/mif-level-gap checks: ${mifValidateScript || '(not supplied — skip those checks)'}`
@@ -206,8 +212,23 @@ log(
 // Deterministic containment check — plain string comparison, no filesystem/Node API needed, and no
 // dependence on any agent's judgment. Used both to skip discovery entirely for literal file paths
 // and, below, as a second independent check on whatever a discovery agent returns for directories.
+// Resolves '.'/'..' segments itself (no Node `path` module available to this script) so a path like
+// '/repo/skills/templates/../../../secrets/x.md' can't bypass containment via string-prefix matching
+// alone — it must resolve to its real target before the prefix comparison runs.
 function normalizeForContainment(p) {
-  return String(p).replace(/\\/g, '/').replace(/\/+$/, '')
+  const raw = String(p).replace(/\\/g, '/')
+  const isAbsolute = raw.startsWith('/')
+  const resolved = []
+  for (const part of raw.split('/')) {
+    if (part === '' || part === '.') continue
+    if (part === '..') {
+      if (resolved.length && resolved[resolved.length - 1] !== '..') resolved.pop()
+      else if (!isAbsolute) resolved.push('..')
+      continue
+    }
+    resolved.push(part)
+  }
+  return (isAbsolute ? '/' : '') + resolved.join('/')
 }
 function isWithinGivenPaths(file, givenPaths) {
   const nf = normalizeForContainment(file)
@@ -292,15 +313,15 @@ const batchResults = await pipeline(
     const perDocGroups = await parallel(batch.flatMap(file => {
       const calls = []
       if (haikuChecks.length) {
-        calls.push(() => agent(findingsPrompt(file, haikuChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
+        calls.push(() => agent(findingsPrompt(file, haikuChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceCorpusCheckScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
           { phase: 'Audit', schema: FINDINGS_SCHEMA, label: `audit:haiku:${file}`, model: 'haiku' }))
       }
       if (sonnetChecks.length) {
-        calls.push(() => agent(findingsPrompt(file, sonnetChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
+        calls.push(() => agent(findingsPrompt(file, sonnetChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceCorpusCheckScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
           { phase: 'Audit', schema: FINDINGS_SCHEMA, label: `audit:sonnet:${file}`, model: 'sonnet' }))
       }
       if (opusDocChecks.length) {
-        calls.push(() => agent(findingsPrompt(file, opusDocChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
+        calls.push(() => agent(findingsPrompt(file, opusDocChecks, resolvedArgs.mifLevel, resolvedArgs.mifProvenanceCorpusCheckScript, resolvedArgs.skillsRoot, resolvedArgs.mifValidateScript),
           { phase: 'Audit', schema: FINDINGS_SCHEMA, label: `audit:opus:${file}`, model: 'opus' }))
       }
       return calls
@@ -326,9 +347,11 @@ const batchResults = await pipeline(
 
     return { batchIndex: index, files: batch, rawFindings: [...perDocFindings, ...batchFindings] }
   },
-  // VERIFY stage — adversarial refute for judgment-tier findings; mechanical (haiku) findings are
-  // already gated by their own oracle (validate_mif_document, link resolution, ontology resolution)
-  // and skip adversarial re-check. A verifier that itself fails must never silently drop the
+  // VERIFY stage — adversarial refute for judgment-tier findings. Haiku-tier findings skip
+  // adversarial re-check purely because of their cost tier, not because every haiku check has an
+  // independent oracle backing it — most do (mif-validate CLI, link resolution, ontology
+  // resolution), but structural-formatting and temporal-metadata are plain LLM judgment routed to
+  // haiku for cost, not tool-verified. A verifier that itself fails must never silently drop the
   // finding — default to reporting it (fail open), flagged as unverified, not vanished.
   async (auditResult) => {
     if (!auditResult) return null

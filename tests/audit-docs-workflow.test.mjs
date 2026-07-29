@@ -8,7 +8,7 @@
 // one is a syntax error in that context. So these tests do NOT import from
 // workflows/audit-docs.js; they mirror the three pure, side-effect-free
 // functions byte-for-byte (normalizeForContainment, isWithinGivenPaths,
-// looksLikeFilePath — see workflows/audit-docs.js lines ~192-207). If those
+// looksLikeFilePath — see workflows/audit-docs.js lines ~218-246). If those
 // functions change, update the copies below to match, or this file silently
 // stops testing the real logic.
 //
@@ -23,7 +23,19 @@ import assert from 'node:assert/strict';
 
 // --- mirrored from workflows/audit-docs.js — keep byte-identical ---
 function normalizeForContainment(p) {
-  return String(p).replace(/\\/g, '/').replace(/\/+$/, '')
+  const raw = String(p).replace(/\\/g, '/')
+  const isAbsolute = raw.startsWith('/')
+  const resolved = []
+  for (const part of raw.split('/')) {
+    if (part === '' || part === '.') continue
+    if (part === '..') {
+      if (resolved.length && resolved[resolved.length - 1] !== '..') resolved.pop()
+      else if (!isAbsolute) resolved.push('..')
+      continue
+    }
+    resolved.push(part)
+  }
+  return (isAbsolute ? '/' : '') + resolved.join('/')
 }
 function isWithinGivenPaths(file, givenPaths) {
   const nf = normalizeForContainment(file)
@@ -96,6 +108,26 @@ test('containment: a file NOT nested under a given directory is out of scope (pr
   assert.equal(
     isWithinGivenPaths('/etc/passwd', ['/repo/skills/adr/templates/good-l1.md']),
     false
+  );
+});
+
+test('containment: a path-traversal escape via .. segments is out of scope, not admitted by string-prefix matching', () => {
+  // A naive prefix check alone (no '.'/'..' resolution) would wrongly admit this: the raw string
+  // starts with the given prefix, but the real, resolved target is well outside it.
+  assert.equal(
+    isWithinGivenPaths('/repo/skills/adr/templates/../../../secrets/credentials.md', ['/repo/skills/adr/templates']),
+    false,
+    'a traversal that resolves outside the given path must be rejected'
+  );
+  assert.equal(
+    isWithinGivenPaths('/repo/skills/adr/templates/./good.md', ['/repo/skills/adr/templates']),
+    true,
+    'a harmless "." segment does not affect a genuinely in-scope path'
+  );
+  assert.equal(
+    isWithinGivenPaths('/repo/skills/adr/templates/sub/../good.md', ['/repo/skills/adr/templates']),
+    true,
+    'a .. that resolves back to within scope is still in scope'
   );
 });
 
