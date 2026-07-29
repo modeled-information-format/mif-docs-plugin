@@ -62,6 +62,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `/audit-docs` slash command backed by a dynamic Workflow
+  (`workflows/audit-docs.js`) that audits MIF documents for frontmatter,
+  provenance, temporal, relationship, citation, taxonomy-alignment,
+  editorial-voice, genre-conformance, accuracy, duplication-drift, and
+  coverage-gap findings across an extensible, model-routed check registry.
+  Supports configurable batch size, a runtime elicitation step for
+  project-specific custom checks, an opt-in `--fix` mode scoped to
+  mechanically-safe findings, and opt-in GitHub issue filing for confirmed
+  high-severity findings.
+
 ## [0.8.0] - 2026-07-28
 
 ### Added
