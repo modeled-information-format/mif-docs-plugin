@@ -1,6 +1,6 @@
 ---
 description: Audit MIF documents under one or more paths for accuracy, taxonomical alignment, editorial consistency, frontmatter/provenance/temporal/relationship/citation conformance, using per-check model routing and configurable batching
-argument-hint: --path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,id,...] [--fix] [--file-issues] [--report-dir <dir>]
+argument-hint: [--help] --path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,id,...] [--fix] [--file-issues] [--report-dir <dir>]
 allowed-tools: Bash(echo:*)
 ---
 
@@ -8,6 +8,71 @@ Audit MIF documents via the `audit-docs` Workflow
 (`${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs.js`) shipped with this plugin.
 
 Arguments: `$ARGUMENTS`
+
+## `--help` / `-h`
+
+If `$ARGUMENTS` contains `--help` or `-h` (anywhere, regardless of other
+flags present), print the block below verbatim and stop — do not resolve
+plugin paths, do not run the elicitation step, do not invoke the Workflow.
+
+```text
+/audit-docs --path <path>... [options]
+
+Audits MIF documents (files with MIF frontmatter) for schema conformance,
+provenance, temporal consistency, editorial voice, taxonomy alignment,
+genre conformance, cross-document accuracy, citations, and coverage —
+via an extensible, model-routed check registry. Read-only by default.
+
+Required:
+  --path <path>...        One or more files or directories to audit.
+                           A directory is recursed for matching MIF documents.
+
+Options:
+  --batch-size N           Targets processed per batch. Default: 5.
+  --mif-level 1|2|3        Target MIF level for frontmatter-schema/mif-level-gap.
+                            Advisory only — never a failing finding.
+  --checks id,id,...        Run only these checks (see the full list below).
+                            Default: every check in the registry.
+  --fix                    Apply fixes for haiku-tier mechanical findings with
+                            one deterministic corrective action. Default: off
+                            (report-only). Never applies to judgment-tier
+                            findings (voice/taxonomy/relationship-graph/
+                            coverage-gap) — that's permanent, not a v1 gap.
+  --file-issues            File confirmed high-severity findings as GitHub
+                            issues in their owning repo. Default: off.
+  --report-dir <dir>       Where the report is written, relative to the
+                            current working directory. Default: reports/audit-docs.
+  --help, -h                Show this help and exit.
+
+Check registry (--checks accepts any of these ids):
+  Mechanical / haiku tier (deterministic tools, cheap):
+    frontmatter-schema      MIF schema + round-trip conformance (mif-validate CLI)
+    mif-level-gap            Current vs. target MIF level (advisory)
+    provenance-drift         Witnessed/asserted provenance coverage
+    link-integrity            Internal/external links actually resolve
+    ontology-reference        MIF ontology term references resolve
+    structural-formatting      Heading hierarchy, code fences, table formatting
+    temporal-metadata          created/modified field consistency
+
+  Judgment / sonnet tier (per-document):
+    taxonomy-alignment        Semantic/episodic/procedural classification + voice
+    editorial-voice            Voice/register consistency
+    genre-conformance          Structure vs. the document's declared genre skill
+    temporal-staleness        Content describing a retired/superseded system
+    accuracy-corpus            Cross-document factual contradictions
+    citation-validity          Citation format and existence
+
+  Judgment / opus tier:
+    accuracy-code              Code citations checked against actual source (per-doc)
+    duplication-drift          Same fact asserted differently across the batch
+    relationship-graph        MIF relationship graph resolves within the batch
+    coverage-gaps              An expected doc genre conspicuously missing
+
+Examples:
+  /audit-docs --path docs/how-to/deploy.md
+  /audit-docs --path docs/ --checks frontmatter-schema,editorial-voice
+  /audit-docs --path docs/ --fix --mif-level 2
+```
 
 - `--path` (required, one or more values): each a file or directory. Recurse
   over matching MIF documents (files with MIF frontmatter) when a value is a
@@ -21,7 +86,8 @@ Arguments: `$ARGUMENTS`
   entirely if not given (the workflow then only reports each doc's own
   current level with no gap comparison).
 - `--checks` (optional, comma-separated check ids): run only these checks
-  from the registry instead of all of them. Omit entirely if not given.
+  from the registry instead of all of them — see the full id list in the
+  `--help` block above. Omit entirely if not given.
 - `--fix` (optional flag): apply fixes after the audit, scoped to haiku-tier
   mechanical findings with a single deterministic corrective action —
   never voice/taxonomy/relationship-graph/coverage-gap findings, those are
