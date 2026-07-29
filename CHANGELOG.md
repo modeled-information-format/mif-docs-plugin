@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-29T22:11:44.764Z'
+modified: '2026-07-29T22:55:33.215Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -69,6 +69,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - `/audit-docs --help`/`-h`: prints full usage text (every check id grouped
   by tier, defaults, examples) and exits before touching plugin paths,
   elicitation, or the Workflow.
+- `/audit-docs`'s `argument-hint` now includes `[--help]`, and the
+  `--checks` doc text points at the full check-id list in the `--help`
+  block instead of a bare `id,id,...` placeholder.
 
 ### Fixed
 
