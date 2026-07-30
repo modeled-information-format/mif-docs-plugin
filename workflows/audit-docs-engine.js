@@ -3,7 +3,7 @@
 // authored --help/argument-hint/elicitation logic (mif-docs-plugin#191).
 export const meta = {
   name: 'audit-docs-engine',
-  description: 'Audit MIF documents for accuracy, taxonomy alignment, editorial consistency, and frontmatter/provenance/temporal/relationship/citation conformance, with per-check model routing and configurable batching',
+  description: 'Internal engine invoked by /mif-docs:audit-docs — do not invoke directly; it skips that command\'s --help, argument-hint, and custom-check elicitation. Audits MIF documents for accuracy, taxonomy alignment, editorial consistency, and frontmatter/provenance/temporal/relationship/citation conformance, with per-check model routing and configurable batching.',
   phases: [
     { title: 'Design', detail: 'discover targets, finalize check registry (built-in + elicited custom checks), plan batches' },
     { title: 'Audit', detail: 'per-doc checks routed by model tier, per-batch cross-doc checks, batches pipelined' },

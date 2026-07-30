@@ -5,11 +5,10 @@ allowed-tools: Bash(echo:*)
 ---
 
 Audit MIF documents via the `audit-docs-engine` Workflow
-(`${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs-engine.js`) shipped with this plugin. It is
-deliberately not named `audit-docs`: Claude Code auto-registers plugin workflows as
-`/<plugin>:<meta.name>`, and a same-named workflow previously shadowed this command entirely
-(mif-docs-plugin#191) — every `--help`/argument-hint/elicitation instruction below was
-unreachable dead code until this rename.
+(`${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs-engine.js`) shipped with this plugin. Its name is
+deliberately distinct from this command's: Claude Code auto-registers plugin workflows as
+`/<plugin>:<meta.name>`, and a workflow sharing this command's name would shadow it entirely,
+making the `--help`/argument-hint/elicitation instructions below unreachable.
 
 Arguments: `$ARGUMENTS`
 

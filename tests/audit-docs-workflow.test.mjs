@@ -8,7 +8,7 @@
 // one is a syntax error in that context. So these tests do NOT import from
 // workflows/audit-docs-engine.js; they mirror the three pure, side-effect-free
 // functions byte-for-byte (normalizeForContainment, isWithinGivenPaths,
-// looksLikeFilePath — see workflows/audit-docs-engine.js lines ~218-246). If those
+// looksLikeFilePath — see workflows/audit-docs-engine.js lines 221-248). If those
 // functions change, update the copies below to match, or this file silently
 // stops testing the real logic.
 //
