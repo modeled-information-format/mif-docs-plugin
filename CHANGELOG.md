@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-29T22:55:33.215Z'
+modified: '2026-07-30T12:19:27.385Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,7 +27,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b483a7f4-7c2c-4044-b643-bc55641c901c
+    '@id': urn:mif:activity:claude-code-session:b5bba701-d09b-493c-98c1-85bd98cd9eec
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
@@ -61,6 +61,22 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Changed
+
+- Replaced the Workflow-based `audit-docs` (`commands/audit-docs.md` +
+  `workflows/audit-docs.js`) with a plain Skill
+  (`skills/audit-docs/SKILL.md`) implementing the same 17-check registry.
+  The Workflow-based version had two production failures: a naming
+  collision where the workflow shadowed the hand-authored command,
+  making `--help`/`argument-hint` unreachable (#191); and a more severe
+  unbounded-fan-out bug in its Verify phase (one opus agent per
+  individual finding, no dedup or cap), which hit the Workflow tool's
+  1000-agent ceiling and burned roughly 51M tokens in one run against a
+  73-file corpus. The new skill runs entirely as bounded, in-conversation
+  `Agent` calls -- one per file, plus at most 3 for cross-document
+  checks -- with no background orchestration and no per-finding fan-out
+  possible by construction.
 
 ## [0.9.1] - 2026-07-29
 

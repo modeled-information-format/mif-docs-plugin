@@ -1,0 +1,47 @@
+{
+  "skill_name": "audit-docs",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "Show me the help for audit-docs.",
+      "expected_output": "Prints the option reference and full check registry (frontmatter-schema, mif-level-gap, provenance-drift, link-integrity, ontology-reference, structural-formatting, temporal-metadata, taxonomy-alignment, editorial-voice, genre-conformance, temporal-staleness, accuracy-corpus, citation-validity, accuracy-code, duplication-drift, relationship-graph, coverage-gaps) verbatim, then stops without running discovery, elicitation, or any Agent call.",
+      "files": [],
+      "expectations": [
+        "Does not ask about custom checks, does not resolve plugin-relative paths, and does not make any Agent call before or after printing help",
+        "Lists all 17 check ids from the registry, not a partial or summarized subset"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "Audit tests/fixtures/good-l1.md with --checks frontmatter-schema,structural-formatting and --report-dir eval-reports-2.",
+      "expected_output": "Discovers exactly one file (the literal path given), makes exactly one Agent call for it running only the two requested checks (never more than requested, never the full registry), and writes a report under eval-reports-2/ naming the audited file — the skill does not support an exact output filename, only --report-dir, so the report's exact basename is not asserted here.",
+      "files": [],
+      "expectations": [
+        "Makes exactly one Agent call total for this single-file, --checks-scoped run — never one call per check and never one call per finding",
+        "Runs only frontmatter-schema and structural-formatting, not the full 17-check registry, since --checks restricted scope",
+        "Writes the report somewhere under eval-reports-2/, never asserting or inventing an exact filename flag the skill doesn't document"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "Audit tests/fixtures/invalid.md for frontmatter-schema and report what's wrong, using --report-dir eval-reports-3. Don't apply --fix.",
+      "expected_output": "Runs the frontmatter-schema check (via the mif-validate CLI, not the validate_mif_document MCP tool) against the fixture, finds the conceptType enum violation, reports it as a real (non-advisory) finding in a report written under eval-reports-3/, and does not modify tests/fixtures/invalid.md since --fix was not requested.",
+      "files": [],
+      "expectations": [
+        "Treats frontmatter-schema violations as real findings, never advisory (unlike mif-level-gap, which is always advisory)",
+        "Does not modify the source fixture file since --fix was not passed",
+        "Names the actual schema violation (the conceptType enum mismatch) in the report, not a generic failure message"
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "I want to audit a directory of 40 MIF documents with the full check registry. Before you start, tell me roughly how many Agent calls this will take and why.",
+      "expected_output": "States the expected call count as O(files), specifically roughly file_count plus a small fixed number (at most 3) for the cross-document checks (duplication-drift, relationship-graph, coverage-gaps) — never file_count times check_count, and never one call per individual finding.",
+      "files": [],
+      "expectations": [
+        "Explicitly rules out per-finding fan-out as the reason a large corpus stays bounded, citing that this is exactly what caused the prior Workflow-based implementation to hit a 1000-agent cap and ~51M tokens in one run",
+        "Gives a concrete, checkable number (e.g. '~40-43 Agent calls'), not a vague 'it depends' with no bound stated"
+      ]
+    }
+  ]
+}
