@@ -42,6 +42,22 @@ interrupt at any point — no silent background runaway.
 **Never spawn one `Agent` call per finding.** If a future edit to this file
 does that, it reintroduces the exact incident described above.
 
+**Never override the per-file `Agent` call's model to `opus` (or any
+non-default tier) without a specific, stated reason.** This skill's bounded
+`O(files)` call count fixed the *fan-out* half of the original incident, but
+a 2026-07-30 run against a 125-file corpus reintroduced the same class of
+unnecessary cost a different way: every one of ~90 per-file `Agent` calls was
+issued with `model: "opus"`, chosen once at the start of the run and never
+revisited, with no finding afterward suggesting sonnet would have missed
+anything. The per-file checks here (read a doc, read a handful of cited
+siblings, run a grep or two against real source, judge voice/structure/
+accuracy) are exactly the kind of grounded-but-not-frontier judgment work the
+session's default model handles well. **Omit the `model` parameter entirely
+in Step 2 and Step 4's `Agent` calls — let it inherit the session's resolved
+model.** Only pass an explicit `model` override if the run has a concrete,
+stated reason to need a different tier (e.g. the user directly asked for a
+specific model), and say so out loud when you do it.
+
 ## `--help` / `-h`
 
 If asked to show help, print the option reference and check registry below,
