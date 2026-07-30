@@ -4,8 +4,12 @@ argument-hint: [--help] --path <path>... [--batch-size N] [--mif-level 1|2|3] [-
 allowed-tools: Bash(echo:*)
 ---
 
-Audit MIF documents via the `audit-docs` Workflow
-(`${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs.js`) shipped with this plugin.
+Audit MIF documents via the `audit-docs-engine` Workflow
+(`${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs-engine.js`) shipped with this plugin. It is
+deliberately not named `audit-docs`: Claude Code auto-registers plugin workflows as
+`/<plugin>:<meta.name>`, and a same-named workflow previously shadowed this command entirely
+(mif-docs-plugin#191) — every `--help`/argument-hint/elicitation instruction below was
+unreachable dead code until this rename.
 
 Arguments: `$ARGUMENTS`
 
@@ -126,7 +130,7 @@ This plugin's own scripts and this workflow live at a path that differs per
 installation, so resolve all four below before invoking anything — never
 assume the audited path is inside this plugin's own repo:
 
-Workflow script path: !`echo ${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs.js`
+Workflow script path: !`echo ${CLAUDE_PLUGIN_ROOT}/workflows/audit-docs-engine.js`
 
 mif-provenance corpus-check script path (provenance-drift uses this, not
 `mif-provenance verify` — that tool checks against the CURRENT session, which

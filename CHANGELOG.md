@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-07-29T22:55:33.215Z'
+modified: '2026-07-30T02:54:35.596Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -27,7 +27,7 @@ provenance:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b483a7f4-7c2c-4044-b643-bc55641c901c
+    '@id': urn:mif:activity:claude-code-session:b5bba701-d09b-493c-98c1-85bd98cd9eec
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
@@ -61,6 +61,19 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- `/audit-docs` was entirely unreachable via its documented interface in
+  v0.9.0 and v0.9.1: the plugin's `workflows/audit-docs.js` shared a base
+  name with `commands/audit-docs.md`, and Claude Code auto-registers plugin
+  workflows as `/<plugin>:<meta.name>` — the auto-registered workflow shadow
+  won that collision, so every invocation of `/mif-docs:audit-docs` (`--help`
+  included) silently ran a generic auto-generated boilerplate instead of the
+  command's actual `--help` text, `argument-hint`, and custom-check
+  elicitation step. Renamed the workflow to `workflows/audit-docs-engine.js`
+  (`meta.name: 'audit-docs-engine'`) so it no longer collides with the
+  command name (#191).
 
 ## [0.9.1] - 2026-07-29
 

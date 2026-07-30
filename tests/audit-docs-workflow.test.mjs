@@ -1,14 +1,14 @@
-// Regression tests for the scope-safety logic in workflows/audit-docs.js.
+// Regression tests for the scope-safety logic in workflows/audit-docs-engine.js.
 //
-// workflows/audit-docs.js is a dynamic Workflow-tool script, not a normal ES
+// workflows/audit-docs-engine.js is a dynamic Workflow-tool script, not a normal ES
 // module: everything after its required `export const meta = {...}` block
 // executes inside the Workflow runtime's own async-wrapped context (top-level
 // await/return, injected agent()/parallel()/pipeline()/phase()/log()
 // globals), which does not support additional `export` statements — adding
 // one is a syntax error in that context. So these tests do NOT import from
-// workflows/audit-docs.js; they mirror the three pure, side-effect-free
+// workflows/audit-docs-engine.js; they mirror the three pure, side-effect-free
 // functions byte-for-byte (normalizeForContainment, isWithinGivenPaths,
-// looksLikeFilePath — see workflows/audit-docs.js lines ~218-246). If those
+// looksLikeFilePath — see workflows/audit-docs-engine.js lines ~218-246). If those
 // functions change, update the copies below to match, or this file silently
 // stops testing the real logic.
 //
@@ -21,7 +21,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-// --- mirrored from workflows/audit-docs.js — keep byte-identical ---
+// --- mirrored from workflows/audit-docs-engine.js — keep byte-identical ---
 function normalizeForContainment(p) {
   const raw = String(p).replace(/\\/g, '/')
   const isAbsolute = raw.startsWith('/')
@@ -132,7 +132,7 @@ test('containment: a path-traversal escape via .. segments is out of scope, not 
 });
 
 test('a discovery result with zero in-scope files signals failure rather than silently succeeding', () => {
-  // Mirrors the real guard in workflows/audit-docs.js: `if (discovery.files.length && !inScope.length) throw`.
+  // Mirrors the real guard in workflows/audit-docs-engine.js: `if (discovery.files.length && !inScope.length) throw`.
   // A discovery agent that returns files, none of which are actually in scope, means discovery
   // failed for this input — that must be distinguishable from "correctly found nothing".
   const directoryPaths = ['/repo/skills/google-design-doc/templates'];
