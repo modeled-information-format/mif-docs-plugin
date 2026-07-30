@@ -34,8 +34,8 @@ function workflowMetaNames() {
       const metaStart = source.indexOf('export const meta');
       assert.notEqual(metaStart, -1, `${f} has no 'export const meta' — every workflow script must declare one`);
       const metaChunk = source.slice(metaStart, metaStart + 500);
-      const match = metaChunk.match(/name:\s*'([^']+)'/);
-      assert.ok(match, `${f}'s meta object has no name: '...' within the first 500 chars after 'export const meta'`);
+      const match = metaChunk.match(/name:\s*['"]([^'"]+)['"]/);
+      assert.ok(match, `${f}'s meta object has no name: '...'/"..." within the first 500 chars after 'export const meta'`);
       return { file: f, name: match[1] };
     });
 }
