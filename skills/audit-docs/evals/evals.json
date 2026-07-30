@@ -13,48 +13,24 @@
     },
     {
       "id": 2,
-      "prompt": "Audit tests/fixtures/good-l1.md with --checks frontmatter-schema,structural-formatting and save the report to audit-good-l1.md.",
-      "expected_output": "Discovers exactly one file (the literal path given), makes exactly one Agent call for it running only the two requested checks (never more than requested, never the full registry), and writes a report to audit-good-l1.md.",
+      "prompt": "Audit tests/fixtures/good-l1.md with --checks frontmatter-schema,structural-formatting and --report-dir eval-reports-2.",
+      "expected_output": "Discovers exactly one file (the literal path given), makes exactly one Agent call for it running only the two requested checks (never more than requested, never the full registry), and writes a report under eval-reports-2/ naming the audited file — the skill does not support an exact output filename, only --report-dir, so the report's exact basename is not asserted here.",
       "files": [],
-      "deterministic_checks": [
-        {
-          "type": "file_exists",
-          "file": "audit-good-l1.md",
-          "description": "Report file was written to the requested path"
-        },
-        {
-          "type": "file_contains",
-          "file": "audit-good-l1.md",
-          "literal": "good-l1.md",
-          "description": "Report names the audited file"
-        }
-      ],
       "expectations": [
         "Makes exactly one Agent call total for this single-file, --checks-scoped run — never one call per check and never one call per finding",
-        "Runs only frontmatter-schema and structural-formatting, not the full 17-check registry, since --checks restricted scope"
+        "Runs only frontmatter-schema and structural-formatting, not the full 17-check registry, since --checks restricted scope",
+        "Writes the report somewhere under eval-reports-2/, never asserting or inventing an exact filename flag the skill doesn't document"
       ]
     },
     {
       "id": 3,
-      "prompt": "Audit tests/fixtures/invalid.md for frontmatter-schema and report what's wrong, saving to audit-invalid.md. Don't apply --fix.",
-      "expected_output": "Runs the frontmatter-schema check (via the mif-validate CLI, not the validate_mif_document MCP tool) against the fixture, finds the conceptType enum violation, reports it as a real (non-advisory) finding in audit-invalid.md, and does not modify tests/fixtures/invalid.md since --fix was not requested.",
+      "prompt": "Audit tests/fixtures/invalid.md for frontmatter-schema and report what's wrong, using --report-dir eval-reports-3. Don't apply --fix.",
+      "expected_output": "Runs the frontmatter-schema check (via the mif-validate CLI, not the validate_mif_document MCP tool) against the fixture, finds the conceptType enum violation, reports it as a real (non-advisory) finding in a report written under eval-reports-3/, and does not modify tests/fixtures/invalid.md since --fix was not requested.",
       "files": [],
-      "deterministic_checks": [
-        {
-          "type": "file_exists",
-          "file": "audit-invalid.md",
-          "description": "Report file was written"
-        },
-        {
-          "type": "regex_match",
-          "file": "audit-invalid.md",
-          "pattern": "(?i)not-a-concept-type|conceptType|enum",
-          "description": "Report names the actual schema violation, not a generic failure"
-        }
-      ],
       "expectations": [
         "Treats frontmatter-schema violations as real findings, never advisory (unlike mif-level-gap, which is always advisory)",
-        "Does not modify the source fixture file since --fix was not passed"
+        "Does not modify the source fixture file since --fix was not passed",
+        "Names the actual schema violation (the conceptType enum mismatch) in the report, not a generic failure message"
       ]
     },
     {
