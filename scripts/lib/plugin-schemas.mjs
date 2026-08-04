@@ -73,12 +73,24 @@ export const SKILL_FRONTMATTER_SCHEMA = {
 // 20-character floor is not imposed here. `allowed-tools` is the documented
 // comma-separated string; a YAML list of non-empty strings is also accepted
 // since js-yaml hands either through.
+//
+// `argument-hint` accepts the same two shapes, and the list form is NOT
+// cosmetic: the documented hint syntax wraps optional arguments in brackets
+// (`argument-hint: [message]`), which YAML parses as a flow sequence —
+// `["message"]`, not the string `"[message]"`. Requiring a string here would
+// make this gate reject the canonical documented form of a perfectly valid
+// command file. Do not "tighten" this back to a bare string.
 export const COMMAND_FRONTMATTER_SCHEMA = {
   type: "object",
   required: ["description"],
   properties: {
     description: { type: "string", minLength: 1 },
-    "argument-hint": { type: "string", minLength: 1 },
+    "argument-hint": {
+      oneOf: [
+        { type: "string", minLength: 1 },
+        { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+      ],
+    },
     "allowed-tools": {
       oneOf: [
         { type: "string", minLength: 1 },

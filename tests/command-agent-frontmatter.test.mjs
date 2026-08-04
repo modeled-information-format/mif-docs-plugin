@@ -49,6 +49,24 @@ test('command: accepts allowed-tools as a YAML list of strings', () => {
   );
 });
 
+// `argument-hint: [message]` — the documented bracket syntax for an optional
+// argument — is a YAML flow sequence, so js-yaml hands the schema an array.
+// A string-only constraint here would fail the gate on a valid command file.
+test('command: accepts argument-hint as the YAML list the bracket syntax parses to', () => {
+  assert.equal(
+    validateCommand({ description: 'A command', 'argument-hint': ['message'] }),
+    true,
+  );
+});
+
+test('command: rejects an empty argument-hint list', () => {
+  assert.equal(validateCommand({ description: 'A command', 'argument-hint': [] }), false);
+});
+
+test('command: rejects an argument-hint list holding an empty string', () => {
+  assert.equal(validateCommand({ description: 'A command', 'argument-hint': [''] }), false);
+});
+
 test('command: rejects a missing description', () => {
   assert.equal(validateCommand({ 'argument-hint': '[path]' }), false);
 });
@@ -146,6 +164,22 @@ test('gate: a well-formed command passes', () => {
   });
   try {
     assert.equal(runGate(root).code, 0);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// End-to-end guard for the same bracket-syntax trap: this fixture is the
+// frontmatter block from Claude Code's own documented slash-command example,
+// verbatim and unquoted. It must pass the gate.
+test('gate: the documented command frontmatter, with an unquoted bracket argument-hint, passes', () => {
+  const root = fixture({
+    'commands/commit.md':
+      '---\nallowed-tools: Bash(git add:*), Bash(git status:*)\nargument-hint: [message]\ndescription: Create a git commit\n---\n\nCommit it.\n',
+  });
+  try {
+    const r = runGate(root);
+    assert.equal(r.code, 0, r.output);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }

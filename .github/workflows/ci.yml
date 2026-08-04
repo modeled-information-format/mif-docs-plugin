@@ -57,7 +57,7 @@ jobs:
           node-version: '24'
       - name: Install
         run: npm ci
-      - name: Validate plugin manifest + SKILL.md frontmatter
+      - name: Validate plugin manifest + SKILL.md, command, and agent frontmatter
         run: npm run validate-plugin
       - name: Hydrate canonical MIF schema
         run: npm run hydrate-schema

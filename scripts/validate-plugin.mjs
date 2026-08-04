@@ -6,7 +6,7 @@
 // honest, deterministic substitute the suite's acceptance check #1 names: it
 // validates plugin.json, marketplace.json and .mcp.json (both when present),
 // every skills/<name>/SKILL.md frontmatter plus its evals/evals.json, and
-// every commands/**/*.md and agents/*.md frontmatter (issue #186) against the
+// every commands/**/*.md and agents/**/*.md frontmatter (issue #186) against the
 // documented Claude Code manifest shape with ajv, and exits non-zero on any
 // violation.
 //
@@ -156,7 +156,7 @@ if (existsSync(commandsDir)) {
   }
 }
 
-// 6. every agents/*.md (frontmatter name must match the file basename)
+// 6. every agents/**/*.md (frontmatter name must match the file basename)
 const agentsDir = join(ROOT, "agents");
 let agentCount = 0;
 if (existsSync(agentsDir)) {

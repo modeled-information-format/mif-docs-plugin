@@ -2,7 +2,7 @@
 id: reference-genre-and-cli
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T21:47:04.573Z'
+modified: '2026-08-04T15:39:41.700Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -18,19 +18,19 @@ provenance:
   '@type': Provenance
   sourceType: agent_inferred
   trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
+    '@id': urn:mif:activity:claude-code-session:fa69eb8c-0e0f-4e98-847d-112c92f6177c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill-set:mif-docs-genres
       '@type': prov:Entity
-  agentVersion: 2.1.220
+  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: tool
@@ -162,7 +162,7 @@ Every script is fail-closed: any failure exits non-zero.
 | `hydrate-schema.mjs` | `hydrate-schema [latest\|<version>]` | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
 | `hydrate-ontology.mjs` | `hydrate-ontology` | `0` ontology cached from published URI / ontologies repo / local sibling checkout; `1` unresolved. |
 | `validate-ontology.mjs` | `validate-ontology` | `0` ontology valid and all `entity_type` / relationship types resolve; `1` not hydrated or dangling reference. |
-| `validate-plugin.mjs` | `validate-plugin` | `0` `plugin.json`, `marketplace.json`, and every `SKILL.md` frontmatter valid; `1` any structural violation. |
+| `validate-plugin.mjs` | `validate-plugin [<plugin-root>]` | `0` `plugin.json`, `marketplace.json`, `.mcp.json`, every `SKILL.md` frontmatter and its `evals/evals.json`, and every `commands/**/*.md` and `agents/**/*.md` frontmatter valid; `1` any structural violation. |
 | `check-exemplars.mjs` | `check-exemplars` | `0` every genre's `good-l1.md` validates at L1 and `good.md` at its target level; `1` otherwise. |
 | `planner-check.mjs` | `planner-check [<recipe>]` | `0` recipe(s) decompose to real member skills and the cross-link graph is complete; `1` otherwise. |
 | `mif-provenance.mjs` | `mif-provenance <stamp\|verify> <file> [--session <id>] [--ledger <path>]` \| `mif-provenance status [--session <id>] [--ledger <path>]` | `0` stamped / verify match / status healthy; `1` verify drift (including unwitnessed) or status found no `session_start` line for this session yet; `2` usage/environment error (unknown verb, no repo and no `--ledger`, ambiguous session, no session id available); `3` stamp declined (unwitnessed, not conformant, would regress the document's MIF level). |
