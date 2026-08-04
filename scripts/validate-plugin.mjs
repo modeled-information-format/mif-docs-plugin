@@ -5,11 +5,15 @@
 // subcommands are init/details/list/enable/disable/install). This script is the
 // honest, deterministic substitute the suite's acceptance check #1 names: it
 // validates plugin.json, marketplace.json and .mcp.json (both when present),
-// and every skills/<name>/SKILL.md frontmatter plus its evals/evals.json
-// against the documented Claude Code manifest shape with ajv, and exits
-// non-zero on any violation.
+// every skills/<name>/SKILL.md frontmatter plus its evals/evals.json, and
+// every commands/**/*.md and agents/*.md frontmatter (issue #186) against the
+// documented Claude Code manifest shape with ajv, and exits non-zero on any
+// violation.
+//
+// An optional first CLI argument overrides the plugin root (default: this
+// repo). Tests use it to point the gate at fixture trees.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { join, dirname } from "node:path";
+import { join, dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import { load as yamlLoad } from "js-yaml";
@@ -17,16 +21,22 @@ import {
   PLUGIN_SCHEMA,
   MARKETPLACE_SCHEMA,
   SKILL_FRONTMATTER_SCHEMA,
+  COMMAND_FRONTMATTER_SCHEMA,
+  AGENT_FRONTMATTER_SCHEMA,
   MCP_SCHEMA,
   EVALS_SCHEMA,
 } from "./lib/plugin-schemas.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+const ROOT = process.argv[2]
+  ? resolve(process.argv[2])
+  : join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
 const validateMarketplaceSchema = ajv.compile(MARKETPLACE_SCHEMA);
 const validateSkillFrontmatterSchema = ajv.compile(SKILL_FRONTMATTER_SCHEMA);
+const validateCommandFrontmatterSchema = ajv.compile(COMMAND_FRONTMATTER_SCHEMA);
+const validateAgentFrontmatterSchema = ajv.compile(AGENT_FRONTMATTER_SCHEMA);
 const validateMcpSchema = ajv.compile(MCP_SCHEMA);
 const validateEvalsSchema = ajv.compile(EVALS_SCHEMA);
 
@@ -123,10 +133,55 @@ if (existsSync(skillsDir)) {
   }
 }
 
-console.log(`plugin: ${pluginName ?? "(unknown)"}  skills validated: ${skillCount}  passed: ${ok.length}  errors: ${errors.length}`);
+// 5. every commands/**/*.md (subdirectories namespace commands, so recurse)
+function* walkMarkdown(dir) {
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, entry.name);
+    if (entry.isDirectory()) yield* walkMarkdown(p);
+    else if (entry.isFile() && entry.name.endsWith(".md")) yield p;
+  }
+}
+
+const commandsDir = join(ROOT, "commands");
+let commandCount = 0;
+if (existsSync(commandsDir)) {
+  for (const commandMd of walkMarkdown(commandsDir)) {
+    const label = relative(ROOT, commandMd);
+    commandCount++;
+    try {
+      check(label, validateCommandFrontmatterSchema, parseFrontmatter(commandMd));
+    } catch (e) {
+      errors.push(`${label}: ${e.message}`);
+    }
+  }
+}
+
+// 6. every agents/*.md (frontmatter name must match the file basename)
+const agentsDir = join(ROOT, "agents");
+let agentCount = 0;
+if (existsSync(agentsDir)) {
+  for (const agentMd of walkMarkdown(agentsDir)) {
+    const label = relative(ROOT, agentMd);
+    const base = label.replace(/^.*\//, "").replace(/\.md$/, "");
+    agentCount++;
+    try {
+      const fm = parseFrontmatter(agentMd);
+      check(label, validateAgentFrontmatterSchema, fm);
+      if (fm?.name && fm.name !== base) {
+        errors.push(`${label}: frontmatter name "${fm.name}" != file "${base}"`);
+      }
+    } catch (e) {
+      errors.push(`${label}: ${e.message}`);
+    }
+  }
+}
+
+console.log(
+  `plugin: ${pluginName ?? "(unknown)"}  skills validated: ${skillCount}  commands: ${commandCount}  agents: ${agentCount}  passed: ${ok.length}  errors: ${errors.length}`,
+);
 if (errors.length) {
   console.error("\nVALIDATION FAILED:");
   for (const e of errors) console.error("  - " + e);
   process.exit(1);
 }
-console.log("OK — plugin manifest, marketplace, and all SKILL.md frontmatter valid.");
+console.log("OK — plugin manifest, marketplace, and all SKILL.md, command, and agent frontmatter valid.");
