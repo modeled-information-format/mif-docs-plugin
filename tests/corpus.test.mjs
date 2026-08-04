@@ -9,10 +9,9 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, globSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
-import { readFileSync, globSync } from 'node:fs';
 import {
   listTemplates,
   listL3Docs,
@@ -158,6 +157,26 @@ test('a non-adr doc under an L3 tree stays gated despite the ADR carve-out (#203
     process.chdir(originalCwd);
     rmSync(scratch, { recursive: true, force: true });
   }
+});
+
+// engine-parity.mjs runs NIGHTLY and never on pull requests, so a ledger entry
+// naming a file that has left the gated corpus (ORPHANED-EXPECTATION, exit 1)
+// is invisible to PR CI until the next scheduled run. The ADR carve-out above
+// is exactly that kind of corpus departure, so pin the ledger's referential
+// integrity here, in a PR-gated test, instead of discovering the rot at 05:17.
+test('every expected-disagreements entry resolves into the parity corpus (#203)', () => {
+  const LEDGER = 'tests/fixtures/engine-parity/expected-disagreements.json';
+  // The exact corpus engine-parity.mjs builds: the gated docs plus this
+  // suite's own committed parity fixtures.
+  const corpus = new Set([...listGatedDocs(), ...globSync('tests/fixtures/engine-parity/*.md')]);
+  const { disagreements } = JSON.parse(readFileSync(LEDGER, 'utf8'));
+  assert.ok(disagreements.length > 0, `${LEDGER} must list at least one tracked disagreement`);
+  const orphans = disagreements.map((d) => d.file).filter((f) => !corpus.has(f));
+  assert.deepEqual(
+    orphans,
+    [],
+    `${LEDGER} names files no corpus glob matches (engine-parity.mjs fails on these): ${orphans.join(', ')}`,
+  );
 });
 
 test('listTemplates fails closed when the template glob resolves to nothing', () => {

@@ -2,7 +2,7 @@
 id: reference-skill-mif-corpus
 type: semantic
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-05T12:00:00Z'
+modified: '2026-08-04T15:49:20.909Z'
 namespace: reference/skills
 title: 'Skill reference: mif-corpus'
 tags:
@@ -19,19 +19,20 @@ temporal:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-fable-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:fa69eb8c-0e0f-4e98-847d-112c92f6177c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-docs-plugin
       '@type': prov:Entity
     - '@id': urn:mif:skill:mif-corpus
       '@type': prov:Entity
+  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: repository
@@ -115,9 +116,9 @@ the suite depends on this skill's availability.
   problem envelope naming the cause.
 - **ADR exclusion** — documents carrying a top-level `description:` key
   currently fail the Rust round-trip inside ingest; in this repo those are
-  the ADR documents under `docs/adr/` (MIF `type: semantic`), skipped in bulk
-  ingests by key or path with the skip stated (tracked in the
-  engine-convergence epic).
+  the ADR documents under `docs/adr/` (MIF `type: adr`, with
+  `conceptType: semantic`), skipped in bulk ingests by key, path, or type
+  with the skip stated (tracked in the engine-convergence epic).
 - **First-run cost** — the first ingest or search downloads the embedding
   model once; subsequent runs are local.
 - **Consumed by the planner** — `doc-set-planner`'s corpus-aware update

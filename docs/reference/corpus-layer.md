@@ -2,7 +2,7 @@
 id: reference-corpus-layer
 type: semantic
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-05T12:00:00Z'
+modified: '2026-08-04T15:48:55.755Z'
 namespace: reference/corpus
 title: The Semantic Corpus Layer
 tags:
@@ -28,17 +28,18 @@ ontology:
 provenance:
   '@type': Provenance
   sourceType: agent_inferred
-  trustLevel: high_confidence
-  agent: anthropic/claude-code
+  trustLevel: user_stated
+  agent: claude-code/claude-fable-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:mif-docs-self-documentation
+    '@id': urn:mif:activity:claude-code-session:fa69eb8c-0e0f-4e98-847d-112c92f6177c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': https://github.com/modeled-information-format/mif-rs
       '@type': prov:Entity
+  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: repository
@@ -99,7 +100,8 @@ about `0.55` to `0.78`.
   frontmatter key currently fail the Rust round-trip inside ingest (the key
   is dropped on re-serialization; tracked in the engine-convergence epic). In
   this corpus those are the ADR documents under `docs/adr/` (whose MIF `type`
-  is `semantic`); bulk ingests skip them by key or path and say so.
+  is `adr`, with `conceptType: semantic`); bulk ingests skip them by key,
+  path, or type and say so.
 - **Errors** — failures render as RFC 9457 `application/problem+json`
   envelopes carrying `suggested_fix` and `code_actions[]` with applicability
   markers; only `machine_applicable` fixes are safe to apply unreviewed.
