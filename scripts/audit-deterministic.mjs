@@ -33,7 +33,14 @@ import { load as yamlLoad } from "js-yaml";
 
 import { splitFrontmatter, isAdrCarveout } from "./lib/mif-genre-signal.mjs";
 import { parseMarkdown, toJsonld, roundTripFromMarkdown, loadValidator, checkLevel } from "./lib/projection.mjs";
-import { checkAll as checkLinks, readSiteBaseFromAstroConfig, maskFencedBlocks } from "./lib/doc-links.mjs";
+import {
+  checkAll as checkLinks,
+  readSiteBaseFromAstroConfig,
+  maskFencedBlocks,
+  buildRouteSet,
+  listDocFiles,
+  suggestFixedTarget,
+} from "./lib/doc-links.mjs";
 import { classifyProvenance } from "./lib/provenance-classify.mjs";
 import { gitDatesOf, declaredDatesOf, detectDateClustering, checkTemporal, isShallowRepo } from "./lib/temporal-git.mjs";
 import { discoverFiles, sha256, genreOfText } from "./lib/audit-state.mjs";
@@ -327,9 +334,19 @@ if (enabled.has("link-integrity")) {
       const inScope = new Set(files);
       // Check every md/mdx under the docs root (a non-MIF page's links still
       // 404), but attribute findings only; route set covers the whole tree.
-      const linkFindings = checkLinks(undefined, undefined, opts);
+      const treeFiles = listDocFiles(opts);
+      const routeSet = buildRouteSet(treeFiles, opts);
+      const linkFindings = checkLinks(treeFiles, undefined, opts);
       for (const lf of linkFindings) {
         const mdSuffix = lf.target !== null && /\.mdx?([?#]|$)/.test(lf.target);
+        // fixable means "one deterministic corrective action exists" -- i.e.
+        // check-doc-links --write would actually repair THIS link. A
+        // not-found link with no resolvable rewrite (renamed target, wrong
+        // depth with no matching file) is real but manual, never fixable
+        // (PR #201 review follow-up: blanket-true misled --fix into
+        // spending calls on fixes that do not exist).
+        const mechanicalFix =
+          lf.target !== null && suggestFixedTarget(lf.file, lf.target, treeFiles, routeSet, opts) !== null;
         addFinding({
           check_id: "link-integrity",
           files: [lf.file],
@@ -345,7 +362,7 @@ if (enabled.has("link-integrity")) {
               : mdSuffix
                 ? "Rewrite to the extensionless trailing-slash route form (check-doc-links --write repairs this class mechanically)."
                 : "Point the link at a real route (check the relative depth against the trailing-slash route model).",
-          fixable: lf.status !== "non-kebab-path",
+          fixable: mechanicalFix,
           advisory: !inScope.has(lf.file), // links in non-MIF pages: report, don't count against MIF docs
         });
       }

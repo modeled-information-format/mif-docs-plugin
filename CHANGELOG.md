@@ -62,36 +62,47 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Changed
-
-- Rewrote the `audit-docs` skill around a deterministic-first, batched,
-  incremental architecture (#201 shipped the tooling; this change rewires
-  the skill onto it). The 17-check registry is now tiered by where each
-  check is decided: eight deterministic checks run as plugin scripts
-  (`audit-deterministic.mjs`) at zero Agent cost; the three cross-document
-  checks run as guaranteed bounded Agent calls BEFORE any per-file work;
-  the seven judgment checks run as batched, schema-validated Agent calls
-  (default six files per call) over only the files that changed since the
-  last recorded audit (`audit-state.mjs`). Total Agent calls per run are
-  bounded at `3 + ceil(dirty_files / batch_size)`; a re-run over an
-  unchanged corpus costs zero Agent calls. Corpus-wide defect classes are
-  reported once with an instance list and a ready-to-run fix command,
-  never re-narrated per file; accepted ADRs and other immutable records
-  no longer receive voice/format nits, and accuracy findings on them are
-  reportable only as supersession candidates. `--batch-size` now means
-  files per judgment Agent call (was: a reporting cadence); `--full` and
-  `--site-base` are new; `--fix` now applies defect-class fixes as one
-  scripted, oracle-verified pass. Motivated by the 2026-07-30 audit run
-  (125 files, ~750 findings, a 266KB report, zero acted-on outcomes,
-  the three cross-document checks never reached).
-
 ### Added
 
-- Eight `audit-docs` evals pinning the new cost invariants: zero Agent
-  calls for deterministic-only and unchanged-corpus runs, the
-  `3 + ceil(dirty/batch)` budget formula, defect-class-not-per-file
-  reporting, immutable-doc suppression, and the malformed-batch-output
+- Added the audit-v2 deterministic tooling (#201): a parameterized
+  route-aware link checker (`check-doc-links.mjs` gained
+  `--docs-root`/`--base`/`--astro-config`/`--json`/`--allow-non-kebab`/
+  `--write`), the pinned `mif-docs/audit-findings@1` payload schema
+  (`lib/audit-findings.mjs`), incremental audit state
+  (`audit-state.mjs` + `lib/audit-state.mjs`), a git-based temporal
+  oracle with shallow-clone detection (`lib/temporal-git.mjs`), a shared
+  provenance classifier (`lib/provenance-classify.mjs`), and the zero-LLM
+  corpus runner (`audit-deterministic.mjs`) emitting findings, defect
+  classes, and a corpus map.
+- Added eight rewritten `audit-docs` evals pinning the redesign's cost
+  invariants: zero Agent calls for deterministic-only and unchanged-corpus
+  runs, the `C + B` budget plan, defect-class-not-per-file reporting,
+  immutable-doc suppression, and the malformed-batch-output
   re-ask/fallback contract.
+
+### Changed
+
+- Rewrote the `audit-docs` skill onto the #201 tooling with a
+  deterministic-first, batched, incremental architecture. The 17-check
+  registry was tiered by where each check is decided: eight deterministic
+  checks moved into the zero-Agent-cost runner; the three cross-document
+  checks moved ahead of all per-file work as guaranteed bounded Agent
+  calls; the seven judgment checks moved into batched, schema-validated
+  Agent calls (default six files per call) gated to files changed since
+  the last recorded audit. The per-run Agent-call plan became `C + B`
+  (in-scope cross-document count plus the real batch-partition count),
+  with zero calls for unchanged corpora. Defect-class reporting replaced
+  per-file re-narration; immutable records stopped receiving voice/format
+  nits, with accuracy findings on them reportable only as supersession
+  candidates. `--batch-size` was redefined as files per judgment call
+  (previously a reporting cadence); `--full`, `--site-base`,
+  `--astro-config`, `--docs-root`, and `--ledger` were added; `--fix`
+  gained the scripted, oracle-verified defect-class pass. Motivated by
+  the 2026-07-30 audit run (125 files, ~750 findings, a 266KB report,
+  zero acted-on outcomes, the three cross-document checks never reached).
+- Barred per-file audit Agent calls from carrying an unjustified `opus`
+  model override; calls inherit the session model unless a stated reason
+  requires otherwise (#195).
 
 ## [0.9.2] - 2026-07-30
 

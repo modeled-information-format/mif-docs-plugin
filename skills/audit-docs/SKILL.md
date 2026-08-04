@@ -1,7 +1,7 @@
 ---
 name: audit-docs
 description: Audit MIF documents under one or more paths for accuracy, taxonomy alignment, editorial consistency, and frontmatter/provenance/temporal/relationship/citation conformance. Deterministic script checks run first at zero Agent cost; cross-document checks are guaranteed (three bounded Agent calls); per-file judgment runs as batched, schema-validated Agent calls over only the files that changed since the last audit. Use when the user asks to audit, review, or check a set of MIF documents for conformance/quality.
-argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--astro-config <file>] [--help]"
+argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--astro-config <file>] [--docs-root <dir>] [--ledger <file>] [--help]"
 ---
 
 # audit-docs
@@ -17,11 +17,16 @@ spent only where judgment is genuinely needed:
 3. **Per-file judgment** checks run as batched Agent calls (several files per
    call), only over files that changed since the last recorded audit.
 
-Total Agent calls for a run: `C + ceil(dirty_files / batch_size)` (+ fix
-batches when `--fix`), where `C` is the number of IN-SCOPE cross-document
-checks — at most 3, and 0 when `--checks` excludes them all (a
-deterministic-only `--checks` run makes zero Agent calls). State that number
-to the user before making any call, and reconcile against it at the end.
+Total Agent calls for a run: `C + B` (+ fix batches when `--fix`), where
+`C` is the number of IN-SCOPE cross-document checks — at most 3, 0 when
+`--checks` excludes them all, and 0 when **zero files are dirty** (prior
+cross-document findings are carried, like per-file ones) — and `B` is the
+number of judgment batches from the ACTUAL batch partition built in Step 5
+(roughly `ceil(dirty / batch_size)`, but size caps and oversized solo files
+can raise it — count the real list, never quote the formula as the plan).
+A deterministic-only `--checks` run and a no-change re-run both make zero
+Agent calls. State the planned number to the user before making any call,
+and reconcile against it at the end.
 
 **This is a plain skill you drive yourself, turn by turn, in this
 conversation — never the Workflow tool.** Read this file's instructions and
@@ -107,6 +112,17 @@ Options:
                             base: field instead of --site-base. If neither
                             resolves a base, link-integrity is skipped with
                             a stated reason.
+  --docs-root <dir>        Docs tree root for route-aware link checking.
+                            Required for link-integrity when --path is a
+                            single file or multiple paths (the runner can
+                            only infer it from a sole directory path); the
+                            single-file example below skips link-integrity
+                            unless this is passed.
+  --ledger <file>          Provenance ledger for witnessed drift
+                            verification. Without it provenance-drift only
+                            records marker-level coverage in the corpus map
+                            and is reported as skipped for drift detection
+                            -- never silently treated as "ran clean".
   --help, -h               Show this help and exit.
 
 Check registry (--checks accepts any of these ids):
@@ -187,12 +203,13 @@ counts and the dirty reasons summary to the user before continuing.
 
 ## Step 2 — Budget gate and custom criteria (one AskUserQuestion, maybe)
 
-Compute and print the plan before any Agent call:
+Build the Step 5 batch partition FIRST (group dirty files, apply the size
+caps), then compute and print the plan before any Agent call:
 
 ```text
-Agent calls this run: <C> cross-document (the in-scope subset of 3) +
-ceil(<dirty>/<batch-size>) judgment batches [+ fix batches if --fix] =
-<N> total. Deterministic checks: 0 calls.
+Agent calls this run: <C> cross-document (in-scope subset of 3; 0 if
+nothing is dirty) + <B> judgment batches (from the real partition, listed) 
+[+ fix batches if --fix] = <N> total. Deterministic checks: 0 calls.
 ```
 
 If `N > 15` or dirty file count > 60, ask the user ONE `AskUserQuestion`
@@ -206,8 +223,13 @@ custom-checks list; do not invent criteria on their behalf.
 ```bash
 node ${CLAUDE_PLUGIN_ROOT}/scripts/audit-deterministic.mjs \
   --paths <path>... --report-dir <report-dir> --mif-level <level> \
-  [--site-base <base> | --astro-config <file>] [--checks <deterministic subset>]
+  [--site-base <base> | --astro-config <file>] [--docs-root <dir>] \
+  [--ledger <file>] [--checks <deterministic subset>]
 ```
+
+Pass `--docs-root` through whenever `--path` is not a single directory
+(link-integrity needs it), and `--ledger` whenever the user supplied one
+(provenance drift detection needs it).
 
 This decides every deterministic check over the FULL corpus (state never
 gates it — it is free and keeps the corpus map current) and writes:
@@ -224,9 +246,11 @@ couldn't run is stated, never silently dropped. Everything this pass decided
 is now **settled**: no Agent call below may re-check it or re-report its
 findings.
 
-## Step 4 — Cross-document checks (at most 3 Agent calls, guaranteed, run NOW)
+## Step 4 — Cross-document checks (one call per in-scope check; at most 3, 0 when nothing is dirty)
 
-Before any per-file judgment, make **one `Agent` call per in-scope
+If at least one file is dirty (a zero-dirty re-run carries the prior
+cross-document findings exactly like per-file ones — zero calls), then
+before any per-file judgment, make **one `Agent` call per in-scope
 cross-document check** (duplication-drift, relationship-graph semantic half,
 coverage-gaps) — never one per file, never one per finding, no `model`
 parameter. These run first so they can never again be starved by per-file
@@ -241,7 +265,14 @@ spending. Each call receives:
   returning, and the SAME pinned `mif-docs/audit-findings@1` output contract
   Step 5 shows — validated with `validateFindings` passing
   `allowedCheckIds: ["<this call's one check id>"]`, so a cross-doc agent
-  can never smuggle findings for a check it was not asked to run.
+  can never smuggle findings for a check it was not asked to run. On
+  validation failure: re-ask that agent once with the errors; on a second
+  failure, record the check in the report's skipped section with the reason
+  — never silently accept, never retry unbounded.
+- A read ceiling: the corpus map is the working set; the agent may Read at
+  most ~10 specific files (~100KB) to confirm suspicions. Anything it
+  cannot confirm within that ceiling is reported at lower `confidence`,
+  not chased across the corpus.
 
 Check semantics:
 
@@ -261,8 +292,15 @@ combined body text — any single file over 25KB gets its own batch. Then make
 **one `Agent` call per batch** (label it with the batch's directory + index).
 Each call's prompt must contain:
 
-1. The batch's file list, each with its genre and matching genre-skill path
-   under `${CLAUDE_PLUGIN_ROOT}/skills/`.
+1. The batch's file list, each with its genre and — when Step 1's `status`
+   output resolved one (`genre_skill_key` != `"*"`) — the matching
+   genre-skill path under `${CLAUDE_PLUGIN_ROOT}/skills/`. Many MIF `type:`
+   values (semantic, episodic, procedural) are taxonomy buckets with NO
+   genre skill; for those files, genre-conformance is judged against the
+   bucket's register rules in the suite's documentation-taxonomy
+   explanation, and the prompt says so. **Never go hunting through the
+   skills directory for a "close enough" genre skill** — that is exactly
+   the token-expensive improvisation this design exists to prevent.
 2. Scope: ONLY the seven per-file judgment checks (plus any user-elicited
    custom criteria). An explicit exclusion block: "These checks were already
    decided by scripts — report nothing for them: <deterministic ids>. These
@@ -280,7 +318,12 @@ Each call's prompt must contain:
    best-confidence finding (with `confidence`) and note what couldn't be
    verified. `evidence` must name what was actually read or run, in which
    file — a finding whose anchor can't be located in the named file is
-   dropped.
+   dropped. Report every structural/register fact observed regardless of
+   whether the document looks like a deliberate example, template, or
+   antipattern demonstration — suppression comes ONLY from the corpus
+   map's recorded `mutability`, never from inferred intent; whether a
+   finding is actionable is the caller's decision, not the checking
+   agent's.
 6. Adversarial self-refutation: "Before finalizing, go back through each
    finding and try to refute it. Drop any finding that doesn't survive its
    own scrutiny, or downgrade its confidence if it's borderline."
@@ -310,13 +353,27 @@ Each call's prompt must contain:
 }
 ```
 
-Validate every batch's returned JSON with
+Write every batch's returned JSON to
+`<report-dir>/findings/batch-<id>.json` FIRST, then validate that FILE with
 `${CLAUDE_PLUGIN_ROOT}/scripts/lib/audit-findings.mjs`'s `validateFindings`
-— a short `node -e` call passing the payload, `expectedFiles` set to the
-batch's assigned file list, and `allowedCheckIds` set to the seven judgment
-ids (plus nothing else), so a registry-valid but out-of-scope check_id
-(e.g. `duplication-drift` from a batch agent) fails validation instead of
-slipping through. On failure: re-ask that agent once with the validation errors; if it
+— e.g. a short `node -e` script that takes the file path and the batch's
+assigned file list as argv and reads the payload with `readFileSync`.
+**Never inline the payload text into a shell command string**: batch
+payloads carry document excerpts, and a backtick inside a double-quoted
+`node -e "..."` is command-substituted by the shell before node ever sees
+it — silently corrupting the payload and then validating the corruption.
+Pass `expectedFiles` (the batch's assignment) and `allowedCheckIds` (the
+seven judgment ids, plus nothing else), so a registry-valid but
+out-of-scope check_id (e.g. `duplication-drift` from a batch agent) fails
+validation instead of slipping through.
+
+After each batch validates, append one entry per audited file to
+`<report-dir>/state/results-pending.json` — `{file, llm_verdict:
+"clean"|"findings", finding_counts, findings_ref:
+"findings/batch-<id>.json", genre_skill_key, genre_skill_sha256}` (the
+key/hash values come from Step 1's `status` output for that file). This
+accumulating file IS Step 7's `results.json` — nothing is re-derived at
+commit time. On failure: re-ask that agent once with the validation errors; if it
 fails again, fall back to one call per file **for that batch only** — still
 bounded, still O(files). Record actual call counts as you go.
 
@@ -346,14 +403,27 @@ batch prompt, and applied when triaging returned findings):
 ## Step 6 — Fix (only if `--fix`)
 
 1. **Defect classes first:** every class in `classes.json` with a
-   `fix_command` runs as that one scripted pass, then the same script
-   re-runs as the oracle to confirm the class is gone (e.g.
-   `check-doc-links.mjs --write` then a clean re-check). One command, one
-   verification — never an Agent call per instance.
-2. **Per-file mechanical findings:** for files with `fixable: true` findings
-   from deterministic or judgment passes, batch them exactly like Step 5
-   (one Agent call per batch, same caps) to apply each fix and re-run the
-   relevant tool-backed check once. Judgment-tier findings
+   `fix_command` runs as that one scripted pass — **the `fix_command`
+   string verbatim** (it carries absolute script and docs-root paths for a
+   reason: a bare `check-doc-links.mjs --write` defaults to THIS plugin's
+   own docs tree and would rewrite the wrong repo) — then the same script
+   re-runs as the oracle to confirm the class is gone. One command, one
+   verification — never an Agent call per instance. Failure branches,
+   stated in the report, never silent: a class whose `fix_command` is null
+   (e.g. link-integrity was skipped this run) is reported as not
+   mechanically fixable this run; instances the oracle still shows after
+   the pass are listed as remaining manual work — do not loop the fixer.
+2. **Per-file mechanical findings:** `fixable: true` means exactly what the
+   registry has always meant by it — a tool-backed mechanical finding with
+   ONE deterministic corrective action (the runner now computes it that
+   way; a broken link with no resolvable rewrite is real but manual, never
+   fixable). For files with such findings left after 6.1 (excluding
+   link-integrity findings — those are 6.1's business entirely), batch them
+   exactly like Step 5: one Agent call per batch, same size caps, same
+   finding caps, and — as with every Agent call in this skill — **no
+   `model` parameter**. Each call applies the fixes and re-runs the
+   relevant tool-backed check once; a fix whose re-check still fails is
+   reported as attempted-and-failed, not retried. Judgment-tier findings
    (voice/taxonomy/genre/cross-document) are permanently out of `--fix`
    scope — not a gap to close later.
 
@@ -368,8 +438,9 @@ made the 266KB report unread; their detail lives in the JSON sidecars):
 ## Triage
 - One verdict line: N files (D judged, C carried), H high / M medium / L low,
   K defect classes
-- Budget line: planned vs actual Agent calls (any excess is the incident
-  signal — call it out, see "When reporting back")
+- Budget line: planned vs actual Agent calls; excess explained by a
+  documented failure branch (a re-ask, a per-file fallback) is accounted
+  for by name — any OTHER excess is the incident signal
 ### Top findings        (≤10 rows: severity | file | check | summary | action)
 ### Defect classes      (class | instances | files | fix: `<command>` or "manual")
 ### Do next             (numbered concrete actions: "run <command>",
@@ -401,11 +472,10 @@ node ${CLAUDE_PLUGIN_ROOT}/scripts/audit-state.mjs commit \
   --results <results.json> --plugin-version <version>
 ```
 
-where `results.json` lists every file judged this run:
-`[{file, llm_verdict: "clean"|"findings", finding_counts, findings_ref,
-genre_skill_key, genre_skill_sha256}]` (the keys/hashes come from Step 1's
-`status` output). A subsequent run over an unchanged corpus then partitions
-to zero dirty files and costs **zero Agent calls**.
+where `results.json` is the `<report-dir>/state/results-pending.json` file
+Step 5 accumulated batch by batch (one entry per judged file). A subsequent
+run over an unchanged corpus then partitions to zero dirty files and costs
+**zero Agent calls** — cross-document included.
 
 ## When reporting back to the user
 

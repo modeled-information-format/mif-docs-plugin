@@ -13,7 +13,7 @@
     },
     {
       "id": 2,
-      "prompt": "Audit docs/ with --checks frontmatter-schema,link-integrity and --report-dir eval-reports-2.",
+      "prompt": "Audit docs/ with --checks frontmatter-schema,link-integrity, --site-base /mif-docs-plugin, and --report-dir eval-reports-2.",
       "expected_output": "Both requested checks are deterministic-tier, so the entire run is scripts only: audit-state.mjs status for discovery/partition, audit-deterministic.mjs for the checks, a report written under eval-reports-2/ — and ZERO Agent calls, stated explicitly in the budget line and the final reconciliation.",
       "files": [],
       "expectations": [
@@ -36,10 +36,10 @@
     {
       "id": 4,
       "prompt": "I want to audit a directory of 40 MIF documents with the full check registry and no prior audit state. Before you start, tell me exactly how many Agent calls this will take and why.",
-      "expected_output": "States the bound as 3 cross-document calls plus ceil(40/6) = 7 judgment batches, so 10 Agent calls total at the default batch size — never one per file, never one per check, never one per finding — and notes the deterministic tier costs zero calls. Cites both prior incidents: the Workflow-based per-finding fan-out that hit the 1000-agent cap at ~51M tokens, and the 2026-07-30 per-file opus run whose calls re-derived script-decided findings.",
+      "expected_output": "States the plan as C + B where C = 3 (the full registry keeps all three cross-document checks in scope and the corpus has dirty files) and B comes from the real batch partition (roughly ceil(40/6) = 7 at the default batch size, so about 10 Agent calls total, with size caps able to raise B slightly) — never one per file, never one per check, never one per finding — and notes the deterministic tier costs zero calls. Cites both prior incidents: the Workflow-based per-finding fan-out that hit the 1000-agent cap at ~51M tokens, and the 2026-07-30 per-file opus run whose calls re-derived script-decided findings.",
       "files": [],
       "expectations": [
-        "Gives the concrete formula 3 + ceil(dirty/batch_size) with the actual number (10 calls for 40 files at batch size 6), not a vague 'it depends'",
+        "Gives the concrete plan C + B (3 cross-document + about 7 batches = about 10 calls for 40 files at batch size 6, from the real partition rather than a bare formula), not a vague 'it depends'",
         "Explicitly rules out per-finding fan-out AND unjustified per-file opus overrides, citing both documented incidents",
         "States that cross-document checks run before per-file batches so they can never be starved"
       ]
@@ -50,7 +50,7 @@
       "expected_output": "audit-state.mjs status partitions every file as clean (content hashes, per-entry checks_version, and genre-skill hashes all match), so the run is deterministic-refresh only: zero Agent calls, prior findings carried into the report marked as carried/unchanged, and the report says so. --full is named as the override for forcing full re-judgment.",
       "files": [],
       "expectations": [
-        "Makes zero Agent calls for the unchanged corpus — incremental state gates all per-file judgment, and clean files' findings are carried, not re-derived",
+        "Makes zero Agent calls for the unchanged corpus — incremental state gates all per-file judgment AND the cross-document calls (prior findings of both kinds are carried, not re-derived)",
         "Deterministic checks still re-run (they are free and keep the corpus map current); only LLM judgment is skipped",
         "Mentions --full as the explicit way to force full re-judgment despite clean state"
       ]
