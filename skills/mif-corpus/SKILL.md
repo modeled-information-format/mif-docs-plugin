@@ -91,11 +91,12 @@ Documents carrying a top-level `description:` frontmatter key currently fail
 the Rust round-trip check inside ingest (the key is dropped by the canonical
 re-serialization; tracked upstream and in this repo's engine-convergence
 epic). In this suite's corpus those are exactly the ADR documents under
-`docs/adr/` — note they carry MIF `type: semantic`, so identify the skip set
-by the `description:` key or the `docs/adr/` path, never by a `type: adr`
-frontmatter value. Skip them in bulk ingests and say that they were skipped
-and why. This sits alongside the suite's existing rule that the adr *genre*
-is validated by the structured-madr Action, not `mif-validate`.
+`docs/adr/`, which carry MIF `type: adr` (`conceptType: semantic`), so the
+skip set is identifiable by the `description:` key, the `docs/adr/` path, or
+the `type: adr` frontmatter value alike. Skip them in bulk ingests and say
+that they were skipped and why. This sits alongside the suite's existing rule
+that the adr *genre* is validated by the structured-madr Action, not
+`mif-validate`.
 
 ## First-run cost
 

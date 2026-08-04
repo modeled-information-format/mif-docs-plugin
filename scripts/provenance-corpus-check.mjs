@@ -4,10 +4,11 @@
 //
 //   provenance-corpus-check [--dir <path>] [--ledger <path>]
 //
-// Default corpus: the suite's own gated docs (scripts/lib/corpus.mjs — the
-// same one definition ci.yml, release.yml and engine-parity.mjs consume), so
-// this report can never disagree with the validation gates about what "the
-// corpus" is. --dir switches to every .md under one tree instead.
+// Default corpus: every doc the suite gates (scripts/lib/corpus.mjs's
+// listAllGatedDocs — the mif-validate corpus PLUS the adr-smadr-owned ADRs
+// and adr template, so the #203 carve-out can't shrink provenance coverage),
+// built on the same one definition ci.yml, release.yml and engine-parity.mjs
+// consume. --dir switches to every .md under one tree instead.
 //
 // Classification per document:
 //   witnessed — the provenance block carries the stamp marker (a
@@ -25,7 +26,7 @@
 
 import { globSync } from "node:fs";
 
-import { listGatedDocs } from "./lib/corpus.mjs";
+import { listAllGatedDocs } from "./lib/corpus.mjs";
 import { readLedger } from "./lib/provenance-ledger.mjs";
 import { classifyProvenance, modelOf } from "./lib/provenance-classify.mjs";
 
@@ -42,7 +43,7 @@ for (let i = 0; i < args.length; i++) {
   }
 }
 
-const files = (dir ? globSync(`${dir}/**/*.md`) : listGatedDocs()).sort();
+const files = (dir ? globSync(`${dir}/**/*.md`) : listAllGatedDocs()).sort();
 if (files.length === 0) {
   console.error(`provenance-corpus-check: no .md files found${dir ? ` under ${dir}` : ""}`);
   process.exit(1);

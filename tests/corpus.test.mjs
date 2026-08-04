@@ -9,7 +9,7 @@
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, rmSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, rmSync, mkdirSync, writeFileSync, readFileSync, globSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { tmpdir } from 'node:os';
 import {
@@ -17,9 +17,12 @@ import {
   listL3Docs,
   listL2Docs,
   listGatedDocs,
+  listAllGatedDocs,
+  listAdrDocs,
   ADR_TEMPLATE_CARVEOUT,
   L3_DIRS,
 } from '../scripts/lib/corpus.mjs';
+import { splitFrontmatter, isAdrCarveout } from '../scripts/lib/mif-genre-signal.mjs';
 
 test('listTemplates excludes the ADR carve-out', () => {
   const templates = listTemplates();
@@ -31,6 +34,9 @@ test('listL3Docs covers every configured L3 tree', () => {
   const files = listL3Docs();
   assert.ok(files.length > 0, 'expected at least one L3 doc');
   for (const dir of L3_DIRS) {
+    // docs/adr holds only type: adr documents, which the content-based ADR
+    // carve-out (issue #203) routes to the adr-smadr job instead.
+    if (dir === 'docs/adr') continue;
     assert.ok(files.some((f) => f.startsWith(`${dir}/`)), `expected at least one file under ${dir}`);
   }
 });
@@ -52,6 +58,21 @@ test('listGatedDocs is exactly the union of templates + L3 + L2', () => {
   const union = new Set([...listTemplates(), ...listL3Docs(), ...listL2Docs()]);
   assert.equal(gated.size, union.size);
   for (const f of union) assert.ok(gated.has(f), `${f} missing from listGatedDocs()`);
+});
+
+test('listAllGatedDocs unions the adr-smadr-owned docs back in (#203 coverage regression)', () => {
+  // The ADR carve-out removes `type: adr` docs and the adr template from the
+  // mif-validate corpus, but they are still gated (by the adr-smadr job) --
+  // cross-cutting consumers like provenance-corpus-check.mjs must keep seeing
+  // them, or coverage silently shrinks.
+  const all = new Set(listAllGatedDocs());
+  const expected = new Set([...listGatedDocs(), ...listAdrDocs(), ADR_TEMPLATE_CARVEOUT]);
+  assert.equal(all.size, expected.size);
+  for (const f of expected) assert.ok(all.has(f), `${f} missing from listAllGatedDocs()`);
+  for (const f of globSync('docs/adr/*.md')) {
+    assert.ok(all.has(f), `${f} must stay in the all-gated corpus despite the carve-out`);
+  }
+  assert.ok(all.has(ADR_TEMPLATE_CARVEOUT), 'the adr template is gated (by adr-smadr), so it belongs here');
 });
 
 test('listL3Docs fails closed when an L3 directory is missing', () => {
@@ -98,6 +119,80 @@ test('listL3Docs fails closed when an L3 tree is a file, not a directory', () =>
     process.chdir(originalCwd);
     rmSync(scratch, { recursive: true, force: true });
   }
+});
+
+// Issue #203 regression: the repo's own ADRs carried `type: semantic` and no
+// `status:`, so the ADR carve-out (and with it audit-v2's immutable-ADR
+// policy and the structured-madr oracle routing) never engaged on them.
+test('every docs/adr document is the type: adr carve-out with a lifecycle status (#203)', () => {
+  const SMADR_STATUSES = new Set(['proposed', 'accepted', 'deprecated', 'superseded']);
+  const adrs = globSync('docs/adr/*.md').sort();
+  assert.ok(adrs.length > 0, 'expected at least one ADR under docs/adr');
+  for (const f of adrs) {
+    const split = splitFrontmatter(readFileSync(f, 'utf8'));
+    assert.ok(split, `${f} must have frontmatter`);
+    assert.ok(isAdrCarveout(split.fmText), `${f} must carry type: adr (the ADR carve-out)`);
+    const status = split.fmText.match(/(^|\n)status[ \t]*:[ \t]*(\S+)/)?.[2];
+    assert.ok(
+      status && SMADR_STATUSES.has(status),
+      `${f} must declare a structured-MADR lifecycle status, got ${status ?? '(none)'}`,
+    );
+  }
+});
+
+test('listL3Docs excludes type: adr docs; listAdrDocs returns exactly them (#203)', () => {
+  const l3 = listL3Docs();
+  const adrDocs = listAdrDocs();
+  const repoAdrs = globSync('docs/adr/*.md').sort();
+  assert.deepEqual(adrDocs, repoAdrs, 'listAdrDocs must return the docs/adr ADRs');
+  for (const f of adrDocs) {
+    assert.ok(!l3.includes(f), `${f} must be carved out of the mif-validate corpus`);
+  }
+});
+
+test('a non-adr doc under an L3 tree stays gated despite the ADR carve-out (#203)', () => {
+  // The carve-out is content-based (type: adr), not directory-based: a plain
+  // semantic doc dropped into docs/adr must remain in the mif-validate corpus.
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  writeFileSync(
+    join(scratch, 'docs/adr', 'adr-1.md'),
+    '---\ntype: adr\nstatus: accepted\n---\n\n# ADR-0001: x\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    const l3 = listL3Docs();
+    assert.ok(l3.includes('docs/adr/x.md'), 'a non-adr doc under docs/adr must stay gated');
+    assert.ok(!l3.includes('docs/adr/adr-1.md'), 'the type: adr doc must be carved out');
+    assert.deepEqual(listAdrDocs(), ['docs/adr/adr-1.md']);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+// engine-parity.mjs runs NIGHTLY and never on pull requests, so a ledger entry
+// naming a file that has left the gated corpus (ORPHANED-EXPECTATION, exit 1)
+// is invisible to PR CI until the next scheduled run. The ADR carve-out above
+// is exactly that kind of corpus departure, so pin the ledger's referential
+// integrity here, in a PR-gated test, instead of discovering the rot at 05:17.
+test('every expected-disagreements entry resolves into the parity corpus (#203)', () => {
+  const LEDGER = 'tests/fixtures/engine-parity/expected-disagreements.json';
+  // The exact corpus engine-parity.mjs builds: the gated docs plus this
+  // suite's own committed parity fixtures.
+  const corpus = new Set([...listGatedDocs(), ...globSync('tests/fixtures/engine-parity/*.md')]);
+  const { disagreements } = JSON.parse(readFileSync(LEDGER, 'utf8'));
+  assert.ok(disagreements.length > 0, `${LEDGER} must list at least one tracked disagreement`);
+  const orphans = disagreements.map((d) => d.file).filter((f) => !corpus.has(f));
+  assert.deepEqual(
+    orphans,
+    [],
+    `${LEDGER} names files no corpus glob matches (engine-parity.mjs fails on these): ${orphans.join(', ')}`,
+  );
 });
 
 test('listTemplates fails closed when the template glob resolves to nothing', () => {

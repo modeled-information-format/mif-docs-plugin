@@ -1,26 +1,33 @@
 ---
-id: adr-0003-attested-delivery
-type: semantic
-created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
-namespace: adr/mif-docs
-title: 'ADR-0003: Adopt the Attested-Delivery Release Pattern'
+title: Adopt the Attested-Delivery Release Pattern
 description: >-
   Release the plugin with the self-contained attested-delivery pattern — a
   reproducible git-archive tarball, SLSA build provenance, and fail-closed
   verification before upload — so every release is independently verifiable.
+type: adr
+conceptType: semantic
+id: adr-0003-attested-delivery
+namespace: adr/mif-docs
+x-ontology:
+  id: mif-docs
+  version: '1.0.0'
+  uri: https://mif-spec.dev/ontologies/mif-docs
+  entity_type: decision-record
+category: supply-chain-security
 tags:
   - adr
   - release
   - attestation
   - supply-chain
-aliases:
-  - ADR-0003
-ontology:
-  '@type': OntologyReference
-  id: mif-docs
-  version: 1.0.0
-  uri: https://mif-spec.dev/ontologies/mif-docs
+status: accepted
+created: 2026-06-30
+updated: 2026-06-30
+author: modeled-information-format
+project: mif-docs
+technologies:
+  - slsa
+  - github-actions
+  - sigstore
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-30T00:00:00Z'
@@ -73,28 +80,20 @@ relationships:
     target: urn:mif:adr-0002-ontologies-separate-repo
   - type: realized-by
     target: urn:mif:runbook-cut-attested-release
-entity:
-  name: Adopt the Attested-Delivery Release Pattern
-  entity_type: decision-record
 summary: >-
   From v0.1.0, releases are reproducible git-archive tarballs carrying SLSA build
   provenance, fail-closed verified before upload; modeled on
   research-harness-template, every action SHA-pinned via the central pin-check.
-extensions:
-  x-adr-status: accepted
-  x-adr-category: supply-chain-security
-  x-superseded-from-smadr: true
-  x-decision-drivers:
-    - supply-chain-integrity
-    - independent-verifiability
-    - fail-closed-publication
-  x-slsa-build-level: 3
-  x-signer-workflow: .github/workflows/release.yml
-  x-verify-command: gh attestation verify --signer-workflow
-  x-technologies:
-    - slsa
-    - github-actions
-    - sigstore
+x-aliases:
+  - ADR-0003
+x-superseded-from-smadr: true
+x-decision-drivers:
+  - supply-chain-integrity
+  - independent-verifiability
+  - fail-closed-publication
+x-slsa-build-level: 3
+x-signer-workflow: .github/workflows/release.yml
+x-verify-command: gh attestation verify --signer-workflow
 ---
 
 # ADR-0003: Adopt the Attested-Delivery Release Pattern

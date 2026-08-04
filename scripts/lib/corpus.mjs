@@ -6,7 +6,8 @@
 // until mif-docs-plugin#32 fixed it there alone, leaving engine-parity.mjs's
 // copy to drift again on the next nested subdirectory. One list, three
 // consumers, no hand-sync (mif-docs-plugin#34).
-import { statSync, globSync } from "node:fs";
+import { statSync, globSync, readFileSync } from "node:fs";
+import { splitFrontmatter, isAdrCarveout } from "./mif-genre-signal.mjs";
 
 function isDirectory(path) {
   try {
@@ -14,6 +15,23 @@ function isDirectory(path) {
   } catch {
     return false;
   }
+}
+
+// Content-based ADR carve-out (issue #203): a `type: adr` document anywhere in
+// the gated trees is owned by the structured-madr Action (the adr-smadr CI
+// job), not by mif-validate, which keys on conceptType — the same predicate
+// the guard and the audit runner already share via mif-genre-signal.mjs.
+// Unreadable files stay IN the corpus so mif-validate reports them instead of
+// this filter silently swallowing them.
+function isAdrDoc(path) {
+  let text;
+  try {
+    text = readFileSync(path, "utf8");
+  } catch {
+    return false;
+  }
+  const split = splitFrontmatter(text);
+  return split ? isAdrCarveout(split.fmText) : false;
 }
 
 export const TEMPLATE_GLOB = "skills/*/templates/good.md";
@@ -54,15 +72,42 @@ export function listL3Docs() {
   if (files.length === 0) {
     throw new Error(`no L3 doc files found under ${L3_DIRS.join(", ")} -- check paths`);
   }
-  return files;
+  // Fail-closed check runs on the PRE-filter list: an L3 tree holding only
+  // ADRs (docs/adr) is present-and-owned-elsewhere, not silently empty.
+  return files.filter((f) => !isAdrDoc(f));
+}
+
+// The `type: adr` documents under the L3 trees — the complement of
+// listL3Docs()'s filter, gated by the adr-smadr CI job (structured-madr
+// Action in smadr strict + mif conformance modes), never by mif-validate.
+export function listAdrDocs() {
+  for (const d of L3_DIRS) {
+    if (!isDirectory(d)) throw new Error(`L3 doc directory missing: ${d}`);
+  }
+  return L3_DIRS.flatMap((d) => globSync(`${d}/**/*.md`))
+    .sort()
+    .filter((f) => isAdrDoc(f));
 }
 
 export function listL2Docs() {
   return L2_GLOBS.flatMap((g) => globSync(g)).sort();
 }
 
-// The full corpus this suite gates with mif-validate at any level -- what
-// engine-parity.mjs asserts node/mif-rs agreement over.
+// The mif-validate corpus at any level -- what engine-parity.mjs asserts
+// node/mif-rs agreement over. NOT every doc CI gates: the `type: adr`
+// documents (listAdrDocs) and the adr template (ADR_TEMPLATE_CARVEOUT) are
+// gated by the adr-smadr job instead; cross-cutting consumers that mean
+// "every gated doc" want listAllGatedDocs().
 export function listGatedDocs() {
   return [...listTemplates(), ...listL3Docs(), ...listL2Docs()].sort();
+}
+
+// Every document ANY CI job gates, regardless of which gate owns it: the
+// mif-validate corpus plus the adr-smadr-owned docs (the `type: adr`
+// documents and the adr template). Cross-cutting reports like
+// provenance-corpus-check.mjs use this so the ADR carve-out (#203) cannot
+// silently shrink their coverage -- an ADR's provenance matters just as much
+// as any other gated doc's.
+export function listAllGatedDocs() {
+  return [...listGatedDocs(), ...listAdrDocs(), ADR_TEMPLATE_CARVEOUT].sort();
 }

@@ -1,25 +1,28 @@
 ---
-id: adr-0002-ontologies-separate-repo
-type: semantic
-created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
-namespace: adr/mif-docs
-title: 'ADR-0002: Host Ontologies in a Separate Repository'
+title: Host Ontologies in a Separate Repository
 description: >-
   Host the MIF ontology in the org-shared ontologies repo and have the plugin
   hydrate it at dev and vendor it into the release artifact, rather than
   committing a copy here that would drift.
+type: adr
+conceptType: semantic
+id: adr-0002-ontologies-separate-repo
+namespace: adr/mif-docs
+x-ontology:
+  id: mif-docs
+  version: '1.0.0'
+  uri: https://mif-spec.dev/ontologies/mif-docs
+  entity_type: decision-record
+category: architecture
 tags:
   - adr
   - ontology
   - vendoring
-aliases:
-  - ADR-0002
-ontology:
-  '@type': OntologyReference
-  id: mif-docs
-  version: 1.0.0
-  uri: https://mif-spec.dev/ontologies/mif-docs
+status: accepted
+created: 2026-06-30
+updated: 2026-06-30
+author: modeled-information-format
+project: mif-docs
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-30T00:00:00Z'
@@ -63,25 +66,21 @@ relationships:
     target: urn:mif:adr-0001-align-adr-to-smadr
   - type: relates-to
     target: urn:mif:adr-0003-attested-delivery
-entity:
-  name: Host Ontologies in a Separate Repository
-  entity_type: decision-record
 summary: >-
   The MIF ontology stays in the org-shared ontologies repo; the plugin hydrates
   it from a raw URL at dev time and vendors a fixed copy into the release
   artifact, so there is one authoritative ontology with no committed duplicate to
   drift.
-extensions:
-  x-adr-status: accepted
-  x-adr-category: architecture
-  x-superseded-from-smadr: true
-  x-decision-drivers:
-    - shared-corpus
-    - drift-avoidance
-    - vendor-at-release
-  x-hydration:
-    - dev-sibling
-    - release-vendored
+x-aliases:
+  - ADR-0002
+x-superseded-from-smadr: true
+x-decision-drivers:
+  - shared-corpus
+  - drift-avoidance
+  - vendor-at-release
+x-hydration:
+  - dev-sibling
+  - release-vendored
 ---
 
 # ADR-0002: Host Ontologies in a Separate Repository
