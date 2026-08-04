@@ -13,7 +13,7 @@
 // An optional first CLI argument overrides the plugin root (default: this
 // repo). Tests use it to point the gate at fixture trees.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
-import { join, dirname, relative, resolve } from "node:path";
+import { join, dirname, relative, resolve, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv from "ajv";
 import { load as yamlLoad } from "js-yaml";
@@ -133,6 +133,14 @@ if (existsSync(skillsDir)) {
   }
 }
 
+// `relative()` joins with the platform separator, so on Windows a label would
+// read `commands\ns\foo.md`. Every label this script reports is a stable,
+// POSIX-style repo-relative path regardless of platform, so error output (and
+// the tests that match on it) does not vary by OS.
+function labelFor(p) {
+  return relative(ROOT, p).split(sep).join("/");
+}
+
 // 5. every commands/**/*.md (subdirectories namespace commands, so recurse)
 function* walkMarkdown(dir) {
   for (const entry of readdirSync(dir, { withFileTypes: true })) {
@@ -146,7 +154,7 @@ const commandsDir = join(ROOT, "commands");
 let commandCount = 0;
 if (existsSync(commandsDir)) {
   for (const commandMd of walkMarkdown(commandsDir)) {
-    const label = relative(ROOT, commandMd);
+    const label = labelFor(commandMd);
     commandCount++;
     try {
       check(label, validateCommandFrontmatterSchema, parseFrontmatter(commandMd));
@@ -161,8 +169,13 @@ const agentsDir = join(ROOT, "agents");
 let agentCount = 0;
 if (existsSync(agentsDir)) {
   for (const agentMd of walkMarkdown(agentsDir)) {
-    const label = relative(ROOT, agentMd);
-    const base = label.replace(/^.*\//, "").replace(/\.md$/, "");
+    const label = labelFor(agentMd);
+    // basename(), not a forward-slash regex over the label: this value is
+    // compared against the frontmatter `name`, so getting it wrong is a false
+    // gate failure, not a cosmetic one. A regex anchored on "/" strips nothing
+    // from a Windows path, which would make every agent file report a bogus
+    // name mismatch against its own directory-prefixed filename.
+    const base = basename(agentMd, ".md");
     agentCount++;
     try {
       const fm = parseFrontmatter(agentMd);

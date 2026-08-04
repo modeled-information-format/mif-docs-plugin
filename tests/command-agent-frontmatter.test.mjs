@@ -222,6 +222,24 @@ test('gate: a command with no frontmatter at all fails', () => {
   }
 });
 
+// The name comparison is against the FILE BASENAME, never a path-prefixed
+// string: a nested agent whose name matches its own filename must pass. The
+// gate reports POSIX-style labels on every platform, which is what the
+// `assert.match` path patterns throughout this file pin. (The Windows
+// separator case that motivated both is not reproducible on a POSIX runner.)
+test('gate: an agent in a subdirectory is matched on its basename, not its path', () => {
+  const root = fixture({
+    'agents/nested/auditor.md':
+      '---\nname: auditor\ndescription: Audits documents for conformance and quality\n---\n\nYou are an auditor.\n',
+  });
+  try {
+    const r = runGate(root);
+    assert.equal(r.code, 0, r.output);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('gate: an agent whose frontmatter name mismatches its filename fails', () => {
   const root = fixture({
     'agents/reviewer.md':
