@@ -74,6 +74,64 @@ export const SKILL_FRONTMATTER_SCHEMA = {
   additionalProperties: true,
 };
 
+// commands/**/*.md frontmatter. Claude Code itself tolerates a command file
+// with no frontmatter at all, but this repo's convention is stricter: every
+// shipped command must declare a `description` (it is the /help line and the
+// model-invocation summary). `description` only has to be non-empty — unlike
+// skills, a command's description is not the model-triggering surface, so the
+// 20-character floor is not imposed here. `allowed-tools` is the documented
+// comma-separated string; a YAML list of non-empty strings is also accepted
+// since js-yaml hands either through.
+//
+// `argument-hint` accepts the same two shapes, and the list form is NOT
+// cosmetic: the documented hint syntax wraps optional arguments in brackets
+// (`argument-hint: [message]`), which YAML parses as a flow sequence —
+// `["message"]`, not the string `"[message]"`. Requiring a string here would
+// make this gate reject the canonical documented form of a perfectly valid
+// command file. Do not "tighten" this back to a bare string.
+export const COMMAND_FRONTMATTER_SCHEMA = {
+  type: "object",
+  required: ["description"],
+  properties: {
+    description: { type: "string", minLength: 1 },
+    "argument-hint": {
+      oneOf: [
+        { type: "string", minLength: 1 },
+        { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+      ],
+    },
+    "allowed-tools": {
+      oneOf: [
+        { type: "string", minLength: 1 },
+        { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+      ],
+    },
+    model: { type: "string", minLength: 1 },
+    "disable-model-invocation": { type: "boolean" },
+  },
+  additionalProperties: true,
+};
+
+// agents/**/*.md frontmatter. Like skills, an agent's description IS the
+// delegation-triggering surface, so the 20-character floor applies.
+export const AGENT_FRONTMATTER_SCHEMA = {
+  type: "object",
+  required: ["name", "description"],
+  properties: {
+    name: { type: "string", pattern: "^[a-z0-9][a-z0-9-]*$" },
+    description: { type: "string", minLength: 20 },
+    tools: {
+      oneOf: [
+        { type: "string", minLength: 1 },
+        { type: "array", minItems: 1, items: { type: "string", minLength: 1 } },
+      ],
+    },
+    model: { type: "string", minLength: 1 },
+    color: { type: "string", minLength: 1 },
+  },
+  additionalProperties: true,
+};
+
 // .mcp.json declares optional MCP servers (the mif-rs mif-mcp binary). The
 // config's shape is validated; the binary's presence never is — the server is
 // an optional enhancement and this check must stay deterministic on machines
