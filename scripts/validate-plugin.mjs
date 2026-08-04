@@ -21,7 +21,17 @@ import {
   EVALS_SCHEMA,
 } from "./lib/plugin-schemas.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+// VALIDATE_PLUGIN_ROOT is a test hook: it lets the test suite point the
+// validator at a fixture plugin root instead of this repository itself.
+// An empty value means unset, matching how every other env override in this
+// codebase is read (see strOrNull in lib/provenance-ledger.mjs and the
+// CLAUDE_CONFIG_DIR guard in lib/provenance-config.mjs). With `??` an
+// exported-but-empty VALIDATE_PLUGIN_ROOT would silently make every path
+// below cwd-relative, so the gate would validate whatever happened to be in
+// the working directory instead of this plugin.
+const ROOT =
+  process.env.VALIDATE_PLUGIN_ROOT ||
+  join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
@@ -60,15 +70,23 @@ let pluginName = null;
 if (!existsSync(pluginPath)) {
   errors.push(".claude-plugin/plugin.json: missing");
 } else {
-  const plugin = readJson(pluginPath);
-  pluginName = plugin.name;
-  check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  try {
+    const plugin = readJson(pluginPath);
+    pluginName = plugin.name;
+    check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  } catch (e) {
+    errors.push(`.claude-plugin/plugin.json: ${e.message}`);
+  }
 }
 
 // 2. marketplace.json (optional but validated when present)
 const marketPath = join(ROOT, ".claude-plugin", "marketplace.json");
 if (existsSync(marketPath)) {
-  check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  try {
+    check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  } catch (e) {
+    errors.push(`.claude-plugin/marketplace.json: ${e.message}`);
+  }
 }
 
 // 3. .mcp.json (optional but validated when present)
