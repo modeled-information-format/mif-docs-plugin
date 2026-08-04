@@ -1,7 +1,7 @@
 ---
 name: audit-docs
 description: Audit MIF documents under one or more paths for accuracy, taxonomy alignment, editorial consistency, and frontmatter/provenance/temporal/relationship/citation conformance. Deterministic script checks run first at zero Agent cost; cross-document checks are guaranteed (three bounded Agent calls); per-file judgment runs as batched, schema-validated Agent calls over only the files that changed since the last audit. Use when the user asks to audit, review, or check a set of MIF documents for conformance/quality.
-argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--help]"
+argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--astro-config <file>] [--help]"
 ---
 
 # audit-docs
@@ -17,9 +17,11 @@ spent only where judgment is genuinely needed:
 3. **Per-file judgment** checks run as batched Agent calls (several files per
    call), only over files that changed since the last recorded audit.
 
-Total Agent calls for a run: `3 + ceil(dirty_files / batch_size)` (+ fix
-batches when `--fix`). State that number to the user before making any call,
-and reconcile against it at the end.
+Total Agent calls for a run: `C + ceil(dirty_files / batch_size)` (+ fix
+batches when `--fix`), where `C` is the number of IN-SCOPE cross-document
+checks — at most 3, and 0 when `--checks` excludes them all (a
+deterministic-only `--checks` run makes zero Agent calls). State that number
+to the user before making any call, and reconcile against it at the end.
 
 **This is a plain skill you drive yourself, turn by turn, in this
 conversation — never the Workflow tool.** Read this file's instructions and
@@ -78,7 +80,14 @@ Options:
                             always an advisory upgrade recommendation, never
                             a failing finding. Default: 3.
   --checks id,id,...        Run only these checks (see the registry below).
-                            Default: every check in the registry.
+                            Default: every check in the registry. The list
+                            is partitioned by tier before running: only its
+                            deterministic ids (plus relationship-graph, for
+                            the structural half) are passed to
+                            audit-deterministic.mjs --checks (which rejects
+                            judgment/cross-doc ids), only its cross-document
+                            ids get Step 4 calls, and only its judgment ids
+                            scope the Step 5 batches.
   --full                   Ignore recorded audit state and re-judge every
                             file. Default: only files that changed since the
                             last recorded audit get LLM judgment.
@@ -93,10 +102,11 @@ Options:
   --report-dir <dir>       Where the report and state live, relative to the
                             current working directory.
                             Default: reports/audit-docs.
-  --site-base <base>       Starlight site base for route-aware link checking
-                            (auto-detected from an astro config when
-                            possible; link-integrity is skipped, with a
-                            stated reason, if no base can be resolved).
+  --site-base <base>       Starlight site base for route-aware link checking.
+  --astro-config <file>    Read the site base from this astro config's
+                            base: field instead of --site-base. If neither
+                            resolves a base, link-integrity is skipped with
+                            a stated reason.
   --help, -h               Show this help and exit.
 
 Check registry (--checks accepts any of these ids):
@@ -180,8 +190,9 @@ counts and the dirty reasons summary to the user before continuing.
 Compute and print the plan before any Agent call:
 
 ```text
-Agent calls this run: 3 cross-document + ceil(<dirty>/<batch-size>) judgment
-batches [+ fix batches if --fix] = <N> total. Deterministic checks: 0 calls.
+Agent calls this run: <C> cross-document (the in-scope subset of 3) +
+ceil(<dirty>/<batch-size>) judgment batches [+ fix batches if --fix] =
+<N> total. Deterministic checks: 0 calls.
 ```
 
 If `N > 15` or dirty file count > 60, ask the user ONE `AskUserQuestion`
@@ -227,8 +238,10 @@ spending. Each call receives:
   suspicion).
 - The defect-class summary from `classes.json` (context, not to re-report).
 - The instruction to adversarially re-check its own findings before
-  returning, and the pinned output contract below with `check_id` restricted
-  to its own check.
+  returning, and the SAME pinned `mif-docs/audit-findings@1` output contract
+  Step 5 shows — validated with `validateFindings` passing
+  `allowedCheckIds: ["<this call's one check id>"]`, so a cross-doc agent
+  can never smuggle findings for a check it was not asked to run.
 
 Check semantics:
 
@@ -299,8 +312,11 @@ Each call's prompt must contain:
 
 Validate every batch's returned JSON with
 `${CLAUDE_PLUGIN_ROOT}/scripts/lib/audit-findings.mjs`'s `validateFindings`
-(a short `node -e` call passing the payload and the batch's assigned file
-list). On failure: re-ask that agent once with the validation errors; if it
+— a short `node -e` call passing the payload, `expectedFiles` set to the
+batch's assigned file list, and `allowedCheckIds` set to the seven judgment
+ids (plus nothing else), so a registry-valid but out-of-scope check_id
+(e.g. `duplication-drift` from a batch agent) fails validation instead of
+slipping through. On failure: re-ask that agent once with the validation errors; if it
 fails again, fall back to one call per file **for that batch only** — still
 bounded, still O(files). Record actual call counts as you go.
 
@@ -395,7 +411,8 @@ to zero dirty files and costs **zero Agent calls**.
 
 - The finalized check registry actually run (built-in + elicited custom).
 - Files audited (judged vs carried), and **planned vs actual Agent-call
-  count** — `3 + batches (+ fix batches)`. Call out any excess explicitly:
+  count** — `in-scope cross-doc + batches (+ fix batches)`. Call out any
+  excess explicitly:
   that divergence is the early signal of every incident above.
 - Findings grouped per the report template; defect classes as classes.
 - If `--fix`: what was fixed by script oracle, what by batch, what remains.

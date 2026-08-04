@@ -8,7 +8,7 @@
       "files": [],
       "expectations": [
         "Does not ask about custom checks, does not resolve plugin-relative paths, and does not make any script or Agent call before or after printing help",
-        "Presents the registry in its three tiers (deterministic / cross-document / per-file judgment) totalling all 17 check ids, not a flat or partial list"
+        "Presents the registry in its three tiers (deterministic / cross-document / per-file judgment) covering all 17 unique check ids, with relationship-graph explicitly shown as the one id split across two tiers (structural half deterministic, semantic half cross-document), not a flat or partial list"
       ]
     },
     {
