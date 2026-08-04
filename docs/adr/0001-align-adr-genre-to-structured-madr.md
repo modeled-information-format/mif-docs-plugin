@@ -1,25 +1,28 @@
 ---
-id: adr-0001-align-adr-to-smadr
-type: semantic
-created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
-namespace: adr/mif-docs
-title: 'ADR-0001: Align the adr Genre Fully to Structured MADR'
+title: Align the adr Genre Fully to Structured MADR
 description: >-
   Align the plugin's flagship adr genre fully to the org's canonical,
   Action-validated Structured MADR format instead of decoupling with an optional
   check, so ADRs never diverge from the ecosystem.
+type: adr
+conceptType: semantic
+id: adr-0001-align-adr-to-smadr
+namespace: adr/mif-docs
+x-ontology:
+  id: mif-docs
+  version: '1.0.0'
+  uri: https://mif-spec.dev/ontologies/mif-docs
+  entity_type: decision-record
+category: documentation-format
 tags:
   - adr
   - structured-madr
   - validation
-aliases:
-  - ADR-0001
-ontology:
-  '@type': OntologyReference
-  id: mif-docs
-  version: 1.0.0
-  uri: https://mif-spec.dev/ontologies/mif-docs
+status: accepted
+created: 2026-06-30
+updated: 2026-06-30
+author: modeled-information-format
+project: mif-docs
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-06-30T00:00:00Z'
@@ -66,23 +69,19 @@ relationships:
     target: urn:mif:adr-0002-ontologies-separate-repo
   - type: relates-to
     target: urn:mif:adr-0003-attested-delivery
-entity:
-  name: Align the adr Genre Fully to Structured MADR
-  entity_type: decision-record
 summary: >-
   The flagship adr genre aligns fully to Structured MADR; the structured-madr
   Action is the authority for ADR validation in both smadr (strict) and mif
   (conformance) modes, so ADRs authored by the plugin never diverge from the org
   standard.
-extensions:
-  x-adr-status: accepted
-  x-adr-category: documentation-format
-  x-superseded-from-smadr: true
-  x-decision-drivers:
-    - flagship-genre
-    - ecosystem-alignment
-    - action-validation
-  x-genre: adr
+x-aliases:
+  - ADR-0001
+x-superseded-from-smadr: true
+x-decision-drivers:
+  - flagship-genre
+  - ecosystem-alignment
+  - action-validation
+x-genre: adr
 ---
 
 # ADR-0001: Align the adr Genre Fully to Structured MADR

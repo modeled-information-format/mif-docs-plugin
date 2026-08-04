@@ -87,8 +87,10 @@ jobs:
       - name: MIF-validate the project's own docs (the suite documents itself)
         run: |
           # The suite documents itself: every doc under docs/ is a full MIF
-          # artifact (the project ADRs are L3 MIF, not structured-MADR). Gate each
-          # at the level it claims so its provenance/citations cannot rot.
+          # artifact. The project ADRs (docs/adr/, type: adr) are structured-MADR
+          # per ADR-0001 and issue #203 -- corpus.mjs carves them out here and the
+          # adr-smadr job below gates them instead. Gate everything else at the
+          # level it claims so its provenance/citations cannot rot.
           # list-gated-docs.mjs fails closed (missing directory, empty result)
           # so a drifted or renamed tree can't silently skip this gate; see the
           # plain-redirect note in the template-validation step above.
@@ -147,3 +149,21 @@ jobs:
           mif-level: '3'
           path: skills/adr/templates
           pattern: good.md
+      # The project's own ADRs are type: adr per ADR-0001 (issue #203) and are
+      # carved out of the mif-validate corpus (scripts/lib/corpus.mjs); this
+      # Action is their gate, in the same two modes as the template above.
+      - name: Validate project ADRs — structured-MADR mode (strict)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        with:
+          mode: smadr
+          path: docs/adr
+          pattern: '*.md'
+          strict: 'true'
+          fail-on-error: 'true'
+      - name: Validate project ADRs — MIF conformance mode (level 3)
+        uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        with:
+          mode: mif
+          mif-level: '3'
+          path: docs/adr
+          pattern: '*.md'

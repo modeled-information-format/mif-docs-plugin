@@ -1,18 +1,29 @@
 ---
+title: Node Engine Stays Authoritative, Convergence Proven by a Parity Gate
+description: >-
+  The plugin's node validation engine remains the authoritative MIF conformance
+  gate; the mif-rs Rust engine is compared against it by a non-required nightly
+  parity job with an explicit expected-disagreement ledger.
+type: adr
+conceptType: semantic
 id: adr-0004-node-engine-authoritative
-type: semantic
-created: '2026-07-05T12:00:00Z'
-modified: '2026-07-28T22:28:30.021Z'
 namespace: adr/mif-docs
-title: 'ADR-0004: Node Engine Stays Authoritative, Convergence Proven by a Parity Gate'
-summary: The plugin's node validation engine remains the authoritative MIF conformance gate; the mif-rs Rust engine is compared against it by a non-required nightly parity job with an explicit expected-disagreement ledger, and no engine substitution happens until that ledger is empty and the upstream capability gaps are closed.
+x-ontology:
+  id: mif-docs
+  version: '1.0.0'
+  uri: https://mif-spec.dev/ontologies/mif-docs
+  entity_type: decision-record
+category: architecture
 tags:
   - adr
   - validation
   - parity
   - mif-rs
-aliases:
-  - ADR-0004
+status: accepted
+created: 2026-07-05
+updated: 2026-07-28
+author: modeled-information-format
+project: mif-docs
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-07-05T00:00:00Z'
@@ -55,21 +66,18 @@ citations:
     title: MIF — Modeled Information Format Specification
     url: https://mif-spec.dev/
     accessed: '2026-07-05'
-ontology:
-  '@type': OntologyReference
-  id: mif-docs
-  version: 1.0.0
-  uri: https://mif-spec.dev/ontologies/mif-docs
-entity:
-  name: Node Engine Authoritative with Parity Gate
-  entity_type: decision-record
-extensions:
-  x-adr-status: accepted
-  x-adr-category: architecture
-  x-decision-drivers:
-    - single-authoritative-verdict
-    - fail-closed-determinism
-    - convergence-without-blocking
+summary: >-
+  The plugin's node validation engine remains the authoritative MIF conformance
+  gate; the mif-rs Rust engine is compared against it by a non-required nightly
+  parity job with an explicit expected-disagreement ledger, and no engine
+  substitution happens until that ledger is empty and the upstream capability
+  gaps are closed.
+x-aliases:
+  - ADR-0004
+x-decision-drivers:
+  - single-authoritative-verdict
+  - fail-closed-determinism
+  - convergence-without-blocking
 ---
 
 # ADR-0004: Node Engine Stays Authoritative, Convergence Proven by a Parity Gate
