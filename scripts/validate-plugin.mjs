@@ -10,8 +10,9 @@
 // documented Claude Code manifest shape with ajv, and exits non-zero on any
 // violation.
 //
-// An optional first CLI argument overrides the plugin root (default: this
-// repo). Tests use it to point the gate at fixture trees.
+// An optional first CLI argument (or the VALIDATE_PLUGIN_ROOT env var)
+// overrides the plugin root (default: this repo). Tests use these to point
+// the gate at fixture trees.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname, relative, resolve, basename, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -27,8 +28,18 @@ import {
   EVALS_SCHEMA,
 } from "./lib/plugin-schemas.mjs";
 
-const ROOT = process.argv[2]
-  ? resolve(process.argv[2])
+// The plugin root can be overridden for tests, in precedence order: an
+// optional first CLI argument, then the VALIDATE_PLUGIN_ROOT env var. Both
+// point the gate at fixture trees, and both treat an empty value as unset,
+// matching how every other env override in this codebase is read (see
+// strOrNull in lib/provenance-ledger.mjs and the CLAUDE_CONFIG_DIR guard in
+// lib/provenance-config.mjs). With `??` an exported-but-empty
+// VALIDATE_PLUGIN_ROOT would silently make every path below cwd-relative, so
+// the gate would validate whatever happened to be in the working directory
+// instead of this plugin.
+const rootOverride = process.argv[2] || process.env.VALIDATE_PLUGIN_ROOT;
+const ROOT = rootOverride
+  ? resolve(rootOverride)
   : join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 
@@ -70,15 +81,23 @@ let pluginName = null;
 if (!existsSync(pluginPath)) {
   errors.push(".claude-plugin/plugin.json: missing");
 } else {
-  const plugin = readJson(pluginPath);
-  pluginName = plugin.name;
-  check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  try {
+    const plugin = readJson(pluginPath);
+    pluginName = plugin.name;
+    check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  } catch (e) {
+    errors.push(`.claude-plugin/plugin.json: ${e.message}`);
+  }
 }
 
 // 2. marketplace.json (optional but validated when present)
 const marketPath = join(ROOT, ".claude-plugin", "marketplace.json");
 if (existsSync(marketPath)) {
-  check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  try {
+    check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  } catch (e) {
+    errors.push(`.claude-plugin/marketplace.json: ${e.message}`);
+  }
 }
 
 // 3. .mcp.json (optional but validated when present)

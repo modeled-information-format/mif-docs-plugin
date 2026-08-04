@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-04T15:06:35.000Z'
+modified: '2026-08-04T15:34:08.079Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -22,17 +22,17 @@ provenance:
   '@type': Provenance
   sourceType: agent_inferred
   trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:b5bba701-d09b-493c-98c1-85bd98cd9eec
+    '@id': urn:mif:activity:claude-code-session:fa69eb8c-0e0f-4e98-847d-112c92f6177c
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.220
+  agentVersion: 2.1.221
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,17 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- Made the repo's own five ADRs (`docs/adr/0001`-`0005`) conform to the
+  `adr` genre skill they ship with (#203): each now carries `type: adr`,
+  a lifecycle `status:`, and the full structured-MADR frontmatter, so
+  audit-v2's immutable-ADR policy and the `structured-madr` oracle
+  routing engage on them. `scripts/lib/corpus.mjs` gained a content-based
+  ADR carve-out (`listAdrDocs`) that keeps `type: adr` documents out of
+  the `mif-validate` corpus, and the `adr-smadr` CI job now validates
+  `docs/adr/` in both `smadr` (strict) and `mif` (level 3) modes.
 
 ## [0.9.3] - 2026-08-04
 

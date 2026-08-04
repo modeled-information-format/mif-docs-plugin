@@ -1,10 +1,12 @@
-// Regression: MARKETPLACE_SCHEMA constrains each plugin entry's `source` object
-// to carry a nested `source` string — the Claude Code plugin-source TYPE
-// DISCRIMINATOR naming the fetch mechanism ("github", "git", "git-subdir", …)
-// that sits alongside that mechanism's own fields. It reads like a
-// self-reference and has already been mistaken for a copy-paste bug once and
-// "simplified" to `additionalProperties: true` (the JSON Schema default), which
-// left the subschema enforcing nothing beyond `type: "object"`.
+// Regression: MARKETPLACE_SCHEMA accepts a plugin entry's `source` in both
+// Claude Code marketplace forms — a bare non-empty string (local-path
+// shorthand) or an object carrying a nested `source` string — the Claude Code
+// plugin-source TYPE DISCRIMINATOR naming the fetch mechanism ("github",
+// "git", "git-subdir", …) that sits alongside that mechanism's own fields. It
+// reads like a self-reference and has already been mistaken for a copy-paste
+// bug once and "simplified" to `additionalProperties: true` (the JSON Schema
+// default), which left the subschema enforcing nothing beyond
+// `type: "object"`.
 //
 // That regression could not fail CI on its own: validate-plugin.mjs only ever
 // validates this repo's own .claude-plugin/marketplace.json, which does carry
@@ -42,6 +44,18 @@ test('accepts the git-subdir source form the org marketplaces ship', () => {
     ),
     true,
   );
+});
+
+test('accepts the string-shorthand local-path source form', () => {
+  assert.equal(validate(marketplace('./packs/channels/book')), true);
+});
+
+test('rejects an empty-string shorthand source', () => {
+  assert.equal(validate(marketplace('')), false);
+});
+
+test('rejects a non-string non-object source', () => {
+  assert.equal(validate(marketplace(42)), false);
 });
 
 test('rejects a source object that never names its fetch mechanism', () => {

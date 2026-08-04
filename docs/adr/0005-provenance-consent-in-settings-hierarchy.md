@@ -1,18 +1,29 @@
 ---
+title: Provenance Consent Rides the Settings Hierarchy, and Refusal Wins
+description: >-
+  The mif-provenance consent surface is one namespaced key (mifProvenance) in
+  Claude Code's settings hierarchy; precedence orders only non-refusal values,
+  refusal at any scope wins, and configuration errors fail closed to disabled.
+type: adr
+conceptType: semantic
 id: adr-0005-provenance-consent
-type: semantic
-created: '2026-07-11T12:00:00Z'
-modified: '2026-07-28T22:28:45.539Z'
 namespace: adr/mif-docs
-title: 'ADR-0005: Provenance Consent Rides the Settings Hierarchy, and Refusal Wins'
-summary: The mif-provenance helper's consent surface is one namespaced key (mifProvenance) in Claude Code's own settings hierarchy, with the plugin-local settings file pattern as the documented fallback carrier; precedence orders only non-refusal values, an explicit disable at any scope defeats enablement at every other scope, and configuration errors fail closed to disabled.
+x-ontology:
+  id: mif-docs
+  version: '1.0.0'
+  uri: https://mif-spec.dev/ontologies/mif-docs
+  entity_type: decision-record
+category: architecture
 tags:
   - adr
   - provenance
   - consent
   - configuration
-aliases:
-  - ADR-0005
+status: accepted
+created: 2026-07-11
+updated: 2026-07-28
+author: modeled-information-format
+project: mif-docs
 temporal:
   '@type': TemporalMetadata
   validFrom: '2026-07-11T00:00:00Z'
@@ -58,21 +69,18 @@ citations:
     citationRole: source
     title: 'mif-docs-plugin#63 — the mif-provenance Epic this decision anchors'
     url: https://github.com/modeled-information-format/mif-docs-plugin/issues/63
-ontology:
-  '@type': OntologyReference
-  id: mif-docs
-  version: 1.0.0
-  uri: https://mif-spec.dev/ontologies/mif-docs
-entity:
-  name: Provenance Consent in the Settings Hierarchy with Refusal-Wins
-  entity_type: decision-record
-extensions:
-  x-adr-status: accepted
-  x-adr-category: architecture
-  x-decision-drivers:
-    - consent-before-observation
-    - fail-closed-misconfiguration
-    - no-novel-config-surface
+summary: >-
+  The mif-provenance helper's consent surface is one namespaced key
+  (mifProvenance) in Claude Code's own settings hierarchy, with the plugin-local
+  settings file pattern as the documented fallback carrier; precedence orders
+  only non-refusal values, an explicit disable at any scope defeats enablement at
+  every other scope, and configuration errors fail closed to disabled.
+x-aliases:
+  - ADR-0005
+x-decision-drivers:
+  - consent-before-observation
+  - fail-closed-misconfiguration
+  - no-novel-config-surface
 ---
 
 # ADR-0005: Provenance Consent Rides the Settings Hierarchy, and Refusal Wins
