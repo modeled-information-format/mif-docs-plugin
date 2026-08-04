@@ -7,7 +7,7 @@
 // copy to drift again on the next nested subdirectory. One list, three
 // consumers, no hand-sync (mif-docs-plugin#34).
 import { statSync, globSync, readFileSync } from "node:fs";
-import { dirname } from "node:path";
+import { dirname, sep } from "node:path";
 import { splitFrontmatter, isAdrCarveout } from "./mif-genre-signal.mjs";
 
 function isDirectory(path) {
@@ -94,7 +94,10 @@ function partitionL3Docs() {
   // Both fail-closed checks run on the PRE-filter list: an L3 tree holding
   // only ADRs (docs/adr) is present-and-owned-elsewhere, not silently empty.
   const adrDocs = files.filter((f) => isAdrDoc(f));
-  const ungated = adrDocs.filter((f) => dirname(f) !== ADR_GATE_DIR);
+  // Separator-safe: globSync returns platform-native separators, and
+  // ADR_GATE_DIR is a forward-slash literal (same normalization as
+  // validate-plugin.mjs's labelFor).
+  const ungated = adrDocs.filter((f) => dirname(f).split(sep).join("/") !== ADR_GATE_DIR);
   if (ungated.length > 0) {
     throw new Error(
       `type: adr document(s) outside the adr-smadr gate's coverage (${ADR_GATE_DIR}/*.md, non-recursive): ` +
@@ -111,8 +114,8 @@ export function listL3Docs() {
 }
 
 // The `type: adr` documents under the L3 trees — the complement of
-// listL3Docs()'s filter, gated by the adr-smadr CI job (structured-madr
-// Action in smadr strict + mif conformance modes), never by mif-validate.
+// listL3Docs(), gated by the adr-smadr CI job (structured-madr Action in
+// smadr strict + mif conformance modes), never by mif-validate.
 export function listAdrDocs() {
   return partitionL3Docs().adrDocs;
 }

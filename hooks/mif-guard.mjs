@@ -78,8 +78,11 @@ try {
 // provenance capture hook: the genre signal must be a TOP-LEVEL frontmatter
 // key (a nested `metadata:\n  type: reference` must not trigger — the
 // auto-memory regression), and the structured-MADR `type: adr` genre is
-// carved out exactly as CI does (validated by the structured-madr action,
-// not mif-validate).
+// carved out of MIF guarding wherever it appears (validated by the
+// structured-madr action, not mif-validate; CI additionally fails closed on
+// a type: adr doc outside docs/adr/ — scripts/lib/corpus.mjs, issue #209 —
+// but this hook's carve-out is deliberately unconditional: placement is
+// CI's contract to enforce, not this write-time guard's).
 const split = splitFrontmatter(content);
 const front = split ? split.fmText : '';
 

@@ -20,6 +20,7 @@ import {
   listAllGatedDocs,
   listAdrDocs,
   ADR_TEMPLATE_CARVEOUT,
+  ADR_GATE_DIR,
   L3_DIRS,
 } from '../scripts/lib/corpus.mjs';
 import { splitFrontmatter, isAdrCarveout } from '../scripts/lib/mif-genre-signal.mjs';
@@ -216,9 +217,24 @@ test('a type: adr doc nested below docs/adr fails closed too — the job glob is
   process.chdir(scratch);
   try {
     assert.throws(() => listL3Docs(), /outside the adr-smadr gate/);
+    assert.throws(() => listAdrDocs(), /outside the adr-smadr gate/);
   } finally {
     process.chdir(originalCwd);
     rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+// The fail-closed boundary is only correct while corpus.mjs's ADR_GATE_DIR
+// agrees with what the adr-smadr job in ci.yml actually walks — two literals
+// with nothing else tying them (the hand-sync-drift class this module's
+// header names, #32/#34). Pin the agreement here, PR-gated.
+test('ADR_GATE_DIR matches the adr-smadr job path/pattern in ci.yml (#209)', () => {
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const projectAdrSteps = [...ci.matchAll(/path:[ \t]*(docs\/[^\s]+)\s*\n\s*pattern:[ \t]*'([^']+)'/g)];
+  assert.ok(projectAdrSteps.length >= 2, 'expected both project-ADR steps in the adr-smadr job');
+  for (const [, path, pattern] of projectAdrSteps) {
+    assert.equal(path, ADR_GATE_DIR, `ci.yml adr-smadr path (${path}) must equal ADR_GATE_DIR`);
+    assert.equal(pattern, '*.md', 'the fail-closed check assumes the non-recursive *.md pattern');
   }
 });
 
