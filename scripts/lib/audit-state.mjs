@@ -51,10 +51,6 @@ export function sha256(text) {
   return createHash("sha256").update(text).digest("hex");
 }
 
-export function sha256File(path) {
-  return createHash("sha256").update(readFileSync(path)).digest("hex");
-}
-
 // One digest over an ordered list of files' contents — the checks_version
 // input: when the skill, the runner, or the finding schema changes, every
 // prior verdict was rendered by retired rules and the whole corpus is dirty.
