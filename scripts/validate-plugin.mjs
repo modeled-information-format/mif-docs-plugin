@@ -23,8 +23,14 @@ import {
 
 // VALIDATE_PLUGIN_ROOT is a test hook: it lets the test suite point the
 // validator at a fixture plugin root instead of this repository itself.
+// An empty value means unset, matching how every other env override in this
+// codebase is read (see strOrNull in lib/provenance-ledger.mjs and the
+// CLAUDE_CONFIG_DIR guard in lib/provenance-config.mjs). With `??` an
+// exported-but-empty VALIDATE_PLUGIN_ROOT would silently make every path
+// below cwd-relative, so the gate would validate whatever happened to be in
+// the working directory instead of this plugin.
 const ROOT =
-  process.env.VALIDATE_PLUGIN_ROOT ??
+  process.env.VALIDATE_PLUGIN_ROOT ||
   join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 

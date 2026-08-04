@@ -36,12 +36,28 @@ function makeRoot({ plugin, marketplace } = {}) {
   return root;
 }
 
-function run(root) {
+function run(root, { cwd } = {}) {
   return spawnSync(process.execPath, [script], {
     encoding: 'utf8',
+    cwd,
     env: { ...process.env, VALIDATE_PLUGIN_ROOT: root },
   });
 }
+
+test('an empty VALIDATE_PLUGIN_ROOT means unset, not a cwd-relative root', () => {
+  // Guards the `||` (not `??`) fallback: an exported-but-empty override must
+  // fall back to this repository, not to whatever the working directory holds.
+  // Spawned from a temp cwd on purpose — with cwd at the repo root the bug is
+  // masked, because "" resolves cwd-relative to the right place by accident.
+  const elsewhere = mkdtempSync(join(tmpdir(), 'validate-plugin-182-cwd-'));
+  try {
+    const r = run('', { cwd: elsewhere });
+    assert.equal(r.status, 0, r.stderr);
+    assert.match(r.stdout, /plugin: mif-docs/);
+  } finally {
+    rmSync(elsewhere, { recursive: true, force: true });
+  }
+});
 
 test('a valid fixture plugin.json passes via the VALIDATE_PLUGIN_ROOT hook', () => {
   const root = makeRoot({ plugin: VALID_PLUGIN });
