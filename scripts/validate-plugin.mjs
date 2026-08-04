@@ -21,7 +21,11 @@ import {
   EVALS_SCHEMA,
 } from "./lib/plugin-schemas.mjs";
 
-const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+// VALIDATE_PLUGIN_ROOT is a test hook: it lets the test suite point the
+// validator at a fixture plugin root instead of this repository itself.
+const ROOT =
+  process.env.VALIDATE_PLUGIN_ROOT ??
+  join(dirname(fileURLToPath(import.meta.url)), "..");
 const ajv = new Ajv({ allErrors: true, strict: false });
 
 const validatePluginSchema = ajv.compile(PLUGIN_SCHEMA);
@@ -60,15 +64,23 @@ let pluginName = null;
 if (!existsSync(pluginPath)) {
   errors.push(".claude-plugin/plugin.json: missing");
 } else {
-  const plugin = readJson(pluginPath);
-  pluginName = plugin.name;
-  check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  try {
+    const plugin = readJson(pluginPath);
+    pluginName = plugin.name;
+    check(".claude-plugin/plugin.json", validatePluginSchema, plugin);
+  } catch (e) {
+    errors.push(`.claude-plugin/plugin.json: ${e.message}`);
+  }
 }
 
 // 2. marketplace.json (optional but validated when present)
 const marketPath = join(ROOT, ".claude-plugin", "marketplace.json");
 if (existsSync(marketPath)) {
-  check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  try {
+    check(".claude-plugin/marketplace.json", validateMarketplaceSchema, readJson(marketPath));
+  } catch (e) {
+    errors.push(`.claude-plugin/marketplace.json: ${e.message}`);
+  }
 }
 
 // 3. .mcp.json (optional but validated when present)
