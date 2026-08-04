@@ -1,44 +1,107 @@
-// doc-links.mjs -- resolve every internal link found in docs/**/*.md(x) against
-// the real Starlight route each doc file maps to, so scripts/check-doc-links.mjs
-// can prove issue #173's AC1 ("the gate shall fail if the target does not
-// resolve to a real page route") instead of the missing gate issue #10 was
-// closed as having added.
+// doc-links.mjs -- resolve every internal link found in a docs tree's *.md(x)
+// files against the real Starlight route each doc file maps to, so
+// scripts/check-doc-links.mjs can prove issue #173's AC1 ("the gate shall fail
+// if the target does not resolve to a real page route") instead of the missing
+// gate issue #10 was closed as having added.
 //
-// Route model: site/astro.config.mjs sets base: "/mif-docs-plugin" and no
+// Route model: a Starlight site sets base: "<siteBase>" and (by default) no
 // trailingSlash, so Starlight's default (every generated page route carries a
 // trailing slash, index files map to their parent directory) is what a real
 // deployed link must match. A file's route is computed purely from its path
-// under docs/ -- the same identity mapping Astro's file-based routing uses --
-// which only holds if every path segment is lowercase-kebab-case; see
+// under the docs root -- the same identity mapping Astro's file-based routing
+// uses -- which only holds if every path segment is lowercase-kebab-case; see
 // checkKebabCase().
+//
+// Every exported function takes an optional trailing `opts` object
+// ({docsRoot, siteBase, globs}) so the same route model can be checked against
+// any Starlight docs tree (e.g. another repo's docs/ with a different site
+// base), not only this plugin's own. Omitting opts preserves this repo's
+// historical defaults exactly.
 import { globSync } from "node:fs";
 import { readFileSync } from "node:fs";
+import { posix } from "node:path";
 
 export const DOCS_GLOBS = ["docs/**/*.md", "docs/**/*.mdx"];
 export const SITE_BASE = "/mif-docs-plugin";
 
+// Normalize {docsRoot, siteBase, globs} with this repo's values as defaults.
+// siteBase keeps no trailing slash internally ("" means the site root), and
+// docsRoot keeps no trailing slash so prefix-stripping is exact.
+export function normalizeOptions(opts = {}) {
+  const docsRoot = (opts.docsRoot ?? "docs").replace(/\/+$/, "");
+  let siteBase = opts.siteBase ?? SITE_BASE;
+  if (!siteBase.startsWith("/")) siteBase = `/${siteBase}`;
+  siteBase = siteBase.replace(/\/+$/, "");
+  const globs = opts.globs ?? [`${docsRoot}/**/*.md`, `${docsRoot}/**/*.mdx`];
+  return { docsRoot, siteBase, globs };
+}
+
+// Pull `base: "<path>"` out of an astro.config.mjs without executing it --
+// a regex over the source is deliberate (the config may import packages this
+// process shouldn't load). Fail loud when absent: a Starlight site with no
+// explicit base serves from "/", and the caller should say so explicitly via
+// siteBase: "/" rather than have it silently guessed.
+export function readSiteBaseFromAstroConfig(configPath) {
+  const src = readFileSync(configPath, "utf8");
+  // Strip comments before matching, or a commented-out `// base: "/old"`
+  // above the real one wins and silently poisons the whole route model.
+  // Block comments go wholesale; line comments are cut only when the `//`
+  // sits outside a string literal, so `site: "https://..."` survives.
+  const noBlocks = src.replace(/\/\*[\s\S]*?\*\//g, " ");
+  const code = noBlocks
+    .split("\n")
+    .map((line) => {
+      let quote = null;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quote) {
+          if (ch === "\\") i++;
+          else if (ch === quote) quote = null;
+        } else if (ch === '"' || ch === "'" || ch === "`") {
+          quote = ch;
+        } else if (ch === "/" && line[i + 1] === "/") {
+          return line.slice(0, i);
+        }
+      }
+      return line;
+    })
+    .join("\n");
+  const m = code.match(/\bbase:\s*["']([^"']+)["']/);
+  if (!m) {
+    throw new Error(`no base: "<path>" found in ${configPath} -- pass the site base explicitly`);
+  }
+  return m[1];
+}
+
 // Fail-closed the same way scripts/lib/corpus.mjs's listL3Docs()/listTemplates()
-// do: an empty result is a setup problem (a renamed docs/ tree, a typo'd glob),
+// do: an empty result is a setup problem (a renamed docs tree, a typo'd glob),
 // never a gate that silently checked zero files.
-export function listDocFiles() {
-  const files = DOCS_GLOBS.flatMap((g) => globSync(g)).sort();
+export function listDocFiles(opts = {}) {
+  const { globs } = normalizeOptions(opts);
+  const files = globs.flatMap((g) => globSync(g)).sort();
   if (files.length === 0) {
-    throw new Error(`no doc files found under ${DOCS_GLOBS.join(", ")} -- check paths`);
+    throw new Error(`no doc files found under ${globs.join(", ")} -- check paths`);
   }
   return files;
 }
 
 const KEBAB_SEGMENT = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
+function relUnderRoot(file, docsRoot) {
+  const prefix = `${docsRoot}/`;
+  return file.startsWith(prefix) ? file.slice(prefix.length) : file;
+}
+
 // The route each doc file maps to depends on every path segment being
 // lowercase-kebab-case -- Astro's file-based routing lower-cases nothing, so
 // a stray uppercase letter or underscore would silently mismap this gate's
 // own route model against the real deployed route. Fail loud rather than
 // silently resolve to a route that doesn't match reality.
-export function checkKebabCase(files) {
+export function checkKebabCase(files, opts = {}) {
+  const { docsRoot } = normalizeOptions(opts);
   const problems = [];
   for (const f of files) {
-    const rel = f.replace(/^docs\//, "");
+    const rel = relUnderRoot(f, docsRoot);
     const segments = rel.split("/");
     const base = segments[segments.length - 1].replace(/\.mdx?$/, "");
     const toCheck = [...segments.slice(0, -1), base];
@@ -54,14 +117,15 @@ export function checkKebabCase(files) {
 
 // docs/architecture/mif-provenance.md -> /mif-docs-plugin/architecture/mif-provenance/
 // docs/index.mdx                      -> /mif-docs-plugin/
-export function routeForDocFile(file) {
-  const rel = file.replace(/^docs\//, "").replace(/\.mdx?$/, "");
+export function routeForDocFile(file, opts = {}) {
+  const { docsRoot, siteBase } = normalizeOptions(opts);
+  const rel = relUnderRoot(file, docsRoot).replace(/\.mdx?$/, "");
   const slug = rel === "index" || rel.endsWith("/index") ? rel.replace(/(^|\/)index$/, "") : rel;
-  return slug ? `${SITE_BASE}/${slug}/` : `${SITE_BASE}/`;
+  return slug ? `${siteBase}/${slug}/` : `${siteBase}/`;
 }
 
-export function buildRouteSet(files) {
-  return new Set(files.map(routeForDocFile));
+export function buildRouteSet(files, opts = {}) {
+  return new Set(files.map((f) => routeForDocFile(f, opts)));
 }
 
 // Mask fenced code blocks (``` or ~~~) with equal-length whitespace -- never
@@ -143,6 +207,10 @@ export function isInternalTarget(raw) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(t)) return false;
   if (t.startsWith("//")) return false;
   if (t.startsWith("#")) return false;
+  // A query-only href (?foo=bar) targets the current page with parameters;
+  // stripping the query left "" which resolveTarget coerced to "/" -- a
+  // false 404 against the site root (flagged on PR #176, fixed here).
+  if (t.startsWith("?")) return false;
   return true;
 }
 
@@ -253,8 +321,8 @@ export function resolveTarget(currentRoute, target) {
 
 // 'ok': exact canonical route match.
 // 'non-canonical': resolves to a real route missing only its trailing slash --
-//   site/astro.config.mjs sets no explicit trailingSlash, so this may 301
-//   rather than 404; never assert a 404 that hasn't been proven.
+//   a site with no explicit trailingSlash config may 301 rather than 404;
+//   never assert a 404 that hasn't been proven.
 // 'not-found': no real route matches even after that allowance (covers both
 //   wrong relative depth and a lingering .md/.mdx suffix no route serves).
 export function classify(resolvedPath, routeSet) {
@@ -263,8 +331,47 @@ export function classify(resolvedPath, routeSet) {
   return "not-found";
 }
 
-export function checkFile(file, content, routeSet) {
-  const currentRoute = routeForDocFile(file);
+// Propose the mechanical rewrite for a broken target, or null when no safe
+// single deterministic correction exists (in which case the finding stays a
+// human's to resolve -- this function must never guess). Two rewrite classes,
+// both verified against the route set before being returned, both preserving
+// any ?query/#anchor suffix:
+//
+// 1. File-relative intent (the dominant real-world class): a `.md`/`.mdx`
+//    target written the way GitHub's web renderer resolves it -- relative to
+//    the SOURCE FILE's directory. Under Starlight's trailing-slash routes the
+//    same string resolves one directory too deep AND with a dead suffix, so
+//    both must be repaired together: locate the target file the author meant,
+//    then emit the correct route-relative link to its real route.
+// 2. Route-relative repair: the target already resolves to the right place
+//    except for a lingering `.md`/`.mdx` suffix or a missing trailing slash.
+export function suggestFixedTarget(file, target, files, routeSet, opts = {}) {
+  const m = target.match(/^([^?#]*)([?#].*)?$/);
+  const path = m[1];
+  const suffix = m[2] ?? "";
+  if (!path) return null;
+  const currentRoute = routeForDocFile(file, opts);
+
+  if (/\.mdx?$/.test(path) && !path.startsWith("/")) {
+    const fileSet = files instanceof Set ? files : new Set(files);
+    const joined = posix.normalize(posix.join(posix.dirname(file), path));
+    if (fileSet.has(joined)) {
+      const targetRoute = routeForDocFile(joined, opts);
+      const rel = posix.relative(currentRoute, targetRoute);
+      const candidate = rel === "" ? "./" : `${rel}/`;
+      if (routeSet.has(resolveTarget(currentRoute, candidate))) return candidate + suffix;
+    }
+  }
+
+  let candidate = path.replace(/\.mdx?$/, "");
+  if (!candidate.endsWith("/")) candidate += "/";
+  if (candidate === path) return null; // nothing changed -- not this fix class
+  if (routeSet.has(resolveTarget(currentRoute, candidate))) return candidate + suffix;
+  return null;
+}
+
+export function checkFile(file, content, routeSet, opts = {}) {
+  const currentRoute = routeForDocFile(file, opts);
   const links = extractLinks(file, content);
   const findings = [];
   for (const { target, line } of links) {
@@ -277,17 +384,37 @@ export function checkFile(file, content, routeSet) {
   return findings;
 }
 
-export function checkAll(files = listDocFiles(), readFile = (f) => readFileSync(f, "utf8")) {
-  const kebabProblems = checkKebabCase(files);
-  if (kebabProblems.length > 0) {
-    const err = new Error("non-kebab-case doc filename(s) found -- the route model cannot be trusted");
-    err.kebabProblems = kebabProblems;
-    throw err;
-  }
-  const routeSet = buildRouteSet(files);
+export function checkAll(files, readFile = (f) => readFileSync(f, "utf8"), opts = {}) {
+  const resolvedFiles = files ?? listDocFiles(opts);
   const findings = [];
-  for (const file of files) {
-    findings.push(...checkFile(file, readFile(file), routeSet));
+  const kebabProblems = checkKebabCase(resolvedFiles, opts);
+  if (kebabProblems.length > 0) {
+    // Default: fail closed -- the route model cannot be trusted, so refuse to
+    // assert anything about link resolution (this repo's own CI gate).
+    // allowNonKebab: audit mode -- report each offending path as its own
+    // finding and keep checking the rest of the corpus with identity routing,
+    // so one route anomaly (e.g. a docs/README.md) doesn't abort a whole
+    // audit that exists to report exactly such anomalies.
+    if (!opts.allowNonKebab) {
+      const err = new Error("non-kebab-case doc filename(s) found -- the route model cannot be trusted");
+      err.kebabProblems = kebabProblems;
+      throw err;
+    }
+    for (const p of kebabProblems) {
+      const file = p.slice(0, p.indexOf(":"));
+      findings.push({
+        file,
+        line: 1,
+        target: null,
+        resolvedPath: routeForDocFile(file, opts),
+        status: "non-kebab-path",
+        detail: p,
+      });
+    }
+  }
+  const routeSet = buildRouteSet(resolvedFiles, opts);
+  for (const file of resolvedFiles) {
+    findings.push(...checkFile(file, readFile(file), routeSet, opts));
   }
   return findings;
 }
