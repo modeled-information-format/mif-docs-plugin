@@ -43,7 +43,30 @@ export function normalizeOptions(opts = {}) {
 // siteBase: "/" rather than have it silently guessed.
 export function readSiteBaseFromAstroConfig(configPath) {
   const src = readFileSync(configPath, "utf8");
-  const m = src.match(/\bbase:\s*["']([^"']+)["']/);
+  // Strip comments before matching, or a commented-out `// base: "/old"`
+  // above the real one wins and silently poisons the whole route model.
+  // Block comments go wholesale; line comments are cut only when the `//`
+  // sits outside a string literal, so `site: "https://..."` survives.
+  const noBlocks = src.replace(/\/\*[\s\S]*?\*\//g, " ");
+  const code = noBlocks
+    .split("\n")
+    .map((line) => {
+      let quote = null;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (quote) {
+          if (ch === "\\") i++;
+          else if (ch === quote) quote = null;
+        } else if (ch === '"' || ch === "'" || ch === "`") {
+          quote = ch;
+        } else if (ch === "/" && line[i + 1] === "/") {
+          return line.slice(0, i);
+        }
+      }
+      return line;
+    })
+    .join("\n");
+  const m = code.match(/\bbase:\s*["']([^"']+)["']/);
   if (!m) {
     throw new Error(`no base: "<path>" found in ${configPath} -- pass the site base explicitly`);
   }
@@ -184,6 +207,10 @@ export function isInternalTarget(raw) {
   if (/^[a-z][a-z0-9+.-]*:/i.test(t)) return false;
   if (t.startsWith("//")) return false;
   if (t.startsWith("#")) return false;
+  // A query-only href (?foo=bar) targets the current page with parameters;
+  // stripping the query left "" which resolveTarget coerced to "/" -- a
+  // false 404 against the site root (flagged on PR #176, fixed here).
+  if (t.startsWith("?")) return false;
   return true;
 }
 

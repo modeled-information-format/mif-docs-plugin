@@ -58,7 +58,9 @@ test('runner finds link/structural defects, classes .md links, and maps ADR muta
     // headings + unclosed fence. adr-0001 is immutable: its duplicate
     // headings are suppressed by policy.
     assert.equal(byCheck['link-integrity'], 1);
-    assert.ok(byCheck['structural-formatting'] >= 3);
+    // Exactly 3: guide.md's h1->h4 level skip, other.md's duplicate heading,
+    // other.md's unclosed fence (adr-0001's duplicates are suppressed).
+    assert.equal(byCheck['structural-formatting'], 3);
     assert.ok(!payload.findings.some((f) => f.files[0].includes('adr-0001')));
 
     const fence = payload.findings.find((f) => f.summary.includes('never closed'));
@@ -107,11 +109,20 @@ test('checks that cannot run are reported as skipped, never silently dropped', (
     mkdirSync(join(dir, 'docs'), { recursive: true });
     writeFileSync(join(dir, 'docs/a.md'), '---\ntype: how-to\ntitle: A\n---\n\n# A\n');
     // No --site-base and no astro config: link-integrity must be skipped
-    // with a stated reason, not quietly return zero findings.
-    const out = runAudit(dir, ['--paths', 'docs', '--report-dir', 'report', '--checks', 'link-integrity']);
+    // with a stated reason, not quietly return zero findings. The same
+    // never-silent invariant holds for provenance-drift without a ledger
+    // and temporal-metadata without any git history (review finding: both
+    // previously half-ran with skipped: [] -- indistinguishable from "ran
+    // and the corpus is clean").
+    const out = runAudit(dir, [
+      '--paths', 'docs', '--report-dir', 'report',
+      '--checks', 'link-integrity,provenance-drift,temporal-metadata',
+    ]);
     assert.match(out, /SKIPPED link-integrity: no site base known/);
+    assert.match(out, /SKIPPED provenance-drift: no --ledger supplied/);
+    assert.match(out, /SKIPPED temporal-metadata: no git history available/);
     const payload = JSON.parse(readFileSync(join(dir, 'report/findings/deterministic.json'), 'utf8'));
-    assert.equal(payload.skipped_checks.length, 1);
+    assert.equal(payload.skipped_checks.length, 3);
     assert.deepEqual(payload.findings, []);
   } finally {
     rmSync(dir, { recursive: true, force: true });
@@ -148,6 +159,24 @@ test('relationship-graph structural half flags dangling .md relationship targets
     const payload = JSON.parse(readFileSync(join(dir, 'report/findings/deterministic.json'), 'utf8'));
     assert.equal(payload.findings.length, 1);
     assert.match(payload.findings[0].summary, /missing\.md.*does not resolve/);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('non-kebab doc paths surface as findings and never abort the audit', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'audit-kebab-'));
+  try {
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs/README.md'), '---\ntype: reference\ntitle: R\n---\n\n# R\n');
+    writeFileSync(join(dir, 'docs/index.md'), '---\ntype: explanation\ntitle: I\n---\n\n# I\n');
+    const out = runAudit(dir, ['--paths', 'docs', '--report-dir', 'report', '--site-base', '/x', '--checks', 'link-integrity']);
+    assert.match(out, /2 MIF document\(s\)/);
+    const payload = JSON.parse(readFileSync(join(dir, 'report/findings/deterministic.json'), 'utf8'));
+    const kebab = payload.findings.filter((f) => f.summary.includes('README'));
+    assert.equal(kebab.length, 1);
+    assert.equal(kebab[0].check_id, 'link-integrity');
+    assert.equal(kebab[0].fixable, false);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

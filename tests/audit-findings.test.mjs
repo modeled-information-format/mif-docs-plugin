@@ -111,3 +111,31 @@ test('a multi-file shared-pattern finding validates (the dedup shape)', () => {
   assert.deepEqual(errors, []);
   assert.equal(ok, true);
 });
+
+test('malformed field types are rejected, not just missing fields', () => {
+  // Review finding: these type checks were deletable with zero test
+  // failures; each line below fails if its corresponding check is removed.
+  assert.ok(validateFinding(goodFinding({ anchor: 'line 12' })).length > 0, 'anchor must be an object');
+  assert.ok(validateFinding(goodFinding({ anchor: { line: 'twelve' } })).length > 0, 'anchor.line must be an integer');
+  assert.ok(validateFinding(goodFinding({ fixable: 'yes' })).length > 0, 'fixable must be boolean');
+  assert.ok(validateFinding(goodFinding({ immutable_doc: 1 })).length > 0, 'immutable_doc must be boolean');
+  assert.ok(validateFinding(goodFinding({ supersession_candidate: 'no' })).length > 0);
+  assert.ok(validateFinding(goodFinding({ advisory: 'true' })).length > 0, 'advisory must be boolean');
+  assert.ok(validateFinding(goodFinding({ evidence: ['read it'] })).length > 0, 'evidence must be a string');
+  assert.deepEqual(validateFinding(goodFinding()), [], 'the base fixture stays valid');
+});
+
+test('files_clean must be an array when present', () => {
+  const { ok, errors } = validateFindings(goodPayload({ files_clean: 'docs/how-to/b.md' }));
+  assert.equal(ok, false);
+  assert.ok(errors.some((e) => e.includes('files_clean')));
+});
+
+test('accounting holds even without expectedFiles: an audited file cannot vanish', () => {
+  // Review finding: accounting previously ran only when the caller passed
+  // expectedFiles, which no caller did.
+  const payload = goodPayload({ files_clean: [] }); // b.md now unaccounted
+  const { ok, errors } = validateFindings(payload);
+  assert.equal(ok, false);
+  assert.ok(errors.some((e) => e.includes('b.md') && e.includes('unaccounted')));
+});

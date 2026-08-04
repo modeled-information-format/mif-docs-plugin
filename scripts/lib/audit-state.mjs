@@ -126,8 +126,20 @@ export function partitionFiles({ state, files, checksVersion, skillsRoot, full =
   const clean = [];
   const reasons = {};
   const entries = state?.entries ?? {};
-  const stateChecksVersion = state?.checks_version;
   const skillHashCache = new Map();
+  if (skillsRoot) {
+    // Fail loud on a mis-resolved skills root: silently hashing "nothing"
+    // for every genre would permanently disable genre-skill staleness
+    // detection with no signal (per-genre misses are still fine -- a genre
+    // with no matching skill dir legitimately maps to "*").
+    let st;
+    try {
+      st = statSync(skillsRoot);
+    } catch {
+      throw new Error(`skillsRoot ${skillsRoot} does not exist -- refusing to partition with a dead genre-skill oracle`);
+    }
+    if (!st.isDirectory()) throw new Error(`skillsRoot ${skillsRoot} is not a directory`);
+  }
 
   for (const file of files) {
     const text = readFileSync(file, "utf8");
@@ -150,8 +162,14 @@ export function partitionFiles({ state, files, checksVersion, skillsRoot, full =
     let reason = null;
     if (full) reason = "--full requested";
     else if (!state) reason = "no prior state";
-    else if (stateChecksVersion !== checksVersion) reason = "checks_version changed (audit rules updated)";
     else if (!entry) reason = "not in prior state (new file)";
+    // checks_version is compared PER ENTRY, never via the state file's
+    // top-level field: a rules change dirties everything, but if only part
+    // of the corpus gets re-audited before commit, the untouched entries
+    // keep their old per-entry version and stay dirty on the next run --
+    // committing a partial run must never certify files as clean under
+    // rules they were never evaluated against (review finding, verified).
+    else if (entry.checks_version !== checksVersion) reason = "checks_version changed (audit rules updated)";
     else if (entry.content_sha256 !== contentSha) reason = "content changed";
     else if (skillsRoot && entry.genre_skill_sha256 !== skillHash) reason = `genre skill "${skillKey}" changed`;
 
@@ -184,6 +202,10 @@ export function commitState({
   for (const r of results) {
     const text = readFileSync(r.file, "utf8");
     entries[r.file] = {
+      // Stamped per entry: only files actually judged THIS run get certified
+      // under the current rules; carried entries keep the version they were
+      // really evaluated under (see partitionFiles).
+      checks_version: checksVersion,
       content_sha256: sha256(text),
       genre: r.genre ?? genreOfText(text),
       genre_skill_key: r.genre_skill_key,

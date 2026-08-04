@@ -121,11 +121,19 @@ export function validateFindings(payload, { expectedFiles, allowedCheckIds } = {
   }
   if (!isStringArray(payload.files_audited)) {
     errors.push("files_audited must be a non-empty array of paths");
-  } else if (expectedFiles) {
+  } else {
+    // Assignment matching runs only against an explicit expectedFiles list,
+    // but the every-file-accounted-for invariant always holds — defaulting
+    // it to files_audited itself, so a payload can never claim a file was
+    // audited while leaving it out of both files_clean and every finding
+    // (review finding: the accounting previously ran only when a caller
+    // passed expectedFiles, which nothing did).
     const audited = new Set(payload.files_audited);
-    const expected = new Set(expectedFiles);
-    for (const f of expected) if (!audited.has(f)) errors.push(`files_audited is missing assigned file ${f}`);
-    for (const f of audited) if (!expected.has(f)) errors.push(`files_audited contains unassigned file ${f}`);
+    const expected = new Set(expectedFiles ?? payload.files_audited);
+    if (expectedFiles) {
+      for (const f of expected) if (!audited.has(f)) errors.push(`files_audited is missing assigned file ${f}`);
+      for (const f of audited) if (!expected.has(f)) errors.push(`files_audited contains unassigned file ${f}`);
+    }
     const accounted = new Set(payload.files_clean ?? []);
     if (Array.isArray(payload.findings)) {
       for (const f of payload.findings) {

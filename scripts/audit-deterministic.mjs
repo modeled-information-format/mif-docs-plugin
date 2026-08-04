@@ -35,7 +35,7 @@ import { splitFrontmatter, isAdrCarveout } from "./lib/mif-genre-signal.mjs";
 import { parseMarkdown, toJsonld, roundTripFromMarkdown, loadValidator, checkLevel } from "./lib/projection.mjs";
 import { checkAll as checkLinks, readSiteBaseFromAstroConfig, maskFencedBlocks } from "./lib/doc-links.mjs";
 import { classifyProvenance } from "./lib/provenance-classify.mjs";
-import { gitDatesOf, declaredDatesOf, detectDateClustering, checkTemporal } from "./lib/temporal-git.mjs";
+import { gitDatesOf, declaredDatesOf, detectDateClustering, checkTemporal, isShallowRepo } from "./lib/temporal-git.mjs";
 import { discoverFiles, sha256, genreOfText } from "./lib/audit-state.mjs";
 import { SCHEMA_ID, CHECK_IDS_BY_TIER } from "./lib/audit-findings.mjs";
 
@@ -267,6 +267,15 @@ if (enabled.has("frontmatter-schema") || enabled.has("mif-level-gap")) {
 // downgrades drifted witnessed blocks to asserted via the shared classifier.
 if (enabled.has("provenance-drift")) {
   let verify = null;
+  if (!flags.ledger) {
+    // Marker-only classification still runs (recorded in the corpus map),
+    // but DRIFT detection needs the ledger witness -- without it, "0
+    // findings" must never read as "ran and clean" (review finding).
+    skipped.push({
+      check_id: "provenance-drift",
+      reason: "no --ledger supplied: marker-only coverage recorded in corpus-map, drift detection not performed",
+    });
+  }
   if (flags.ledger) {
     const { verifyFile } = await import("./lib/provenance-stamp.mjs");
     const { readLedger } = await import("./lib/provenance-ledger.mjs");
@@ -400,9 +409,27 @@ if (enabled.has("ontology-reference")) {
 
 // ---------- temporal-metadata ----------
 if (enabled.has("temporal-metadata")) {
+  // A shallow clone reports the truncated tip date as every file's whole
+  // history -- fabricated dates, not an oracle. Detect once and fall back
+  // to declared-date-only checks, saying so (review finding, verified
+  // under fetch-depth: 1).
+  const firstDir = dirname(resolve(corpus[0].file));
+  const shallow = isShallowRepo(firstDir);
   for (const doc of corpus) {
     const abs = resolve(doc.file);
-    doc.git_dates = gitDatesOf(abs, { cwd: dirname(abs) });
+    doc.git_dates = shallow ? null : gitDatesOf(abs, { cwd: dirname(abs) });
+  }
+  const withGit = corpus.filter((d) => d.git_dates).length;
+  if (shallow) {
+    skipped.push({
+      check_id: "temporal-metadata",
+      reason: "shallow git clone: git dates would be fabricated; only declared-date contradictions checked",
+    });
+  } else if (withGit === 0) {
+    skipped.push({
+      check_id: "temporal-metadata",
+      reason: "no git history available for any file: only declared-date contradictions checked",
+    });
   }
   const clustered = detectDateClustering(corpus.map((d) => d.git_dates?.last).filter(Boolean));
   for (const doc of corpus) {
@@ -555,7 +582,10 @@ for (const bucket of classBuckets.values()) {
       description =
         "Internal links written GitHub-style with a .md/.mdx suffix do not resolve under the site's trailing-slash Starlight routes.";
       if (flags._linkOpts) {
-        fix_command = `node scripts/check-doc-links.mjs --docs-root ${flags._linkOpts.docsRoot} --base ${flags._linkOpts.siteBase} --allow-non-kebab --write`;
+        // Absolute paths on both sides: the audited tree is usually NOT this
+        // plugin's repo, and a --write against a relative --docs-root
+        // resolved from the wrong cwd would mutate the wrong tree.
+        fix_command = `node ${join(PLUGIN_ROOT, "scripts/check-doc-links.mjs")} --docs-root ${resolve(flags._linkOpts.docsRoot)} --base ${flags._linkOpts.siteBase} --allow-non-kebab --write`;
       }
     } else if (bucket.class_id === "broken-links-other") {
       description = "Internal links that resolve to no real route (wrong relative depth or renamed targets).";

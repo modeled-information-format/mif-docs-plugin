@@ -148,3 +148,36 @@ test('no-opts calls still behave exactly as the historical defaults', () => {
     assert.deepEqual(checkAll(files, () => '# Home\n'), []);
   });
 });
+
+test('readSiteBaseFromAstroConfig ignores commented-out base: lines', () => {
+  withTempDir(() => {
+    writeFileSync(
+      'astro.config.mjs',
+      '// base: "/old-retired-path"\n/* base: "/also-old" */\nexport default defineConfig({\n  site: "https://example.dev", // served at https://example.dev/gdlc\n  base: "/gdlc",\n});\n',
+    );
+    assert.equal(readSiteBaseFromAstroConfig('astro.config.mjs'), '/gdlc');
+  });
+});
+
+test('a query-only href is not an internal target (PR #176 follow-up)', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/index.md', '# Home\n\n[filtered view](?tab=all)\n');
+    assert.deepEqual(checkAll(undefined, undefined, {}), []);
+  });
+});
+
+test('allowNonKebab reports non-kebab paths as findings and keeps checking', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/README.md', '# Readme\n\n[broken](missing.md)\n');
+    writeFileSync('docs/index.md', '# Home\n');
+    assert.throws(() => checkAll(undefined, undefined, {}), /non-kebab-case/);
+    const findings = checkAll(undefined, undefined, { allowNonKebab: true });
+    const statuses = findings.map((f) => f.status).sort();
+    assert.deepEqual(statuses, ['non-kebab-path', 'not-found']);
+    const kebab = findings.find((f) => f.status === 'non-kebab-path');
+    assert.equal(kebab.file, 'docs/README.md');
+    assert.equal(kebab.target, null);
+  });
+});

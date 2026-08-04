@@ -30,6 +30,8 @@ import {
   buildRouteSet,
   suggestFixedTarget,
   readSiteBaseFromAstroConfig,
+  splitFrontmatter,
+  maskCode,
 } from "./lib/doc-links.mjs";
 
 function parseArgs(argv) {
@@ -39,7 +41,7 @@ function parseArgs(argv) {
     const needsValue = () => {
       if (i + 1 >= argv.length || argv[i + 1].startsWith("--")) {
         console.error(`check-doc-links: ${a} requires a value`);
-        process.exit(1);
+        process.exit(2);
       }
       return argv[++i];
     };
@@ -51,7 +53,7 @@ function parseArgs(argv) {
     else if (a === "--allow-non-kebab") flags.allowNonKebab = true;
     else {
       console.error(`check-doc-links: unknown argument "${a}"`);
-      process.exit(1);
+      process.exit(2);
     }
   }
   return flags;
@@ -91,9 +93,18 @@ try {
 }
 
 // --write: apply the single mechanical fix class in place, then re-check.
-// Grouped per file so each file is read and written once; within a line the
-// exact broken target string is replaced everywhere it appears (identical
-// occurrences are the identical defect with the identical fix).
+//
+// Replacement is POSITIONAL against a code-masked copy of each line, never a
+// whole-line string substitution. Review verified three corruptions the
+// naive split/join produced: `[a](index.md) [b](sub/index.md)` rewrote [b]
+// to `sub/../` (a link that resolves back to its own page, which the
+// re-check then calls OK); `/foo` + `/foo/bar` manufactured `/foo//bar`;
+// and a `cat ./setup.md` code span got rewritten. Occurrence spans are
+// therefore located in the masked line (code spans/fences are blanked, so a
+// target inside one is never found), longest-target-first (so a shorter
+// target can never match inside a longer one's span), and substituted back
+// into the REAL line by exact range -- leaving every unfixable span
+// byte-for-byte intact.
 let written = null;
 if (flags.write && findings.length > 0) {
   const routeSet = buildRouteSet(files, opts);
@@ -105,26 +116,57 @@ if (flags.write && findings.length > 0) {
     byFile.get(f.file).push(f);
   }
   for (const [file, fileFindings] of byFile) {
-    const lines = readFileSync(file, "utf8").split("\n");
+    const content = readFileSync(file, "utf8");
+    const lines = content.split("\n");
+    // Mask exactly the way link extraction does, so "where a link can be"
+    // is one definition: body code is blanked, frontmatter passes through.
+    const { frontmatter, body } = splitFrontmatter(content);
+    const maskedLines = (frontmatter + maskCode(body)).split("\n");
     let touched = false;
+    const byLine = new Map();
     for (const f of fileFindings) {
       if (!f.target) {
         written.unfixable++; // non-kebab-path findings have no link to rewrite
         continue;
       }
-      const fixed = suggestFixedTarget(file, f.target, fileSet, routeSet, opts);
-      if (fixed === null) {
-        written.unfixable++;
+      if (!byLine.has(f.line)) byLine.set(f.line, new Set());
+      byLine.get(f.line).add(f.target); // dedup identical targets on a line
+    }
+    for (const [lineNo, targets] of byLine) {
+      const idx = lineNo - 1;
+      if (idx < 0 || idx >= lines.length) {
+        written.unfixable += targets.size; // stale line info -- never write a guess
         continue;
       }
-      const idx = f.line - 1;
-      if (idx < 0 || idx >= lines.length || !lines[idx].includes(f.target)) {
-        written.unfixable++; // stale line info -- never write a guess
-        continue;
+      const masked = maskedLines[idx] ?? lines[idx];
+      const spans = [];
+      for (const target of [...targets].sort((a, b) => b.length - a.length)) {
+        const fixed = suggestFixedTarget(file, target, fileSet, routeSet, opts);
+        let at = 0;
+        let found = false;
+        while ((at = masked.indexOf(target, at)) !== -1) {
+          if (!spans.some((s) => at < s.end && at + target.length > s.start)) {
+            spans.push({ start: at, end: at + target.length, fixed });
+            found = true;
+          }
+          at += target.length;
+        }
+        if (!found || fixed === null) written.unfixable++;
+        else written.fixedFindings++;
       }
-      lines[idx] = lines[idx].split(f.target).join(fixed);
-      written.fixedFindings++;
-      touched = true;
+      const applicable = spans.filter((s) => s.fixed !== null).sort((a, b) => a.start - b.start);
+      if (applicable.length === 0) continue;
+      let out = "";
+      let pos = 0;
+      for (const s of applicable) {
+        out += lines[idx].slice(pos, s.start) + s.fixed;
+        pos = s.end;
+      }
+      out += lines[idx].slice(pos);
+      if (out !== lines[idx]) {
+        lines[idx] = out;
+        touched = true;
+      }
     }
     if (touched) {
       writeFileSync(file, lines.join("\n"));

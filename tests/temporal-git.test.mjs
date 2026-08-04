@@ -12,7 +12,25 @@ import {
   declaredDatesOf,
   detectDateClustering,
   checkTemporal,
+  isShallowRepo,
 } from '../scripts/lib/temporal-git.mjs';
+
+// Hermetic git environment: without this, a contributor's global config
+// (signing hooks, commit templates) leaks into the fixture repo -- observed
+// invoking an unrelated global post-commit signing hook during review.
+function gitEnv(dir, dates = {}) {
+  return {
+    ...process.env,
+    HOME: dir,
+    GIT_CONFIG_GLOBAL: '/dev/null',
+    GIT_CONFIG_SYSTEM: '/dev/null',
+    GIT_AUTHOR_NAME: 't',
+    GIT_AUTHOR_EMAIL: 't@t',
+    GIT_COMMITTER_NAME: 't',
+    GIT_COMMITTER_EMAIL: 't@t',
+    ...dates,
+  };
+}
 
 test('declaredDatesOf prefers the L2 temporal block over top-level fields', () => {
   assert.deepEqual(declaredDatesOf({ created: '2026-01-01', modified: '2026-01-02' }), {
@@ -93,41 +111,73 @@ test('gitDatesOf returns real first/last dates in a repo and null outside one', 
   try {
     writeFileSync(join(dir, 'doc.md'), 'v1\n');
     assert.equal(gitDatesOf('doc.md', { cwd: dir }), null); // no repo yet
-    const git = (...args) =>
-      execFileSync('git', args, {
+    const git = (dates, ...args) =>
+      execFileSync('git', ['-c', 'core.hooksPath=/dev/null', ...args], {
         cwd: dir,
         encoding: 'utf8',
-        env: {
-          ...process.env,
-          GIT_AUTHOR_NAME: 't',
-          GIT_AUTHOR_EMAIL: 't@t',
-          GIT_COMMITTER_NAME: 't',
-          GIT_COMMITTER_EMAIL: 't@t',
-          GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z',
-          GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z',
-        },
+        env: gitEnv(dir, dates),
       });
-    git('init', '-q');
-    git('add', 'doc.md');
-    git('commit', '-q', '-m', 'first');
+    const jan = { GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z' };
+    const feb = { GIT_AUTHOR_DATE: '2026-02-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-02-01T00:00:00Z' };
+    git(jan, 'init', '-q');
+    git(jan, 'add', 'doc.md');
+    git(jan, 'commit', '-q', '-m', 'first');
     writeFileSync(join(dir, 'doc.md'), 'v2\n');
-    execFileSync('git', ['commit', '-q', '-am', 'second'], {
-      cwd: dir,
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        GIT_AUTHOR_NAME: 't',
-        GIT_AUTHOR_EMAIL: 't@t',
-        GIT_COMMITTER_NAME: 't',
-        GIT_COMMITTER_EMAIL: 't@t',
-        GIT_AUTHOR_DATE: '2026-02-01T00:00:00Z',
-        GIT_COMMITTER_DATE: '2026-02-01T00:00:00Z',
-      },
-    });
+    git(feb, 'commit', '-q', '-am', 'second');
     const dates = gitDatesOf('doc.md', { cwd: dir });
     assert.ok(dates.first.startsWith('2026-01-01'));
     assert.ok(dates.last.startsWith('2026-02-01'));
     assert.equal(gitDatesOf('never-committed.md', { cwd: dir }), null);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('declared created after the first git commit is a low-confidence advisory', () => {
+  // Review finding: this whole branch was deletable without failing a test.
+  const findings = checkTemporal({
+    declared: { created: '2026-03-01', modified: '2026-03-01' },
+    git: { first: '2026-01-01T00:00:00Z', last: '2026-03-01T00:00:00Z' },
+  });
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].advisory, true);
+  assert.equal(findings[0].confidence, 'low');
+  assert.match(findings[0].summary, /postdates the file's first git commit/);
+});
+
+test('git-derived findings carry demoted confidence, never high', () => {
+  const stale = { declared: { created: '2026-01-01', modified: '2026-01-05' }, git: { first: '2026-01-01T00:00:00Z', last: '2026-02-15T00:00:00Z' } };
+  assert.equal(checkTemporal(stale)[0].confidence, 'medium');
+  assert.equal(checkTemporal({ ...stale, clustered: true })[0].confidence, 'low');
+  const contradiction = checkTemporal({ declared: { created: '2026-03-01', modified: '2026-02-01' }, git: null });
+  assert.equal(contradiction[0].confidence, 'high');
+});
+
+test('isShallowRepo detects a depth-1 clone; gitDatesOf callers must gate on it', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'temporal-shallow-'));
+  try {
+    const src = join(dir, 'src');
+    const shallow = join(dir, 'shallow');
+    const git = (cwd, dates, ...args) =>
+      execFileSync('git', ['-c', 'core.hooksPath=/dev/null', ...args], { cwd, encoding: 'utf8', env: gitEnv(dir, dates) });
+    const jan = { GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z' };
+    const feb = { GIT_AUTHOR_DATE: '2026-02-01T00:00:00Z', GIT_COMMITTER_DATE: '2026-02-01T00:00:00Z' };
+    execFileSync('git', ['init', '-q', src], { encoding: 'utf8', env: gitEnv(dir) });
+    writeFileSync(join(src, 'doc.md'), 'v1\n');
+    git(src, jan, 'add', 'doc.md');
+    git(src, jan, 'commit', '-q', '-m', 'first');
+    writeFileSync(join(src, 'doc.md'), 'v2\n');
+    git(src, feb, 'commit', '-q', '-am', 'second');
+    execFileSync('git', ['clone', '-q', '--depth', '1', `file://${src}`, shallow], {
+      encoding: 'utf8',
+      env: gitEnv(dir),
+    });
+    assert.equal(isShallowRepo(shallow), true);
+    assert.equal(isShallowRepo(src), false);
+    // The fabrication the gate exists for: in the shallow clone, the file's
+    // "first" date is the truncated tip, not the real 2026-01-01.
+    const dates = gitDatesOf('doc.md', { cwd: shallow });
+    assert.ok(dates.first.startsWith('2026-02-01'), 'shallow history fabricates first-commit dates');
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }

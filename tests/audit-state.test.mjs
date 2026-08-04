@@ -215,3 +215,73 @@ test('sha256OfFiles is order-independent and content-sensitive', () => {
     assert.equal(sha256('abc'), sha256('abc'));
   });
 });
+
+test('a partial commit after a rules change never certifies un-reaudited files clean', () => {
+  // Review finding (major): rules change -> all dirty -> a budget-capped run
+  // commits results for a subset -> the rest must STAY dirty on the next
+  // partition, not inherit the new checks_version.
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/a.md', MIF_DOC('A'));
+    writeFileSync('docs/b.md', MIF_DOC('B'));
+    const files = discoverFiles(['docs']);
+    let state = commitState({
+      statePath: 's.json',
+      state: null,
+      checksVersion: 'v1',
+      files,
+      results: files.map((file) => ({ file, llm_verdict: 'clean' })),
+    });
+    // Rules change to v2; only a.md gets re-audited before commit.
+    state = commitState({
+      statePath: 's.json',
+      state,
+      checksVersion: 'v2',
+      files,
+      results: [{ file: 'docs/a.md', llm_verdict: 'clean' }],
+    });
+    const p = partitionFiles({ state, files, checksVersion: 'v2' });
+    assert.deepEqual(p.dirty.map((d) => d.file), ['docs/b.md']);
+    assert.match(p.reasons['docs/b.md'], /checks_version changed/);
+    assert.deepEqual(p.clean.map((c) => c.file), ['docs/a.md']);
+  });
+});
+
+test('a genuinely new file after a committed state is dirty with the new-file reason', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/a.md', MIF_DOC('A'));
+    let files = discoverFiles(['docs']);
+    const state = commitState({
+      statePath: 's.json',
+      state: null,
+      checksVersion: 'v1',
+      files,
+      results: files.map((file) => ({ file, llm_verdict: 'clean' })),
+    });
+    writeFileSync('docs/new.md', MIF_DOC('New'));
+    files = discoverFiles(['docs']);
+    const p = partitionFiles({ state, files, checksVersion: 'v1' });
+    assert.deepEqual(p.dirty.map((d) => d.file), ['docs/new.md']);
+    assert.equal(p.reasons['docs/new.md'], 'not in prior state (new file)');
+  });
+});
+
+test('a missing or non-directory skillsRoot fails loud instead of hashing nothing', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/a.md', MIF_DOC('A'));
+    const files = discoverFiles(['docs']);
+    assert.throws(
+      () => partitionFiles({ state: null, files, checksVersion: 'v1', skillsRoot: 'no-such-dir' }),
+      /skillsRoot no-such-dir does not exist/,
+    );
+  });
+});
+
+test('loadState rejects a state file with an unknown schema', () => {
+  withTempDir(() => {
+    writeFileSync('bad.json', JSON.stringify({ schema: 'mif-docs/audit-state@99', entries: {} }));
+    assert.throws(() => loadState('bad.json'), /declares schema mif-docs\/audit-state@99/);
+  });
+});

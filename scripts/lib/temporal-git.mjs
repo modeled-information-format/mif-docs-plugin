@@ -12,10 +12,30 @@ import { execFileSync } from "node:child_process";
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// True when the repository containing cwd is a shallow clone. In a shallow
+// clone `git log --follow` succeeds and reports the truncated tip date as
+// every file's whole history — fabricated dates, not a real oracle (review
+// finding, verified under fetch-depth: 1). Callers must treat a shallow
+// repo as "no oracle" for date work.
+export function isShallowRepo(cwd = process.cwd()) {
+  try {
+    return (
+      execFileSync("git", ["rev-parse", "--is-shallow-repository"], {
+        cwd,
+        encoding: "utf8",
+        stdio: ["ignore", "pipe", "ignore"],
+      }).trim() === "true"
+    );
+  } catch {
+    return false; // not a repo at all -- gitDatesOf already returns null there
+  }
+}
+
 // First and last author dates (ISO 8601) for one file, rename-tracking via
 // --follow. Returns { first, last } or null when the file has no git history
 // (untracked, or the tree is not a git repo) — null is "no oracle", never an
-// error: audits legitimately run against uncommitted docs.
+// error: audits legitimately run against uncommitted docs. Callers auditing
+// possibly-shallow checkouts must gate on isShallowRepo() first.
 export function gitDatesOf(file, { cwd = process.cwd() } = {}) {
   let out;
   try {
@@ -84,6 +104,7 @@ export function checkTemporal({ declared, git, clustered = false, toleranceDays 
     findings.push({
       check_id: "temporal-metadata",
       severity: "medium",
+      confidence: "high", // internally contradictory, no external oracle involved
       advisory: false,
       summary: `declared modified (${declared.modified}) predates declared created (${declared.created})`,
       recommendation: "Correct whichever field is wrong; modified must never precede created.",
@@ -97,6 +118,9 @@ export function checkTemporal({ declared, git, clustered = false, toleranceDays 
       findings.push({
         check_id: "temporal-metadata",
         severity: "low",
+        // git dates are a real but imperfect oracle; a clustered corpus is a
+        // known-weak one -- never let these ship stamped high-confidence.
+        confidence: clustered ? "low" : "medium",
         advisory: clustered,
         summary:
           `declared modified (${declared.modified}) is stale against the last git change (${git.last})` +
@@ -110,6 +134,7 @@ export function checkTemporal({ declared, git, clustered = false, toleranceDays 
       findings.push({
         check_id: "temporal-metadata",
         severity: "low",
+        confidence: "low",
         advisory: true, // a file can legitimately predate its git import
         summary:
           `declared created (${declared.created}) postdates the file's first git commit (${git.first}) [advisory]`,
