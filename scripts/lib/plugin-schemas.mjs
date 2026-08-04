@@ -103,7 +103,7 @@ export const COMMAND_FRONTMATTER_SCHEMA = {
   additionalProperties: true,
 };
 
-// agents/*.md frontmatter. Like skills, an agent's description IS the
+// agents/**/*.md frontmatter. Like skills, an agent's description IS the
 // delegation-triggering surface, so the 20-character floor applies.
 export const AGENT_FRONTMATTER_SCHEMA = {
   type: "object",

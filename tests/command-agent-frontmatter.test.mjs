@@ -140,6 +140,16 @@ function runGate(root) {
     execFileSync(process.execPath, [SCRIPT, root], { encoding: 'utf8' });
     return { code: 0 };
   } catch (e) {
+    // A spawn failure or a signal kill leaves `status` null, not a number.
+    // Do NOT paper over that with a default of 1: four of the cases below
+    // assert exactly 1, so a harness fault would masquerade as the very
+    // exit code they are checking for and pass green. Fail loudly instead.
+    if (typeof e.status !== 'number') {
+      throw new Error(
+        `validate-plugin could not be run (status ${e.status}, signal ${e.signal}): ${e.message}`,
+        { cause: e },
+      );
+    }
     return { code: e.status, output: `${e.stdout ?? ''}${e.stderr ?? ''}` };
   }
 }
