@@ -4,28 +4,28 @@
     {
       "id": 1,
       "prompt": "Show me the help for audit-docs.",
-      "expected_output": "Prints the option reference and full check registry (frontmatter-schema, mif-level-gap, provenance-drift, link-integrity, ontology-reference, structural-formatting, temporal-metadata, taxonomy-alignment, editorial-voice, genre-conformance, temporal-staleness, accuracy-corpus, citation-validity, accuracy-code, duplication-drift, relationship-graph, coverage-gaps) verbatim, then stops without running discovery, elicitation, or any Agent call.",
+      "expected_output": "Prints the option reference and the full check registry grouped into its three tiers — Deterministic (frontmatter-schema, mif-level-gap, provenance-drift, link-integrity, ontology-reference, temporal-metadata, structural-formatting, relationship-graph structural half), Cross-document (duplication-drift, relationship-graph semantic half, coverage-gaps), Per-file judgment (taxonomy-alignment, editorial-voice, genre-conformance, temporal-staleness, accuracy-corpus, citation-validity, accuracy-code) — then stops without running discovery, elicitation, any script, or any Agent call.",
       "files": [],
       "expectations": [
-        "Does not ask about custom checks, does not resolve plugin-relative paths, and does not make any Agent call before or after printing help",
-        "Lists all 17 check ids from the registry, not a partial or summarized subset"
+        "Does not ask about custom checks, does not resolve plugin-relative paths, and does not make any script or Agent call before or after printing help",
+        "Presents the registry in its three tiers (deterministic / cross-document / per-file judgment) covering all 17 unique check ids, with relationship-graph explicitly shown as the one id split across two tiers (structural half deterministic, semantic half cross-document), not a flat or partial list"
       ]
     },
     {
       "id": 2,
-      "prompt": "Audit tests/fixtures/good-l1.md with --checks frontmatter-schema,structural-formatting and --report-dir eval-reports-2.",
-      "expected_output": "Discovers exactly one file (the literal path given), makes exactly one Agent call for it running only the two requested checks (never more than requested, never the full registry), and writes a report under eval-reports-2/ naming the audited file — the skill does not support an exact output filename, only --report-dir, so the report's exact basename is not asserted here.",
+      "prompt": "Audit docs/ with --checks frontmatter-schema,link-integrity, --site-base /mif-docs-plugin, and --report-dir eval-reports-2.",
+      "expected_output": "Both requested checks are deterministic-tier, so the entire run is scripts only: audit-state.mjs status for discovery/partition, audit-deterministic.mjs for the checks, a report written under eval-reports-2/ — and ZERO Agent calls, stated explicitly in the budget line and the final reconciliation.",
       "files": [],
       "expectations": [
-        "Makes exactly one Agent call total for this single-file, --checks-scoped run — never one call per check and never one call per finding",
-        "Runs only frontmatter-schema and structural-formatting, not the full 17-check registry, since --checks restricted scope",
-        "Writes the report somewhere under eval-reports-2/, never asserting or inventing an exact filename flag the skill doesn't document"
+        "Makes zero Agent calls — both requested checks are decided by plugin scripts, and the skill never asks an Agent to re-decide anything a script already settled",
+        "States the planned Agent-call count (0) before running and reconciles the actual count (0) when reporting back",
+        "Writes the report under eval-reports-2/ with findings sourced from the deterministic runner's JSON output"
       ]
     },
     {
       "id": 3,
       "prompt": "Audit tests/fixtures/invalid.md for frontmatter-schema and report what's wrong, using --report-dir eval-reports-3. Don't apply --fix.",
-      "expected_output": "Runs the frontmatter-schema check (via the mif-validate CLI, not the validate_mif_document MCP tool) against the fixture, finds the conceptType enum violation, reports it as a real (non-advisory) finding in a report written under eval-reports-3/, and does not modify tests/fixtures/invalid.md since --fix was not requested.",
+      "expected_output": "Runs the deterministic runner (which uses the mif-validate projection internally, never the validate_mif_document MCP tool) against the fixture, finds the conceptType enum violation, reports it as a real (non-advisory) finding in a report under eval-reports-3/, and does not modify tests/fixtures/invalid.md since --fix was not requested.",
       "files": [],
       "expectations": [
         "Treats frontmatter-schema violations as real findings, never advisory (unlike mif-level-gap, which is always advisory)",
@@ -35,12 +35,57 @@
     },
     {
       "id": 4,
-      "prompt": "I want to audit a directory of 40 MIF documents with the full check registry. Before you start, tell me roughly how many Agent calls this will take and why.",
-      "expected_output": "States the expected call count as O(files), specifically roughly file_count plus a small fixed number (at most 3) for the cross-document checks (duplication-drift, relationship-graph, coverage-gaps) — never file_count times check_count, and never one call per individual finding.",
+      "prompt": "I want to audit a directory of 40 MIF documents with the full check registry and no prior audit state. Before you start, tell me exactly how many Agent calls this will take and why.",
+      "expected_output": "States the plan as C + B where C = 3 (the full registry keeps all three cross-document checks in scope and the corpus has dirty files) and B comes from the real batch partition (roughly ceil(40/6) = 7 at the default batch size, so about 10 Agent calls total, with size caps able to raise B slightly) — never one per file, never one per check, never one per finding — and notes the deterministic tier costs zero calls. Cites both prior incidents: the Workflow-based per-finding fan-out that hit the 1000-agent cap at ~51M tokens, and the 2026-07-30 per-file opus run whose calls re-derived script-decided findings.",
       "files": [],
       "expectations": [
-        "Explicitly rules out per-finding fan-out as the reason a large corpus stays bounded, citing that this is exactly what caused the prior Workflow-based implementation to hit a 1000-agent cap and ~51M tokens in one run",
-        "Gives a concrete, checkable number (e.g. '~40-43 Agent calls'), not a vague 'it depends' with no bound stated"
+        "Gives the concrete plan C + B (3 cross-document + about 7 batches = about 10 calls for 40 files at batch size 6, from the real partition rather than a bare formula), not a vague 'it depends'",
+        "Explicitly rules out per-finding fan-out AND unjustified per-file opus overrides, citing both documented incidents",
+        "States that cross-document checks run before per-file batches so they can never be starved"
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "Re-run the audit on the same directory you audited an hour ago. Nothing has changed since — same files, same content, no rule changes.",
+      "expected_output": "audit-state.mjs status partitions every file as clean (content hashes, per-entry checks_version, and genre-skill hashes all match), so the run is deterministic-refresh only: zero Agent calls, prior findings carried into the report marked as carried/unchanged, and the report says so. --full is named as the override for forcing full re-judgment.",
+      "files": [],
+      "expectations": [
+        "Makes zero Agent calls for the unchanged corpus — incremental state gates all per-file judgment AND the cross-document calls (prior findings of both kinds are carried, not re-derived)",
+        "Deterministic checks still re-run (they are free and keep the corpus map current); only LLM judgment is skipped",
+        "Mentions --full as the explicit way to force full re-judgment despite clean state"
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "The deterministic pass just reported 300 broken .md-suffix links across 90 files as a defect class. Write the findings section for the report.",
+      "expected_output": "One defect-class entry: class description, instance and file counts, the ready-to-run fix command from classes.json, and a pointer to the machine-readable instance list — never 300 individually narrated findings, and no Agent is asked to confirm or re-report any instance of the class.",
+      "files": [],
+      "expectations": [
+        "Reports the defect class exactly once with counts and the fix_command, never as per-file or per-link narrated findings",
+        "Does not spawn any Agent call to re-check instances of a class the script already decided",
+        "Keeps medium/low detail out of the markdown report body — the JSON sidecar is named as the machine-readable source"
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "One of the files in the batch is docs/decisions/adr-0009-retire-the-old-pipeline.md with status: accepted. The batch agent found passive voice, a missing closing section, and a factual claim contradicted by the shipped code. What gets reported?",
+      "expected_output": "Only the accuracy finding survives, and only as supersession_candidate: true with a recommendation to write a superseding record or a dated audit-trail entry — never to edit the accepted text. The voice and structure nits are suppressed by the immutable-doc policy and appear (as counts) only in the suppressed section, and --fix would not touch the document body.",
+      "files": [],
+      "expectations": [
+        "Suppresses editorial-voice and genre-structure findings entirely on an accepted (immutable) ADR",
+        "Reports the accuracy contradiction only as a supersession candidate whose recommendation is a superseding record, never an edit to the accepted text",
+        "Accounts for the suppressed findings in the report's suppressed section rather than dropping them silently"
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "A judgment batch agent returned YAML prose instead of the required JSON, with a check id 'style-vibes' that is not in the registry. What now?",
+      "expected_output": "The payload fails validateFindings (wrong format, invented check_id outside the closed enum). The agent is re-asked exactly once with the validation errors; if it fails again, that batch falls back to one call per file for that batch only — still bounded, still O(files) — and the final report's call-count reconciliation shows and explains the extra calls.",
+      "files": [],
+      "expectations": [
+        "Validates every batch's returned JSON against the pinned mif-docs/audit-findings@1 schema and rejects the invented check id — the enum is closed",
+        "Re-asks the failing agent exactly once, then falls back to per-file calls for that batch only, never unbounded retries and never silently accepting malformed output",
+        "Reconciles the extra calls in the final report's planned-vs-actual count instead of hiding them"
       ]
     }
   ]

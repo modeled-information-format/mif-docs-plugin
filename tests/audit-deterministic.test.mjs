@@ -181,3 +181,22 @@ test('non-kebab doc paths surface as findings and never abort the audit', () => 
     rmSync(dir, { recursive: true, force: true });
   }
 });
+
+test('link findings are fixable only when a mechanical rewrite actually exists', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'audit-fixable-'));
+  try {
+    mkdirSync(join(dir, 'docs'), { recursive: true });
+    writeFileSync(join(dir, 'docs/target.md'), '---\ntype: reference\ntitle: T\n---\n\n# T\n');
+    writeFileSync(
+      join(dir, 'docs/a.md'),
+      '---\ntype: how-to\ntitle: A\n---\n\n# A\n\n[fixable](target.md)\n[renamed](gone.md)\n',
+    );
+    runAudit(dir, ['--paths', 'docs', '--report-dir', 'report', '--site-base', '/x', '--checks', 'link-integrity']);
+    const payload = JSON.parse(readFileSync(join(dir, 'report/findings/deterministic.json'), 'utf8'));
+    const byTarget = Object.fromEntries(payload.findings.map((f) => [f.anchor.excerpt, f.fixable]));
+    assert.equal(byTarget['target.md'], true, 'a rewrite that provably resolves is fixable');
+    assert.equal(byTarget['gone.md'], false, 'a renamed target with no rewrite is real but manual');
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
+});
