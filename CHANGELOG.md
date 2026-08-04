@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-04T16:41:17.152Z'
+modified: '2026-08-04T17:20:06.069Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -62,8 +62,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.4] - 2026-08-04
+
+### Added
+
+- The `validate-plugin` gate now inspects `commands/**/*.md` and
+  `agents/**/*.md` frontmatter (#186) with dedicated ajv schemas
+  (`COMMAND_FRONTMATTER_SCHEMA`, `AGENT_FRONTMATTER_SCHEMA`), enforces
+  agent `name`/basename agreement, and accepts a plugin-root override
+  (CLI argument or `VALIDATE_PLUGIN_ROOT`, both empty-safe) so tests can
+  target fixture trees.
+
 ### Fixed
 
+- `MARKETPLACE_SCHEMA` accepts the string-shorthand plugin `source` form
+  (#183) alongside the discriminated object form, matching every real
+  marketplace manifest in the org.
+- Malformed `plugin.json` or `marketplace.json` now surface as structured
+  validation errors with exit 1 (#182) instead of crashing the
+  `validate-plugin` gate with a bare parse stack trace.
 - Closed the gate-coverage gap between the content-based ADR carve-out and
   the directory-scoped `adr-smadr` CI job (#209): `scripts/lib/corpus.mjs`
   now fails closed on a `type: adr` document the `adr-smadr` job cannot see
