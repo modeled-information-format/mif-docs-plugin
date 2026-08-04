@@ -152,6 +152,10 @@ jobs:
       # The project's own ADRs are type: adr per ADR-0001 (issue #203) and are
       # carved out of the mif-validate corpus (scripts/lib/corpus.mjs); this
       # Action is their gate, in the same two modes as the template above.
+      # The '*.md' pattern is NON-recursive, so this gate only sees direct
+      # children of docs/adr/ — corpus.mjs fails closed (issue #209) on any
+      # type: adr document elsewhere, so nothing can sit between the two
+      # gates validated by neither.
       - name: Validate project ADRs — structured-MADR mode (strict)
         uses: modeled-information-format/structured-madr@325eafe9a17a23e716daffddac5db10ee178c08e # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:

@@ -20,6 +20,7 @@ import {
   listAllGatedDocs,
   listAdrDocs,
   ADR_TEMPLATE_CARVEOUT,
+  ADR_GATE_DIR,
   L3_DIRS,
 } from '../scripts/lib/corpus.mjs';
 import { splitFrontmatter, isAdrCarveout } from '../scripts/lib/mif-genre-signal.mjs';
@@ -169,6 +170,89 @@ test('a non-adr doc under an L3 tree stays gated despite the ADR carve-out (#203
     assert.ok(l3.includes('docs/adr/x.md'), 'a non-adr doc under docs/adr must stay gated');
     assert.ok(!l3.includes('docs/adr/adr-1.md'), 'the type: adr doc must be carved out');
     assert.deepEqual(listAdrDocs(), ['docs/adr/adr-1.md']);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+// Issue #209 regression: the carve-out predicate is content-based across every
+// L3 tree, but the adr-smadr CI job only globs docs/adr/*.md (non-recursive).
+// A `type: adr` doc anywhere the job cannot see used to be silently dropped
+// from the mif-validate corpus and validated by NOTHING; the partition must
+// throw instead.
+test('a type: adr doc outside docs/adr fails closed instead of escaping both gates (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  writeFileSync(
+    join(scratch, 'docs/architecture', '0006-rogue.md'),
+    '---\ntype: adr\nstatus: accepted\n---\n\n# ADR-0006: rogue\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.throws(() => listL3Docs(), /outside the adr-smadr gate/);
+    assert.throws(() => listAdrDocs(), /outside the adr-smadr gate/);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('a type: adr doc nested below docs/adr fails closed too — the job glob is non-recursive (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  mkdirSync(join(scratch, 'docs/adr/superseded'), { recursive: true });
+  writeFileSync(
+    join(scratch, 'docs/adr/superseded', '0007-nested.md'),
+    '---\ntype: adr\nstatus: superseded\n---\n\n# ADR-0007: nested\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.throws(() => listL3Docs(), /outside the adr-smadr gate/);
+    assert.throws(() => listAdrDocs(), /outside the adr-smadr gate/);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+// The fail-closed boundary is only correct while corpus.mjs's ADR_GATE_DIR
+// agrees with what the adr-smadr job in ci.yml actually walks — two literals
+// with nothing else tying them (the hand-sync-drift class this module's
+// header names, #32/#34). Pin the agreement here, PR-gated.
+test('ADR_GATE_DIR matches the adr-smadr job path/pattern in ci.yml (#209)', () => {
+  const ci = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const projectAdrSteps = [...ci.matchAll(/path:[ \t]*(docs\/[^\s]+)\s*\n\s*pattern:[ \t]*'([^']+)'/g)];
+  assert.ok(projectAdrSteps.length >= 2, 'expected both project-ADR steps in the adr-smadr job');
+  for (const [, path, pattern] of projectAdrSteps) {
+    assert.equal(path, ADR_GATE_DIR, `ci.yml adr-smadr path (${path}) must equal ADR_GATE_DIR`);
+    assert.equal(pattern, '*.md', 'the fail-closed check assumes the non-recursive *.md pattern');
+  }
+});
+
+test('a type: adr doc as a direct child of docs/adr still partitions cleanly (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  writeFileSync(
+    join(scratch, 'docs/adr', 'adr-1.md'),
+    '---\ntype: adr\nstatus: accepted\n---\n\n# ADR-0001: x\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.deepEqual(listAdrDocs(), ['docs/adr/adr-1.md']);
+    assert.ok(!listL3Docs().includes('docs/adr/adr-1.md'));
   } finally {
     process.chdir(originalCwd);
     rmSync(scratch, { recursive: true, force: true });
