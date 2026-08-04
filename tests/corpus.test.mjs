@@ -17,6 +17,7 @@ import {
   listL3Docs,
   listL2Docs,
   listGatedDocs,
+  listAllGatedDocs,
   listAdrDocs,
   ADR_TEMPLATE_CARVEOUT,
   L3_DIRS,
@@ -57,6 +58,21 @@ test('listGatedDocs is exactly the union of templates + L3 + L2', () => {
   const union = new Set([...listTemplates(), ...listL3Docs(), ...listL2Docs()]);
   assert.equal(gated.size, union.size);
   for (const f of union) assert.ok(gated.has(f), `${f} missing from listGatedDocs()`);
+});
+
+test('listAllGatedDocs unions the adr-smadr-owned docs back in (#203 coverage regression)', () => {
+  // The ADR carve-out removes `type: adr` docs and the adr template from the
+  // mif-validate corpus, but they are still gated (by the adr-smadr job) --
+  // cross-cutting consumers like provenance-corpus-check.mjs must keep seeing
+  // them, or coverage silently shrinks.
+  const all = new Set(listAllGatedDocs());
+  const expected = new Set([...listGatedDocs(), ...listAdrDocs(), ADR_TEMPLATE_CARVEOUT]);
+  assert.equal(all.size, expected.size);
+  for (const f of expected) assert.ok(all.has(f), `${f} missing from listAllGatedDocs()`);
+  for (const f of globSync('docs/adr/*.md')) {
+    assert.ok(all.has(f), `${f} must stay in the all-gated corpus despite the carve-out`);
+  }
+  assert.ok(all.has(ADR_TEMPLATE_CARVEOUT), 'the adr template is gated (by adr-smadr), so it belongs here');
 });
 
 test('listL3Docs fails closed when an L3 directory is missing', () => {

@@ -93,8 +93,21 @@ export function listL2Docs() {
   return L2_GLOBS.flatMap((g) => globSync(g)).sort();
 }
 
-// The full corpus this suite gates with mif-validate at any level -- what
-// engine-parity.mjs asserts node/mif-rs agreement over.
+// The mif-validate corpus at any level -- what engine-parity.mjs asserts
+// node/mif-rs agreement over. NOT every doc CI gates: the `type: adr`
+// documents (listAdrDocs) and the adr template (ADR_TEMPLATE_CARVEOUT) are
+// gated by the adr-smadr job instead; cross-cutting consumers that mean
+// "every gated doc" want listAllGatedDocs().
 export function listGatedDocs() {
   return [...listTemplates(), ...listL3Docs(), ...listL2Docs()].sort();
+}
+
+// Every document ANY CI job gates, regardless of which gate owns it: the
+// mif-validate corpus plus the adr-smadr-owned docs (the `type: adr`
+// documents and the adr template). Cross-cutting reports like
+// provenance-corpus-check.mjs use this so the ADR carve-out (#203) cannot
+// silently shrink their coverage -- an ADR's provenance matters just as much
+// as any other gated doc's.
+export function listAllGatedDocs() {
+  return [...listGatedDocs(), ...listAdrDocs(), ADR_TEMPLATE_CARVEOUT].sort();
 }
