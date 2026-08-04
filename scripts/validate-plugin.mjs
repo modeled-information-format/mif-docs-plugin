@@ -216,4 +216,6 @@ if (errors.length) {
   for (const e of errors) console.error("  - " + e);
   process.exit(1);
 }
-console.log("OK — plugin manifest, marketplace, and all SKILL.md, command, and agent frontmatter valid.");
+console.log(
+  "OK — plugin manifest, marketplace, .mcp.json, and all SKILL.md (with evals), command, and agent frontmatter valid.",
+);
