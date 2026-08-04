@@ -23,13 +23,11 @@
 // timestamps, no environment echoes, deterministic ordering throughout. CI
 // runs it twice and diffs to hold that property.
 
-import { readFileSync, globSync } from "node:fs";
-import { resolve } from "node:path";
-import { load as yamlLoad } from "js-yaml";
+import { globSync } from "node:fs";
 
 import { listGatedDocs } from "./lib/corpus.mjs";
-import { ACTIVITY_URN_PREFIX, readLedger } from "./lib/provenance-ledger.mjs";
-import { splitFrontmatter } from "./lib/mif-genre-signal.mjs";
+import { readLedger } from "./lib/provenance-ledger.mjs";
+import { classifyProvenance, modelOf } from "./lib/provenance-classify.mjs";
 
 const args = process.argv.slice(2);
 let dir;
@@ -50,68 +48,18 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-function provenanceOf(file) {
-  let text;
-  try {
-    text = readFileSync(file, "utf8");
-  } catch {
-    return null;
-  }
-  const split = splitFrontmatter(text);
-  if (!split) return null;
-  let fm;
-  try {
-    fm = yamlLoad(split.fmText);
-  } catch {
-    return null;
-  }
-  const p = fm?.provenance;
-  return p && typeof p === "object" && !Array.isArray(p) ? p : null;
-}
-
-function isMarked(prov) {
-  const id = prov?.wasGeneratedBy?.["@id"];
-  return typeof id === "string" && id.startsWith(ACTIVITY_URN_PREFIX);
-}
-
+// The witnessed/asserted/none classification itself lives in
+// lib/provenance-classify.mjs (shared with audit-deterministic.mjs).
 // verify (against a ledger) only when asked for one; loaded lazily so the
 // default CI run keeps zero heavy imports beyond js-yaml. The ledger is read
 // and parsed ONCE for the whole corpus, not once per marked file.
-let verifyFileFn = null;
-let ledgerLines = null;
+let verify = null;
 if (ledgerFile) {
-  ({ verifyFile: verifyFileFn } = await import("./lib/provenance-stamp.mjs"));
-  ledgerLines = readLedger(ledgerFile);
+  const { verifyFile } = await import("./lib/provenance-stamp.mjs");
+  verify = { verifyFile, ledgerFile, lines: readLedger(ledgerFile) };
 }
 
-const rows = [];
-for (const file of files) {
-  const prov = provenanceOf(file);
-  let status = "none";
-  if (prov) {
-    status = "asserted";
-    if (isMarked(prov)) {
-      if (verifyFileFn) {
-        const sessionId = prov.wasGeneratedBy["@id"].slice(ACTIVITY_URN_PREFIX.length);
-        const v = verifyFileFn({ filePath: resolve(file), ledgerFile, sessionId, lines: ledgerLines });
-        status = v.verdict === "match" ? "witnessed" : "asserted";
-      } else {
-        status = "witnessed";
-      }
-    }
-  }
-  rows.push({
-    file,
-    status,
-    agent: typeof prov?.agent === "string" && prov.agent ? prov.agent : "(unattributed)",
-  });
-}
-function modelOf(agent) {
-  // Only the stamp policy's own `claude-code/<model>` agent format carries a
-  // WITNESSED model component; any other agent string (e.g. an asserted
-  // `anthropic/claude-code`) does not name a model this report can trust.
-  return agent.startsWith("claude-code/") ? agent.slice("claude-code/".length) : "(unspecified)";
-}
+const rows = files.map((file) => classifyProvenance(file, verify));
 
 function tally(keyOf) {
   const map = new Map();
