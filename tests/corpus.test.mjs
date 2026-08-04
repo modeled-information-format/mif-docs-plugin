@@ -175,6 +175,74 @@ test('a non-adr doc under an L3 tree stays gated despite the ADR carve-out (#203
   }
 });
 
+// Issue #209 regression: the carve-out predicate is content-based across every
+// L3 tree, but the adr-smadr CI job only globs docs/adr/*.md (non-recursive).
+// A `type: adr` doc anywhere the job cannot see used to be silently dropped
+// from the mif-validate corpus and validated by NOTHING; the partition must
+// throw instead.
+test('a type: adr doc outside docs/adr fails closed instead of escaping both gates (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  writeFileSync(
+    join(scratch, 'docs/architecture', '0006-rogue.md'),
+    '---\ntype: adr\nstatus: accepted\n---\n\n# ADR-0006: rogue\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.throws(() => listL3Docs(), /outside the adr-smadr gate/);
+    assert.throws(() => listAdrDocs(), /outside the adr-smadr gate/);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('a type: adr doc nested below docs/adr fails closed too — the job glob is non-recursive (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  mkdirSync(join(scratch, 'docs/adr/superseded'), { recursive: true });
+  writeFileSync(
+    join(scratch, 'docs/adr/superseded', '0007-nested.md'),
+    '---\ntype: adr\nstatus: superseded\n---\n\n# ADR-0007: nested\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.throws(() => listL3Docs(), /outside the adr-smadr gate/);
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
+test('a type: adr doc as a direct child of docs/adr still partitions cleanly (#209)', () => {
+  const scratch = mkdtempSync(join(tmpdir(), 'mif-corpus-test-'));
+  for (const dir of L3_DIRS) {
+    mkdirSync(join(scratch, dir), { recursive: true });
+    writeFileSync(join(scratch, dir, 'x.md'), '---\ntype: semantic\n---\n\n# x\n');
+  }
+  writeFileSync(
+    join(scratch, 'docs/adr', 'adr-1.md'),
+    '---\ntype: adr\nstatus: accepted\n---\n\n# ADR-0001: x\n',
+  );
+  const originalCwd = process.cwd();
+  process.chdir(scratch);
+  try {
+    assert.deepEqual(listAdrDocs(), ['docs/adr/adr-1.md']);
+    assert.ok(!listL3Docs().includes('docs/adr/adr-1.md'));
+  } finally {
+    process.chdir(originalCwd);
+    rmSync(scratch, { recursive: true, force: true });
+  }
+});
+
 // engine-parity.mjs runs NIGHTLY and never on pull requests, so a ledger entry
 // naming a file that has left the gated corpus (ORPHANED-EXPECTATION, exit 1)
 // is invisible to PR CI until the next scheduled run. The ADR carve-out above

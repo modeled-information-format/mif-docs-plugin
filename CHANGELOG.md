@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-04T15:34:08.079Z'
+modified: '2026-08-04T16:41:17.152Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -64,6 +64,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Closed the gate-coverage gap between the content-based ADR carve-out and
+  the directory-scoped `adr-smadr` CI job (#209): `scripts/lib/corpus.mjs`
+  now fails closed on a `type: adr` document the `adr-smadr` job cannot see
+  (outside `docs/adr/`, or nested below it — the job's `'*.md'` pattern is
+  non-recursive), instead of silently dropping it from the `mif-validate`
+  corpus and leaving it validated by nothing.
 - Made the repo's own five ADRs (`docs/adr/0001`-`0005`) conform to the
   `adr` genre skill they ship with (#203): each now carries `type: adr`,
   a lifecycle `status:`, and the full structured-MADR frontmatter, so
