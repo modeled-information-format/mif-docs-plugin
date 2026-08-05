@@ -195,11 +195,12 @@ test('readmeAsIndex defaults to false and leaves routeForDocFile/checkKebabCase 
   assert.equal(routeForDocFile('docs/adr/README.md'), '/mif-docs-plugin/adr/README/');
 });
 
-test('routeForDocFile maps README.md (any case) to its directory route when readmeAsIndex is true', () => {
+test('routeForDocFile maps a SUBDIRECTORY README.md (any case) to its directory route when readmeAsIndex is true', () => {
   const opts = { siteBase: '/rht', readmeAsIndex: true };
   assert.equal(routeForDocFile('docs/adr/README.md', opts), '/rht/adr/');
-  assert.equal(routeForDocFile('docs/readme.md', opts), '/rht/');
   assert.equal(routeForDocFile('docs/adr/0001-foo.md', opts), '/rht/adr/0001-foo/');
+  // A docs-ROOT README.md is a different case entirely -- see the dedicated
+  // "round 2" tests below; it must NOT map to the site root.
 });
 
 test('checkKebabCase exempts README (any case) only when readmeAsIndex is true', () => {
@@ -335,13 +336,49 @@ test('checkKebabCase still flags a directory literally named README even with re
   });
 });
 
-test('checkKebabCase exempts an uppercase README.md at the docs root, not just in a subdirectory', () => {
+// readmeAsIndex round 2 (review follow-up on the round-1 fix): README-as-index
+// is a SUBDIRECTORY convention only. A docs-ROOT README.md must NOT be
+// treated as the site index -- that route already belongs to index.md/mdx.
+// Confirmed against the real config that originally motivated readmeAsIndex
+// (research-harness-template's generateId guards this exact case with
+// `segs.length > 1`), and against the real built site: docs/README.md
+// renders at its own /readme/ route, never colliding with the root.
+
+test('routeForDocFile does NOT treat a docs-root README.md as the index, even with readmeAsIndex:true', () => {
+  const opts = { siteBase: '/rht', readmeAsIndex: true };
+  assert.equal(routeForDocFile('docs/README.md', opts), '/rht/README/');
+  assert.equal(routeForDocFile('docs/readme.md', opts), '/rht/readme/');
+});
+
+test('routeForDocFile DOES treat a subdirectory README.md as its directory index, with readmeAsIndex:true', () => {
+  const opts = { siteBase: '/rht', readmeAsIndex: true };
+  assert.equal(routeForDocFile('docs/adr/README.md', opts), '/rht/adr/');
+});
+
+test('checkKebabCase still flags a docs-root README.md as non-kebab (uppercase), even with readmeAsIndex:true', () => {
   withTempDir(() => {
     mkdirSync('docs', { recursive: true });
     writeFileSync('docs/README.md', '# Root readme\n');
-    assert.deepEqual(checkKebabCase(['docs/README.md'], { readmeAsIndex: true }), []);
-    assert.equal(routeForDocFile('docs/README.md', { siteBase: '/rht', readmeAsIndex: true }), '/rht/');
+    assert.deepEqual(checkKebabCase(['docs/README.md'], { readmeAsIndex: true }), [
+      'docs/README.md: path segment "README" is not lowercase-kebab-case',
+    ]);
   });
+});
+
+test('checkKebabCase exempts a subdirectory README.md (not the docs root) with readmeAsIndex:true', () => {
+  withTempDir(() => {
+    mkdirSync('docs/adr', { recursive: true });
+    writeFileSync('docs/adr/README.md', '# ADR index\n');
+    assert.deepEqual(checkKebabCase(['docs/adr/README.md'], { readmeAsIndex: true }), []);
+  });
+});
+
+test('a docs-root README.md and index.md/mdx never collide, even with readmeAsIndex:true (the round-1 fix\'s false positive)', () => {
+  const files = ['docs/index.mdx', 'docs/README.md'];
+  const opts = { siteBase: '/rht', readmeAsIndex: true };
+  assert.deepEqual(checkRouteCollisions(files, opts), []);
+  const routeSet = buildRouteSet(files, opts);
+  assert.deepEqual([...routeSet].sort(), ['/rht/', '/rht/README/']);
 });
 
 // checkRouteCollisions (review follow-up): index.md and README.md in the
