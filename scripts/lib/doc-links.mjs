@@ -30,9 +30,12 @@ export const SITE_BASE = "/mif-docs-plugin";
 // is exact. readmeAsIndex defaults to false: most Starlight sites use only
 // `index.md`/`index.mdx` as the directory-index convention, so treating
 // README.md as one too is opt-in, not assumed (issue #213 -- a caller whose
-// content-collection config re-slugs README.md to its directory's route,
-// e.g. via a custom `generateId`, passes readmeAsIndex: true to make this
-// gate's route model match that reality).
+// content-collection config re-slugs a SUBDIRECTORY README.md to its
+// directory's route, e.g. via a custom `generateId`, passes
+// readmeAsIndex: true to make this gate's route model match that reality).
+// Subdirectory only: a docs-ROOT README.md is never the site index -- that
+// route belongs to index.md/index.mdx -- so it keeps its own ordinary route
+// (see routeForDocFile/checkKebabCase).
 export function normalizeOptions(opts = {}) {
   const docsRoot = (opts.docsRoot ?? "docs").replace(/\/+$/, "");
   let siteBase = opts.siteBase ?? SITE_BASE;
@@ -113,14 +116,25 @@ export function checkKebabCase(files, opts = {}) {
     const base = segments[segments.length - 1].replace(/\.mdx?$/, "");
     const toCheck = [...segments.slice(0, -1), base];
     const lastIndex = toCheck.length - 1;
+    // README-as-index is a SUBDIRECTORY convention (mirrors the real-world
+    // config that motivated it, research-harness-template's generateId:
+    // `segs.length > 1 && /^README$/i.test(...)`) -- a docs-ROOT README.md
+    // gets its own ordinary route (e.g. /readme/), never the site root,
+    // because the root route already belongs to index.md/mdx. Applying the
+    // exemption there too silently collided the two into one route (issue
+    // #213 review follow-up, round 2). This flag means exactly "this file
+    // IS the nested-README-as-index case" -- not merely "this file is
+    // nested" -- so the loop below only needs to check segment position,
+    // never re-derive the README-ness itself (Copilot review, round 2).
+    const isReadmeIndexFile = readmeAsIndex && toCheck.length > 1 && base.toLowerCase() === "readme";
     toCheck.forEach((seg, i) => {
       if (seg === "index") return; // literal Starlight index convention
       // The README-as-index exemption applies only to the file's own
       // basename (the last segment) -- a directory literally named
       // "README" is not the convention readmeAsIndex models and must still
       // fail loud, or a route like /adr/README/foo/ reaches the model
-      // unflagged (issue #213 review follow-up).
-      if (readmeAsIndex && i === lastIndex && seg.toLowerCase() === "readme") return;
+      // unflagged (issue #213 review follow-up, round 1).
+      if (isReadmeIndexFile && i === lastIndex) return;
       if (!KEBAB_SEGMENT.test(seg)) {
         problems.push(`${f}: path segment "${seg}" is not lowercase-kebab-case`);
       }
@@ -132,13 +146,21 @@ export function checkKebabCase(files, opts = {}) {
 // docs/architecture/mif-provenance.md -> /mif-docs-plugin/architecture/mif-provenance/
 // docs/index.mdx                      -> /mif-docs-plugin/
 // docs/adr/README.md                  -> /mif-docs-plugin/adr/  (only with readmeAsIndex: true)
+// docs/README.md                      -> /mif-docs-plugin/README/  (a docs-ROOT README is
+//                                        never the index, with or without readmeAsIndex)
 export function routeForDocFile(file, opts = {}) {
   const { docsRoot, siteBase, readmeAsIndex } = normalizeOptions(opts);
   const rel = relUnderRoot(file, docsRoot).replace(/\.mdx?$/, "");
-  const indexRe = readmeAsIndex ? /(^|\/)(index|README)$/i : /(^|\/)index$/;
-  const isIndex = readmeAsIndex
-    ? rel === "index" || rel.endsWith("/index") || /(^|\/)README$/i.test(rel)
-    : rel === "index" || rel.endsWith("/index");
+  // README-as-index is a SUBDIRECTORY convention only -- a docs-root
+  // README.md gets its own ordinary route (e.g. /readme/), never the site
+  // root, which already belongs to index.md/mdx. `/README$/i` (requires a
+  // preceding "/") deliberately excludes the bare root-level "README" case
+  // that `(^|\/)README$` would otherwise also match (issue #213 review
+  // follow-up, round 2 -- mirrors research-harness-template's own
+  // generateId: `segs.length > 1 && /^README$/i.test(...)`).
+  const isNestedReadme = readmeAsIndex && /\/README$/i.test(rel);
+  const isIndex = rel === "index" || rel.endsWith("/index") || isNestedReadme;
+  const indexRe = isNestedReadme ? /\/README$/i : /(^|\/)index$/;
   const slug = isIndex ? rel.replace(indexRe, "") : rel;
   return slug ? `${siteBase}/${slug}/` : `${siteBase}/`;
 }

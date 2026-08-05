@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-05T00:58:31.156Z'
+modified: '2026-08-05T02:05:58.683Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -81,6 +81,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for such a site. Both flags thread through `check-doc-links.mjs`,
   `audit-deterministic.mjs` (including its generated `md-suffix-links`
   `fix_command`), and the `audit-docs` skill.
+- `readmeAsIndex` (#213, above) incorrectly applied to a docs-ROOT
+  `README.md` too, treating it as the site index and colliding it with
+  `index.md`/`.mdx`. The convention that motivated the option
+  (research-harness-template's own `generateId`) only re-slugs a
+  *subdirectory* `README.md`; a root-level one gets its own ordinary route,
+  never the site root (the real built site serves it at `/readme/` — its own
+  slugifier lowercases the segment, so an uppercase root `README.md` is
+  reported by `checkKebabCase` as a non-kebab path rather than routed on a
+  guess). `routeForDocFile`/`checkKebabCase` now match that scoping exactly.
 
 ## [0.9.4] - 2026-08-04
 
