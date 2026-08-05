@@ -1,7 +1,7 @@
 ---
 name: audit-docs
 description: Audit MIF documents under one or more paths for accuracy, taxonomy alignment, editorial consistency, and frontmatter/provenance/temporal/relationship/citation conformance. Deterministic script checks run first at zero Agent cost; cross-document checks are guaranteed (three bounded Agent calls); per-file judgment runs as batched, schema-validated Agent calls over only the files that changed since the last audit. Use when the user asks to audit, review, or check a set of MIF documents for conformance/quality.
-argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--astro-config <file>] [--docs-root <dir>] [--ledger <file>] [--help]"
+argument-hint: "--path <path>... [--batch-size N] [--mif-level 1|2|3] [--checks id,...] [--full] [--fix] [--file-issues] [--report-dir <dir>] [--site-base <base>] [--astro-config <file>] [--docs-root <dir>] [--ledger <file>] [--readme-as-index] [--md-links-rewritten] [--help]"
 ---
 
 # audit-docs
@@ -123,6 +123,28 @@ Options:
                             records marker-level coverage in the corpus map
                             and is reported as skipped for drift detection
                             -- never silently treated as "ran clean".
+  --readme-as-index         Pass through to link-integrity: a subdirectory
+                            README.md renders as that directory's own route
+                            (a content-collection generateId convention some
+                            sites use). Off by default — check the target
+                            site's Astro content-collection config before
+                            setting this; guessing wrong either direction
+                            produces false findings or misses real ones.
+  --md-links-rewritten      Pass through to link-integrity: the site wires a
+                            build-time remark/rehype plugin (e.g.
+                            astro-rehype-relative-markdown-links) that
+                            resolves file-relative .md/.mdx links itself, so
+                            the md-suffix-links defect class does not apply
+                            to links it would resolve. Off by default — check
+                            astro.config.mjs's plugin list before setting
+                            this; do not infer it from a --fix run's own
+                            "success," since the fix_command's own oracle
+                            re-check cannot detect this on its own (issue
+                            #213 — a --fix run against a site using such a
+                            plugin can "succeed" while actively regressing
+                            working links; verify a spot-check of the real
+                            built site before trusting either flag's absence
+                            or presence).
   --help, -h               Show this help and exit.
 
 Check registry (--checks accepts any of these ids):
@@ -224,12 +246,17 @@ custom-checks list; do not invent criteria on their behalf.
 node ${CLAUDE_PLUGIN_ROOT}/scripts/audit-deterministic.mjs \
   --paths <path>... --report-dir <report-dir> --mif-level <level> \
   [--site-base <base> | --astro-config <file>] [--docs-root <dir>] \
-  [--ledger <file>] [--checks <deterministic subset>]
+  [--ledger <file>] [--checks <deterministic subset>] \
+  [--readme-as-index] [--md-links-rewritten]
 ```
 
 Pass `--docs-root` through whenever `--path` is not a single directory
 (link-integrity needs it), and `--ledger` whenever the user supplied one
-(provenance drift detection needs it).
+(provenance drift detection needs it). Pass `--readme-as-index`/
+`--md-links-rewritten` through only when the user supplied them — never
+infer either from the target site's behavior; a wrong guess in either
+direction produces exactly the false-positive/false-negative pair issue #213
+documents.
 
 This decides every deterministic check over the FULL corpus (state never
 gates it — it is free and keeps the corpus map current) and writes:

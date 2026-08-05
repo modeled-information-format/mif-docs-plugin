@@ -14,6 +14,15 @@
 //                          (default: /mif-docs-plugin; pass "/" for a root site)
 //   --astro-config <file>  Read the site base from this astro.config.mjs's
 //                          `base:` instead of --base
+//   --readme-as-index      A subdirectory README.md renders as that
+//                          directory's own route (a content-collection
+//                          generateId convention some sites use); off by
+//                          default
+//   --md-links-rewritten   The site wires a build-time remark/rehype plugin
+//                          (e.g. astro-rehype-relative-markdown-links) that
+//                          resolves file-relative .md/.mdx links itself, so
+//                          such a link pointing at a real file is not a
+//                          defect; off by default
 //   --json                 Emit machine-readable JSON to stdout instead of the
 //                          human report (same exit-code semantics)
 //   --write                Apply the one mechanical fix class in place (drop a
@@ -51,6 +60,8 @@ function parseArgs(argv) {
     else if (a === "--json") flags.json = true;
     else if (a === "--write") flags.write = true;
     else if (a === "--allow-non-kebab") flags.allowNonKebab = true;
+    else if (a === "--readme-as-index") flags.readmeAsIndex = true;
+    else if (a === "--md-links-rewritten") flags.mdLinksRewritten = true;
     else {
       console.error(`check-doc-links: unknown argument "${a}"`);
       process.exit(2);
@@ -63,7 +74,13 @@ const flags = parseArgs(process.argv.slice(2));
 if (flags.astroConfig && flags.siteBase === undefined) {
   flags.siteBase = readSiteBaseFromAstroConfig(flags.astroConfig);
 }
-const opts = { docsRoot: flags.docsRoot, siteBase: flags.siteBase, allowNonKebab: flags.allowNonKebab };
+const opts = {
+  docsRoot: flags.docsRoot,
+  siteBase: flags.siteBase,
+  allowNonKebab: flags.allowNonKebab,
+  readmeAsIndex: flags.readmeAsIndex,
+  mdLinksRewritten: flags.mdLinksRewritten,
+};
 for (const k of Object.keys(opts)) if (opts[k] === undefined) delete opts[k];
 
 // Delegates the whole listDocFiles -> checkKebabCase -> buildRouteSet ->

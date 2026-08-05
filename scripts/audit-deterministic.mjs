@@ -13,6 +13,16 @@
 //                                 (default: the sole directory in --paths)
 //     [--site-base <b>]           Starlight site base for link checking
 //     [--astro-config <f>]        read the site base from this astro config
+//     [--readme-as-index]         a subdirectory README.md renders as that
+//                                 directory's own route (a content-collection
+//                                 generateId convention some sites use --
+//                                 issue #213); off by default
+//     [--md-links-rewritten]      the site wires a build-time remark/rehype
+//                                 plugin (e.g. astro-rehype-relative-markdown-
+//                                 links) that resolves file-relative .md/.mdx
+//                                 links itself, so such a link pointing at a
+//                                 real file is not a defect (issue #213); off
+//                                 by default
 //     [--no-routes]               skip link-integrity entirely (recorded as skipped)
 //     [--checks id,id,...]        run only these deterministic checks
 //     [--ledger <f>]              provenance ledger for witnessed verification
@@ -74,6 +84,8 @@ function parseArgs(argv) {
     else if (a === "--docs-root") flags.docsRoot = val();
     else if (a === "--site-base") flags.siteBase = val();
     else if (a === "--astro-config") flags.astroConfig = val();
+    else if (a === "--readme-as-index") flags.readmeAsIndex = true;
+    else if (a === "--md-links-rewritten") flags.mdLinksRewritten = true;
     else if (a === "--no-routes") flags.noRoutes = true;
     else if (a === "--checks") flags.checks = val().split(",").map((s) => s.trim()).filter(Boolean);
     else if (a === "--ledger") flags.ledger = val();
@@ -330,7 +342,13 @@ if (enabled.has("link-integrity")) {
         reason: "no site base known (pass --site-base or --astro-config); route-aware checking needs the real base",
       });
     } else {
-      const opts = { docsRoot, siteBase, allowNonKebab: true };
+      const opts = {
+        docsRoot,
+        siteBase,
+        allowNonKebab: true,
+        readmeAsIndex: flags.readmeAsIndex,
+        mdLinksRewritten: flags.mdLinksRewritten,
+      };
       const inScope = new Set(files);
       // Check every md/mdx under the docs root (a non-MIF page's links still
       // 404), but attribute findings only; route set covers the whole tree.
@@ -366,7 +384,12 @@ if (enabled.has("link-integrity")) {
           advisory: !inScope.has(lf.file), // links in non-MIF pages: report, don't count against MIF docs
         });
       }
-      flags._linkOpts = { docsRoot, siteBase };
+      flags._linkOpts = {
+        docsRoot,
+        siteBase,
+        readmeAsIndex: flags.readmeAsIndex,
+        mdLinksRewritten: flags.mdLinksRewritten,
+      };
     }
   }
 }
@@ -601,8 +624,15 @@ for (const bucket of classBuckets.values()) {
       if (flags._linkOpts) {
         // Absolute paths on both sides: the audited tree is usually NOT this
         // plugin's repo, and a --write against a relative --docs-root
-        // resolved from the wrong cwd would mutate the wrong tree.
-        fix_command = `node ${join(PLUGIN_ROOT, "scripts/check-doc-links.mjs")} --docs-root ${resolve(flags._linkOpts.docsRoot)} --base ${flags._linkOpts.siteBase} --allow-non-kebab --write`;
+        // resolved from the wrong cwd would mutate the wrong tree. Carries
+        // the same --readme-as-index/--md-links-rewritten flags the check
+        // itself ran with (issue #213) -- the fix pass must model the same
+        // route reality the check did, or --write can "succeed" against a
+        // route model the check itself didn't believe.
+        const linkOptFlags =
+          (flags._linkOpts.readmeAsIndex ? " --readme-as-index" : "") +
+          (flags._linkOpts.mdLinksRewritten ? " --md-links-rewritten" : "");
+        fix_command = `node ${join(PLUGIN_ROOT, "scripts/check-doc-links.mjs")} --docs-root ${resolve(flags._linkOpts.docsRoot)} --base ${flags._linkOpts.siteBase} --allow-non-kebab${linkOptFlags} --write`;
       }
     } else if (bucket.class_id === "broken-links-other") {
       description = "Internal links that resolve to no real route (wrong relative depth or renamed targets).";
