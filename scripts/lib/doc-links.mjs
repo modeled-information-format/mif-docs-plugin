@@ -119,8 +119,11 @@ export function checkKebabCase(files, opts = {}) {
     // gets its own ordinary route (e.g. /readme/), never the site root,
     // because the root route already belongs to index.md/mdx. Applying the
     // exemption there too silently collided the two into one route (issue
-    // #213 review follow-up, round 2).
-    const isNestedReadme = readmeAsIndex && toCheck.length > 1;
+    // #213 review follow-up, round 2). This flag means exactly "this file
+    // IS the nested-README-as-index case" -- not merely "this file is
+    // nested" -- so the loop below only needs to check segment position,
+    // never re-derive the README-ness itself (Copilot review, round 2).
+    const isReadmeIndexFile = readmeAsIndex && toCheck.length > 1 && base.toLowerCase() === "readme";
     toCheck.forEach((seg, i) => {
       if (seg === "index") return; // literal Starlight index convention
       // The README-as-index exemption applies only to the file's own
@@ -128,7 +131,7 @@ export function checkKebabCase(files, opts = {}) {
       // "README" is not the convention readmeAsIndex models and must still
       // fail loud, or a route like /adr/README/foo/ reaches the model
       // unflagged (issue #213 review follow-up, round 1).
-      if (isNestedReadme && i === lastIndex && seg.toLowerCase() === "readme") return;
+      if (isReadmeIndexFile && i === lastIndex) return;
       if (!KEBAB_SEGMENT.test(seg)) {
         problems.push(`${f}: path segment "${seg}" is not lowercase-kebab-case`);
       }
