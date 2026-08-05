@@ -369,17 +369,21 @@ if (enabled.has("link-integrity")) {
           check_id: "link-integrity",
           files: [lf.file],
           anchor: { line: lf.line, excerpt: lf.target ?? lf.detail },
-          severity: lf.status === "not-found" ? "medium" : "low",
+          severity: lf.status === "not-found" || lf.status === "route-collision" ? "medium" : "low",
           summary:
             lf.status === "non-kebab-path"
               ? `${lf.detail} — route computed as-is (${lf.resolvedPath}); confirm this URL is deliberate`
-              : `"${lf.target}" resolves to ${lf.resolvedPath} (${lf.status}) under base ${siteBase}`,
+              : lf.status === "route-collision"
+                ? lf.detail
+                : `"${lf.target}" resolves to ${lf.resolvedPath} (${lf.status}) under base ${siteBase}`,
           recommendation:
             lf.status === "non-kebab-path"
               ? "Rename to lowercase-kebab-case (or index.md) if this page is meant to be routable, or stop linking to it from rendered pages."
-              : mdSuffix
-                ? "Rewrite to the extensionless trailing-slash route form (check-doc-links --write repairs this class mechanically)."
-                : "Point the link at a real route (check the relative depth against the trailing-slash route model).",
+              : lf.status === "route-collision"
+                ? "Rename or remove one of the two files (a directory should have only one of index.md/README.md when readmeAsIndex is set) -- this needs a human decision, not a mechanical fix."
+                : mdSuffix
+                  ? "Rewrite to the extensionless trailing-slash route form (check-doc-links --write repairs this class mechanically)."
+                  : "Point the link at a real route (check the relative depth against the trailing-slash route model).",
           fixable: mechanicalFix,
           advisory: !inScope.has(lf.file), // links in non-MIF pages: report, don't count against MIF docs
         });

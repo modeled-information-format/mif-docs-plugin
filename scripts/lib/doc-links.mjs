@@ -112,13 +112,19 @@ export function checkKebabCase(files, opts = {}) {
     const segments = rel.split("/");
     const base = segments[segments.length - 1].replace(/\.mdx?$/, "");
     const toCheck = [...segments.slice(0, -1), base];
-    for (const seg of toCheck) {
-      if (seg === "index") continue; // literal Starlight index convention
-      if (readmeAsIndex && seg.toLowerCase() === "readme") continue; // opt-in README-as-index convention
+    const lastIndex = toCheck.length - 1;
+    toCheck.forEach((seg, i) => {
+      if (seg === "index") return; // literal Starlight index convention
+      // The README-as-index exemption applies only to the file's own
+      // basename (the last segment) -- a directory literally named
+      // "README" is not the convention readmeAsIndex models and must still
+      // fail loud, or a route like /adr/README/foo/ reaches the model
+      // unflagged (issue #213 review follow-up).
+      if (readmeAsIndex && i === lastIndex && seg.toLowerCase() === "readme") return;
       if (!KEBAB_SEGMENT.test(seg)) {
         problems.push(`${f}: path segment "${seg}" is not lowercase-kebab-case`);
       }
-    }
+    });
   }
   return problems;
 }
@@ -139,6 +145,33 @@ export function routeForDocFile(file, opts = {}) {
 
 export function buildRouteSet(files, opts = {}) {
   return new Set(files.map((f) => routeForDocFile(f, opts)));
+}
+
+// readmeAsIndex (issue #213 review follow-up): a directory holding BOTH
+// index.md and README.md maps two real files onto one route -- buildRouteSet
+// silently absorbs this into a single Set entry, which is exactly the
+// "route model cannot be trusted" condition checkKebabCase already exists to
+// catch (a --write repair using the collided routeSet could point a link at
+// the wrong one of the two files, or a real link to either could resolve
+// as "ok" while actually landing on its sibling's content on the deployed
+// site). Only meaningful when readmeAsIndex is set; with it off, index and
+// README never collide because README maps to its own literal route.
+export function checkRouteCollisions(files, opts = {}) {
+  const { readmeAsIndex } = normalizeOptions(opts);
+  if (!readmeAsIndex) return [];
+  const byRoute = new Map();
+  for (const f of files) {
+    const route = routeForDocFile(f, opts);
+    if (!byRoute.has(route)) byRoute.set(route, []);
+    byRoute.get(route).push(f);
+  }
+  const problems = [];
+  for (const [route, group] of byRoute) {
+    if (group.length > 1) {
+      problems.push(`${group.sort().join(" and ")} both resolve to route ${route} -- README-as-index collides with an index file in the same directory`);
+    }
+  }
+  return problems;
 }
 
 // Mask fenced code blocks (``` or ~~~) with equal-length whitespace -- never
@@ -401,6 +434,12 @@ function isRewrittenMdLink(file, target, fileSet, opts) {
   return fileSet.has(joined);
 }
 
+// fileSet is optional and only consulted when opts.mdLinksRewritten is set
+// (isRewrittenMdLink no-ops without it) -- a caller that passes
+// mdLinksRewritten: true but omits fileSet silently gets the pre-#213
+// behavior (every .md-suffixed link checked, none exempted) rather than an
+// error. checkAll (the only caller in this codebase) always supplies it; a
+// new direct caller of checkFile wanting the exemption must pass it too.
 export function checkFile(file, content, routeSet, opts = {}, fileSet = null) {
   const currentRoute = routeForDocFile(file, opts);
   const links = extractLinks(file, content);
@@ -441,6 +480,28 @@ export function checkAll(files, readFile = (f) => readFileSync(f, "utf8"), opts 
         target: null,
         resolvedPath: routeForDocFile(file, opts),
         status: "non-kebab-path",
+        detail: p,
+      });
+    }
+  }
+  const collisionProblems = checkRouteCollisions(resolvedFiles, opts);
+  if (collisionProblems.length > 0) {
+    // Same fail-closed-by-default / allowNonKebab-audit-mode split as the
+    // kebab-case check above -- a route collision is the same "the model
+    // cannot be trusted" condition, just a different cause.
+    if (!opts.allowNonKebab) {
+      const err = new Error("README-as-index route collision(s) found -- the route model cannot be trusted");
+      err.collisionProblems = collisionProblems;
+      throw err;
+    }
+    for (const p of collisionProblems) {
+      const [firstFile] = p.split(" and ");
+      findings.push({
+        file: firstFile,
+        line: 1,
+        target: null,
+        resolvedPath: routeForDocFile(firstFile, opts),
+        status: "route-collision",
         detail: p,
       });
     }

@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-04T17:20:06.069Z'
+modified: '2026-08-05T00:58:31.156Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -22,12 +22,12 @@ provenance:
   '@type': Provenance
   sourceType: agent_inferred
   trustLevel: user_stated
-  agent: claude-code/claude-fable-5
+  agent: claude-code/claude-sonnet-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:fa69eb8c-0e0f-4e98-847d-112c92f6177c
+    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
@@ -61,6 +61,26 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- `scripts/hydrate-ontology.mjs` assumed a per-ontology subdirectory layout
+  (`ontologies/<name>/<name>.ontology.yaml`) for both remote sources and the
+  sibling-checkout fallback (#212), but the `ontologies` repo vendors flat
+  (`ontologies/<name>.ontology.yaml`); all three source paths corrected.
+- `scripts/lib/doc-links.mjs`'s route model gained two opt-in options
+  (default `false`, no behavior change for any existing caller) closing two
+  real gaps (#213): `readmeAsIndex` models a content-collection config that
+  re-slugs a subdirectory `README.md` to its directory's own route (what
+  actually broke research-harness-template#834 — a mechanical `--write` fix
+  that turned a correct link into a broken one, self-consistently, because
+  the route it computed for `README.md` itself was already wrong);
+  `mdLinksRewritten` models a site wiring a build-time remark/rehype plugin
+  (e.g. `astro-rehype-relative-markdown-links`) that resolves file-relative
+  `.md`/`.mdx` links itself, so `md-suffix-links` no longer false-positives
+  for such a site. Both flags thread through `check-doc-links.mjs`,
+  `audit-deterministic.mjs` (including its generated `md-suffix-links`
+  `fix_command`), and the `audit-docs` skill.
 
 ## [0.9.4] - 2026-08-04
 

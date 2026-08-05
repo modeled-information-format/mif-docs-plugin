@@ -103,6 +103,10 @@ try {
     console.error("check-doc-links: non-kebab-case doc path segment(s) found -- the route model");
     console.error("(file path under the docs root -> Starlight route) cannot be trusted while these exist:");
     for (const p of e.kebabProblems) console.error(`  - ${p}`);
+  } else if (e.collisionProblems) {
+    console.error("check-doc-links: README-as-index route collision(s) found -- the route model cannot");
+    console.error("be trusted while these exist:");
+    for (const p of e.collisionProblems) console.error(`  - ${p}`);
   } else {
     console.error(`check-doc-links: ${e.message}`);
   }
@@ -231,11 +235,19 @@ function reportHuman() {
   const notFound = findings.filter((f) => f.status === "not-found");
   const nonCanonical = findings.filter((f) => f.status === "non-canonical");
   const nonKebab = findings.filter((f) => f.status === "non-kebab-path");
+  const collisions = findings.filter((f) => f.status === "route-collision");
 
   if (nonKebab.length > 0) {
     console.error(`${nonKebab.length} doc path(s) are not lowercase-kebab-case (route computed as-is; verify deliberately):`);
     for (const f of nonKebab) {
       console.error(`  - ${f.detail} -> ${f.resolvedPath}`);
+    }
+  }
+
+  if (collisions.length > 0) {
+    console.error(`${collisions.length} README-as-index route collision(s) (two files resolve to the same route):`);
+    for (const f of collisions) {
+      console.error(`  - ${f.detail}`);
     }
   }
 
