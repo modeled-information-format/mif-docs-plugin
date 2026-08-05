@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-05T02:05:58.683Z'
+modified: '2026-08-05T02:32:14.854Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,8 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.5] - 2026-08-05
 
 ### Fixed
 
