@@ -18,6 +18,8 @@ import {
   resolveTarget,
   suggestFixedTarget,
   checkAll,
+  checkKebabCase,
+  checkRouteCollisions,
   SITE_BASE,
 } from '../scripts/lib/doc-links.mjs';
 
@@ -179,5 +181,195 @@ test('allowNonKebab reports non-kebab paths as findings and keeps checking', () 
     const kebab = findings.find((f) => f.status === 'non-kebab-path');
     assert.equal(kebab.file, 'docs/README.md');
     assert.equal(kebab.target, null);
+  });
+});
+
+// readmeAsIndex (issue #213): a content-collection config that re-slugs a
+// subdirectory README.md to its directory's own route (research-harness-template's
+// custom generateId is a real example) needs the route model to match that,
+// opt-in only -- every test above this point exercises the default (false)
+// and must keep passing unchanged.
+
+test('readmeAsIndex defaults to false and leaves routeForDocFile/checkKebabCase unchanged', () => {
+  assert.equal(normalizeOptions().readmeAsIndex, false);
+  assert.equal(routeForDocFile('docs/adr/README.md'), '/mif-docs-plugin/adr/README/');
+});
+
+test('routeForDocFile maps README.md (any case) to its directory route when readmeAsIndex is true', () => {
+  const opts = { siteBase: '/rht', readmeAsIndex: true };
+  assert.equal(routeForDocFile('docs/adr/README.md', opts), '/rht/adr/');
+  assert.equal(routeForDocFile('docs/readme.md', opts), '/rht/');
+  assert.equal(routeForDocFile('docs/adr/0001-foo.md', opts), '/rht/adr/0001-foo/');
+});
+
+test('checkKebabCase exempts README (any case) only when readmeAsIndex is true', () => {
+  withTempDir(() => {
+    mkdirSync('docs/adr', { recursive: true });
+    writeFileSync('docs/adr/README.md', '# ADR index\n');
+    writeFileSync('docs/index.md', '# Home\n');
+    const files = ['docs/adr/README.md', 'docs/index.md'];
+    assert.deepEqual(checkKebabCase(files, {}), ['docs/adr/README.md: path segment "README" is not lowercase-kebab-case']);
+    assert.deepEqual(checkKebabCase(files, { readmeAsIndex: true }), []);
+  });
+});
+
+test('suggestFixedTarget repairs a README-index page\'s sibling link without an erroneous leading ../ (PR research-harness-template#834 regression)', () => {
+  const files = ['docs/adr/README.md', 'docs/adr/0001-four-layer-single-repository-architecture.md'];
+  const opts = { siteBase: '/rht', readmeAsIndex: true };
+  const routeSet = buildRouteSet(files, opts);
+  assert.deepEqual([...routeSet].sort(), ['/rht/adr/', '/rht/adr/0001-four-layer-single-repository-architecture/']);
+  const fixed = suggestFixedTarget(
+    'docs/adr/README.md',
+    '0001-four-layer-single-repository-architecture.md',
+    files,
+    routeSet,
+    opts,
+  );
+  assert.equal(fixed, '0001-four-layer-single-repository-architecture/');
+});
+
+test('without readmeAsIndex, the same sibling link is mis-rewritten with an erroneous leading ../ (documents the exact PR research-harness-template#834 bug this option fixes)', () => {
+  const files = ['docs/adr/README.md', 'docs/adr/0001-four-layer-single-repository-architecture.md'];
+  const opts = { siteBase: '/rht' }; // readmeAsIndex omitted -- the pre-fix default
+  const routeSet = buildRouteSet(files, opts);
+  const fixed = suggestFixedTarget(
+    'docs/adr/README.md',
+    '0001-four-layer-single-repository-architecture.md',
+    files,
+    routeSet,
+    opts,
+  );
+  // Both the (wrong) identity route for README.md and the erroneous rewrite
+  // agree with each other self-consistently, which is exactly why this
+  // shipped undetected: the route model was internally consistent, just
+  // wrong about what page README.md actually renders as.
+  assert.equal(fixed, '../0001-four-layer-single-repository-architecture/');
+});
+
+// mdLinksRewritten (issue #213): a site wiring a build-time remark/rehype
+// plugin (astro-rehype-relative-markdown-links is a real example) resolves
+// GitHub-style file-relative .md/.mdx links itself, so such a link is not a
+// defect -- it's the intentional dual-purpose (renders on GitHub too) form.
+// Opt-in only; every test above this point exercises the default (false)
+// and must keep passing unchanged.
+
+test('mdLinksRewritten defaults to false and .md-suffixed links are still flagged', () => {
+  withTempDir(() => {
+    mkdirSync('docs/how-to', { recursive: true });
+    writeFileSync('docs/how-to/guide.md', '# Guide\n');
+    writeFileSync('docs/index.md', '# Home\n\n[Guide](how-to/guide.md)\n');
+    const findings = checkAll(undefined, undefined, {});
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].status, 'not-found');
+  });
+});
+
+test('mdLinksRewritten:true does not flag a .md-suffixed link that resolves to a real file', () => {
+  withTempDir(() => {
+    mkdirSync('docs/how-to', { recursive: true });
+    writeFileSync('docs/how-to/guide.md', '# Guide\n');
+    writeFileSync('docs/index.md', '# Home\n\n[Guide](how-to/guide.md)\n');
+    const findings = checkAll(undefined, undefined, { mdLinksRewritten: true });
+    assert.deepEqual(findings, []);
+  });
+});
+
+test('mdLinksRewritten:true still flags a .md-suffixed link whose target file does not exist', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/index.md', '# Home\n\n[Missing](nowhere.md)\n');
+    const findings = checkAll(undefined, undefined, { mdLinksRewritten: true });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].status, 'not-found');
+  });
+});
+
+test('mdLinksRewritten:true does not exempt an absolute-path .md link (only file-relative ones are the GitHub-render convention)', () => {
+  withTempDir(() => {
+    mkdirSync('docs/how-to', { recursive: true });
+    writeFileSync('docs/how-to/guide.md', '# Guide\n');
+    writeFileSync('docs/index.md', '# Home\n\n[Guide](/how-to/guide.md)\n');
+    const findings = checkAll(undefined, undefined, { mdLinksRewritten: true });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].status, 'not-found');
+  });
+});
+
+test('mdLinksRewritten:true still flags a wrong-relative-depth .md link (the file it names does not exist at that relative path)', () => {
+  withTempDir(() => {
+    mkdirSync('docs/how-to', { recursive: true });
+    mkdirSync('docs/reference', { recursive: true });
+    writeFileSync('docs/reference/tools.md', '# Tools\n');
+    writeFileSync('docs/how-to/guide.md', '# Guide\n\n[Tools](reference/tools.md)\n'); // wrong depth: should be ../reference/tools.md
+    const findings = checkAll(undefined, undefined, { mdLinksRewritten: true });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].status, 'not-found');
+  });
+});
+
+test('mdLinksRewritten:true exempts a rewritten link carrying a #anchor or ?query suffix, still requiring the target file to be real', () => {
+  withTempDir(() => {
+    mkdirSync('docs/how-to', { recursive: true });
+    writeFileSync('docs/how-to/guide.md', '# Guide\n');
+    writeFileSync(
+      'docs/index.md',
+      '# Home\n\n[Guide section](how-to/guide.md#section)\n[Guide query](how-to/guide.md?tab=x)\n[Missing](how-to/nope.md#section)\n',
+    );
+    const findings = checkAll(undefined, undefined, { mdLinksRewritten: true });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0].target, 'how-to/nope.md#section');
+  });
+});
+
+// checkKebabCase review follow-up: the README-as-index exemption must apply
+// only to the file's own basename, never to a directory segment literally
+// named "README" -- that is not the readmeAsIndex convention and must still
+// fail loud, or a route like /base/README/foo/ reaches the model unflagged.
+
+test('checkKebabCase still flags a directory literally named README even with readmeAsIndex:true', () => {
+  withTempDir(() => {
+    mkdirSync('docs/README', { recursive: true });
+    writeFileSync('docs/README/foo.md', '# Foo\n');
+    const problems = checkKebabCase(['docs/README/foo.md'], { readmeAsIndex: true });
+    assert.deepEqual(problems, ['docs/README/foo.md: path segment "README" is not lowercase-kebab-case']);
+  });
+});
+
+test('checkKebabCase exempts an uppercase README.md at the docs root, not just in a subdirectory', () => {
+  withTempDir(() => {
+    mkdirSync('docs', { recursive: true });
+    writeFileSync('docs/README.md', '# Root readme\n');
+    assert.deepEqual(checkKebabCase(['docs/README.md'], { readmeAsIndex: true }), []);
+    assert.equal(routeForDocFile('docs/README.md', { siteBase: '/rht', readmeAsIndex: true }), '/rht/');
+  });
+});
+
+// checkRouteCollisions (review follow-up): index.md and README.md in the
+// same directory both wanting the directory's own route is exactly the
+// "route model cannot be trusted" condition checkKebabCase already exists
+// to catch -- readmeAsIndex must not silently absorb it into one Set entry.
+
+test('checkRouteCollisions is empty without readmeAsIndex (index.md and README.md are just two ordinary, distinct pages)', () => {
+  const files = ['docs/adr/index.md', 'docs/adr/README.md'];
+  assert.deepEqual(checkRouteCollisions(files, { siteBase: '/rht' }), []);
+});
+
+test('checkRouteCollisions flags a directory holding both index.md and README.md when readmeAsIndex is true', () => {
+  const files = ['docs/adr/index.md', 'docs/adr/README.md'];
+  const problems = checkRouteCollisions(files, { siteBase: '/rht', readmeAsIndex: true });
+  assert.equal(problems.length, 1);
+  assert.match(problems[0], /docs\/adr\/README\.md and docs\/adr\/index\.md both resolve to route \/rht\/adr\//);
+});
+
+test('checkAll fails closed by default on a README/index collision, and reports it as a finding under allowNonKebab', () => {
+  withTempDir(() => {
+    mkdirSync('docs/adr', { recursive: true });
+    writeFileSync('docs/adr/index.md', '# ADR index\n');
+    writeFileSync('docs/adr/README.md', '# Also an index?\n');
+    assert.throws(() => checkAll(undefined, undefined, { readmeAsIndex: true }), /route collision/);
+    const findings = checkAll(undefined, undefined, { readmeAsIndex: true, allowNonKebab: true });
+    const collision = findings.find((f) => f.status === 'route-collision');
+    assert.ok(collision, 'expected a route-collision finding');
+    assert.equal(collision.target, null);
   });
 });

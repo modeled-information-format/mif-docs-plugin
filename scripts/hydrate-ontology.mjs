@@ -17,11 +17,14 @@ const OUT = join(CACHE, "mif-docs.ontology.yaml");
 const LOCK = join(CACHE, "VENDOR.lock");
 // Resolution order: published canonical URI -> the ontologies repo on GitHub
 // (works in CI once that repo is pushed) -> the local sibling checkout (dev).
+// The `ontologies` repo vendors ontology definitions FLAT
+// (ontologies/ontologies/<name>.ontology.yaml) -- there is no per-ontology
+// subdirectory. Verified against the live repo and mif-spec.dev (issue #212).
 const SOURCES = [
-  "https://mif-spec.dev/ontologies/mif-docs/mif-docs.ontology.yaml",
-  "https://raw.githubusercontent.com/modeled-information-format/ontologies/main/ontologies/mif-docs/mif-docs.ontology.yaml",
+  "https://mif-spec.dev/ontologies/mif-docs.ontology.yaml",
+  "https://raw.githubusercontent.com/modeled-information-format/ontologies/main/ontologies/mif-docs.ontology.yaml",
 ];
-const SIBLING = join(ROOT, "..", "ontologies", "ontologies", "mif-docs", "mif-docs.ontology.yaml");
+const SIBLING = join(ROOT, "..", "ontologies", "ontologies", "mif-docs.ontology.yaml");
 
 async function fromUri(uri) {
   const res = await fetch(uri, { redirect: "follow" });

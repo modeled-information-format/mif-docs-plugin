@@ -24,16 +24,23 @@ import { posix } from "node:path";
 export const DOCS_GLOBS = ["docs/**/*.md", "docs/**/*.mdx"];
 export const SITE_BASE = "/mif-docs-plugin";
 
-// Normalize {docsRoot, siteBase, globs} with this repo's values as defaults.
-// siteBase keeps no trailing slash internally ("" means the site root), and
-// docsRoot keeps no trailing slash so prefix-stripping is exact.
+// Normalize {docsRoot, siteBase, globs, readmeAsIndex} with this repo's
+// values as defaults. siteBase keeps no trailing slash internally ("" means
+// the site root), and docsRoot keeps no trailing slash so prefix-stripping
+// is exact. readmeAsIndex defaults to false: most Starlight sites use only
+// `index.md`/`index.mdx` as the directory-index convention, so treating
+// README.md as one too is opt-in, not assumed (issue #213 -- a caller whose
+// content-collection config re-slugs README.md to its directory's route,
+// e.g. via a custom `generateId`, passes readmeAsIndex: true to make this
+// gate's route model match that reality).
 export function normalizeOptions(opts = {}) {
   const docsRoot = (opts.docsRoot ?? "docs").replace(/\/+$/, "");
   let siteBase = opts.siteBase ?? SITE_BASE;
   if (!siteBase.startsWith("/")) siteBase = `/${siteBase}`;
   siteBase = siteBase.replace(/\/+$/, "");
   const globs = opts.globs ?? [`${docsRoot}/**/*.md`, `${docsRoot}/**/*.mdx`];
-  return { docsRoot, siteBase, globs };
+  const readmeAsIndex = opts.readmeAsIndex ?? false;
+  return { docsRoot, siteBase, globs, readmeAsIndex };
 }
 
 // Pull `base: "<path>"` out of an astro.config.mjs without executing it --
@@ -98,34 +105,73 @@ function relUnderRoot(file, docsRoot) {
 // own route model against the real deployed route. Fail loud rather than
 // silently resolve to a route that doesn't match reality.
 export function checkKebabCase(files, opts = {}) {
-  const { docsRoot } = normalizeOptions(opts);
+  const { docsRoot, readmeAsIndex } = normalizeOptions(opts);
   const problems = [];
   for (const f of files) {
     const rel = relUnderRoot(f, docsRoot);
     const segments = rel.split("/");
     const base = segments[segments.length - 1].replace(/\.mdx?$/, "");
     const toCheck = [...segments.slice(0, -1), base];
-    for (const seg of toCheck) {
-      if (seg === "index") continue; // literal Starlight index convention
+    const lastIndex = toCheck.length - 1;
+    toCheck.forEach((seg, i) => {
+      if (seg === "index") return; // literal Starlight index convention
+      // The README-as-index exemption applies only to the file's own
+      // basename (the last segment) -- a directory literally named
+      // "README" is not the convention readmeAsIndex models and must still
+      // fail loud, or a route like /adr/README/foo/ reaches the model
+      // unflagged (issue #213 review follow-up).
+      if (readmeAsIndex && i === lastIndex && seg.toLowerCase() === "readme") return;
       if (!KEBAB_SEGMENT.test(seg)) {
         problems.push(`${f}: path segment "${seg}" is not lowercase-kebab-case`);
       }
-    }
+    });
   }
   return problems;
 }
 
 // docs/architecture/mif-provenance.md -> /mif-docs-plugin/architecture/mif-provenance/
 // docs/index.mdx                      -> /mif-docs-plugin/
+// docs/adr/README.md                  -> /mif-docs-plugin/adr/  (only with readmeAsIndex: true)
 export function routeForDocFile(file, opts = {}) {
-  const { docsRoot, siteBase } = normalizeOptions(opts);
+  const { docsRoot, siteBase, readmeAsIndex } = normalizeOptions(opts);
   const rel = relUnderRoot(file, docsRoot).replace(/\.mdx?$/, "");
-  const slug = rel === "index" || rel.endsWith("/index") ? rel.replace(/(^|\/)index$/, "") : rel;
+  const indexRe = readmeAsIndex ? /(^|\/)(index|README)$/i : /(^|\/)index$/;
+  const isIndex = readmeAsIndex
+    ? rel === "index" || rel.endsWith("/index") || /(^|\/)README$/i.test(rel)
+    : rel === "index" || rel.endsWith("/index");
+  const slug = isIndex ? rel.replace(indexRe, "") : rel;
   return slug ? `${siteBase}/${slug}/` : `${siteBase}/`;
 }
 
 export function buildRouteSet(files, opts = {}) {
   return new Set(files.map((f) => routeForDocFile(f, opts)));
+}
+
+// readmeAsIndex (issue #213 review follow-up): a directory holding BOTH
+// index.md and README.md maps two real files onto one route -- buildRouteSet
+// silently absorbs this into a single Set entry, which is exactly the
+// "route model cannot be trusted" condition checkKebabCase already exists to
+// catch (a --write repair using the collided routeSet could point a link at
+// the wrong one of the two files, or a real link to either could resolve
+// as "ok" while actually landing on its sibling's content on the deployed
+// site). Only meaningful when readmeAsIndex is set; with it off, index and
+// README never collide because README maps to its own literal route.
+export function checkRouteCollisions(files, opts = {}) {
+  const { readmeAsIndex } = normalizeOptions(opts);
+  if (!readmeAsIndex) return [];
+  const byRoute = new Map();
+  for (const f of files) {
+    const route = routeForDocFile(f, opts);
+    if (!byRoute.has(route)) byRoute.set(route, []);
+    byRoute.get(route).push(f);
+  }
+  const problems = [];
+  for (const [route, group] of byRoute) {
+    if (group.length > 1) {
+      problems.push(`${group.sort().join(" and ")} both resolve to route ${route} -- README-as-index collides with an index file in the same directory`);
+    }
+  }
+  return problems;
 }
 
 // Mask fenced code blocks (``` or ~~~) with equal-length whitespace -- never
@@ -370,11 +416,36 @@ export function suggestFixedTarget(file, target, files, routeSet, opts = {}) {
   return null;
 }
 
-export function checkFile(file, content, routeSet, opts = {}) {
+// mdLinksRewritten (issue #213): some Starlight sites wire a build-time
+// remark/rehype plugin (e.g. astro-rehype-relative-markdown-links) that
+// resolves GitHub-style file-relative `.md`/`.mdx` links to their real route
+// at build time -- deliberately, so the same source also renders correctly
+// on GitHub. For such a site, a `.md`-suffixed link is not a defect; it is
+// the intended, dual-purpose form, and the only real question is whether it
+// points at a real file. Opt-in and default false: the historical model
+// (every `.md`-suffixed link is a defect the gate must catch, issue #173)
+// stays exactly as-is for every caller that doesn't set this.
+function isRewrittenMdLink(file, target, fileSet, opts) {
+  if (!opts.mdLinksRewritten) return false;
+  const m = target.match(/^([^?#]*)([?#].*)?$/);
+  const path = m[1];
+  if (!path || path.startsWith("/") || !/\.mdx?$/.test(path)) return false;
+  const joined = posix.normalize(posix.join(posix.dirname(file), path));
+  return fileSet.has(joined);
+}
+
+// fileSet is optional and only consulted when opts.mdLinksRewritten is set
+// (isRewrittenMdLink no-ops without it) -- a caller that passes
+// mdLinksRewritten: true but omits fileSet silently gets the pre-#213
+// behavior (every .md-suffixed link checked, none exempted) rather than an
+// error. checkAll (the only caller in this codebase) always supplies it; a
+// new direct caller of checkFile wanting the exemption must pass it too.
+export function checkFile(file, content, routeSet, opts = {}, fileSet = null) {
   const currentRoute = routeForDocFile(file, opts);
   const links = extractLinks(file, content);
   const findings = [];
   for (const { target, line } of links) {
+    if (fileSet && isRewrittenMdLink(file, target, fileSet, opts)) continue;
     const resolvedPath = resolveTarget(currentRoute, target);
     const status = classify(resolvedPath, routeSet);
     if (status !== "ok") {
@@ -386,6 +457,7 @@ export function checkFile(file, content, routeSet, opts = {}) {
 
 export function checkAll(files, readFile = (f) => readFileSync(f, "utf8"), opts = {}) {
   const resolvedFiles = files ?? listDocFiles(opts);
+  const fileSet = new Set(resolvedFiles);
   const findings = [];
   const kebabProblems = checkKebabCase(resolvedFiles, opts);
   if (kebabProblems.length > 0) {
@@ -412,9 +484,31 @@ export function checkAll(files, readFile = (f) => readFileSync(f, "utf8"), opts 
       });
     }
   }
+  const collisionProblems = checkRouteCollisions(resolvedFiles, opts);
+  if (collisionProblems.length > 0) {
+    // Same fail-closed-by-default / allowNonKebab-audit-mode split as the
+    // kebab-case check above -- a route collision is the same "the model
+    // cannot be trusted" condition, just a different cause.
+    if (!opts.allowNonKebab) {
+      const err = new Error("README-as-index route collision(s) found -- the route model cannot be trusted");
+      err.collisionProblems = collisionProblems;
+      throw err;
+    }
+    for (const p of collisionProblems) {
+      const [firstFile] = p.split(" and ");
+      findings.push({
+        file: firstFile,
+        line: 1,
+        target: null,
+        resolvedPath: routeForDocFile(firstFile, opts),
+        status: "route-collision",
+        detail: p,
+      });
+    }
+  }
   const routeSet = buildRouteSet(resolvedFiles, opts);
   for (const file of resolvedFiles) {
-    findings.push(...checkFile(file, readFile(file), routeSet, opts));
+    findings.push(...checkFile(file, readFile(file), routeSet, opts, fileSet));
   }
   return findings;
 }
