@@ -30,9 +30,12 @@ export const SITE_BASE = "/mif-docs-plugin";
 // is exact. readmeAsIndex defaults to false: most Starlight sites use only
 // `index.md`/`index.mdx` as the directory-index convention, so treating
 // README.md as one too is opt-in, not assumed (issue #213 -- a caller whose
-// content-collection config re-slugs README.md to its directory's route,
-// e.g. via a custom `generateId`, passes readmeAsIndex: true to make this
-// gate's route model match that reality).
+// content-collection config re-slugs a SUBDIRECTORY README.md to its
+// directory's route, e.g. via a custom `generateId`, passes
+// readmeAsIndex: true to make this gate's route model match that reality).
+// Subdirectory only: a docs-ROOT README.md is never the site index -- that
+// route belongs to index.md/index.mdx -- so it keeps its own ordinary route
+// (see routeForDocFile/checkKebabCase).
 export function normalizeOptions(opts = {}) {
   const docsRoot = (opts.docsRoot ?? "docs").replace(/\/+$/, "");
   let siteBase = opts.siteBase ?? SITE_BASE;
@@ -143,6 +146,8 @@ export function checkKebabCase(files, opts = {}) {
 // docs/architecture/mif-provenance.md -> /mif-docs-plugin/architecture/mif-provenance/
 // docs/index.mdx                      -> /mif-docs-plugin/
 // docs/adr/README.md                  -> /mif-docs-plugin/adr/  (only with readmeAsIndex: true)
+// docs/README.md                      -> /mif-docs-plugin/README/  (a docs-ROOT README is
+//                                        never the index, with or without readmeAsIndex)
 export function routeForDocFile(file, opts = {}) {
   const { docsRoot, siteBase, readmeAsIndex } = normalizeOptions(opts);
   const rel = relUnderRoot(file, docsRoot).replace(/\.mdx?$/, "");
