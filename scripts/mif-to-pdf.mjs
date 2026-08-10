@@ -730,10 +730,20 @@ function makeRenderer(doc, fonts) {
         return wrapTokens(tokenize(parseInline(cell), cellSize), colWidth - cellPad * 2).map((line) => ({ line, font }));
       }),
     );
-    for (const wrappedRow of wrappedRows) {
-      const rowLines = Math.max(...wrappedRow.map((c) => c.length), 1);
-      const rowHeight = rowLines * (cellSize + 4) + cellPad * 2;
-      ensureSpace(rowHeight);
+    const rowHeights = wrappedRows.map(
+      (wrappedRow) => Math.max(...wrappedRow.map((c) => c.length), 1) * (cellSize + 4) + cellPad * 2,
+    );
+    // A table that can fit on one page must not straddle a page break —
+    // otherwise the header row (or header plus a lone data row) strands at
+    // the bottom of the current page. A table too tall for any single page
+    // still must not open with a stranded header: it needs at least the
+    // header plus the first data row to fit before starting.
+    const totalHeight = rowHeights.reduce((a, b) => a + b, 0);
+    const leadHeight = rowHeights[0] + (rowHeights[1] ?? 0);
+    const keepTogether = totalHeight <= PAGE_HEIGHT - MARGIN * 2 ? totalHeight : leadHeight;
+    if (y - keepTogether < MARGIN) newPage();
+
+    function drawRow(wrappedRow, rowHeight) {
       const rowTop = y;
       for (let c = 0; c < wrappedRow.length; c++) {
         const cellX = MARGIN + c * colWidth + cellPad;
@@ -754,7 +764,17 @@ function makeRenderer(doc, fonts) {
       });
       y = rowTop - rowHeight;
     }
-    y -= LINE_HEIGHT / 2;
+
+    for (let r = 0; r < wrappedRows.length; r++) {
+      if (y - rowHeights[r] < MARGIN) {
+        // A table taller than one page breaks between rows; the header row
+        // repeats on each continuation page so no page shows bare data rows.
+        newPage();
+        if (r > 0) drawRow(wrappedRows[0], rowHeights[0]);
+      }
+      drawRow(wrappedRows[r], rowHeights[r]);
+    }
+    y -= LINE_HEIGHT;
   }
 
   // The true shared primitive: every embedded raster image (PNG or JPG,
