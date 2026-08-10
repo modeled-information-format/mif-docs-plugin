@@ -1270,3 +1270,47 @@ test('regression (#224): a table that fits on one page starts on a fresh page in
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('regression (#224 review): a multi-page table starts with header plus first row together and repeats the header on every continuation page', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  try {
+    // 26 filler paragraphs leave a sliver that fits the header row alone
+    // but not header plus first data row; the 50-row table cannot fit any
+    // single page. The table must not open with a stranded header, and
+    // every continuation page must re-draw the header row.
+    const filler = Array.from({ length: 26 }, (_, i) => `Filler${i} pads the page.`).join('\n\n');
+    const table = [
+      '| TBLHDRA | TBLHDRB |',
+      '| --- | --- |',
+      ...Array.from({ length: 50 }, (_, i) => `| TBLROW${i}A | TBLROW${i}B |`),
+    ].join('\n');
+    const source = JSON.parse(readFileSync(fixture, 'utf8'));
+    source.content = `# Pagination fixture\n\n${filler}\n\n${table}\n\nTrailing paragraph.`;
+    writeFileSync(input, JSON.stringify(source));
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+
+    const doc = await PDFDocument.load(readFileSync(out));
+    const pagesWithRows = [];
+    let headerFirstPage = -1;
+    let firstRowPage = -1;
+    for (let p = 0; p < doc.getPageCount(); p++) {
+      const tokens = decodedTextTokens(doc, p);
+      if (headerFirstPage < 0 && tokens.includes('TBLHDRA')) headerFirstPage = p;
+      if (firstRowPage < 0 && tokens.includes('TBLROW0A')) firstRowPage = p;
+      if (tokens.some((t) => /^TBLROW\d+A$/.test(t))) pagesWithRows.push(p);
+    }
+    assert.ok(pagesWithRows.length >= 2, `table must span multiple pages, got row pages: ${pagesWithRows}`);
+    assert.equal(headerFirstPage, firstRowPage, 'a multi-page table must not open with a stranded header row');
+    for (const p of pagesWithRows) {
+      assert.ok(
+        decodedTextTokens(doc, p).includes('TBLHDRA'),
+        `page ${p} shows data rows without a header row`,
+      );
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});

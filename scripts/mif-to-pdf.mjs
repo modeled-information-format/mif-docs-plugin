@@ -735,9 +735,13 @@ function makeRenderer(doc, fonts) {
     );
     // A table that can fit on one page must not straddle a page break —
     // otherwise the header row (or header plus a lone data row) strands at
-    // the bottom of the current page.
+    // the bottom of the current page. A table too tall for any single page
+    // still must not open with a stranded header: it needs at least the
+    // header plus the first data row to fit before starting.
     const totalHeight = rowHeights.reduce((a, b) => a + b, 0);
-    if (y - totalHeight < MARGIN && totalHeight <= PAGE_HEIGHT - MARGIN * 2) newPage();
+    const leadHeight = rowHeights[0] + (rowHeights[1] ?? 0);
+    const keepTogether = totalHeight <= PAGE_HEIGHT - MARGIN * 2 ? totalHeight : leadHeight;
+    if (y - keepTogether < MARGIN) newPage();
 
     function drawRow(wrappedRow, rowHeight) {
       const rowTop = y;
