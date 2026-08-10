@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-10T17:24:20.508Z'
+modified: '2026-08-10T17:31:43.371Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -64,6 +64,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.9.6] - 2026-08-10
 
+### Changed
+
+- Dependabot bump: `js-yaml` 5.2.2 → 5.2.3 (#222).
+
 ### Fixed
 
 - `mif-to-pdf`'s table renderer placed rows with per-row space checks only,
@@ -80,13 +84,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 ### Security
 
 - Resolved the osv-scanner High/Medium advisories that had `sca` failing on
-  `main` and every PR since they published (#226): `dompurify` 3.4.12
-  (GHSA-55q2-fjhq-7xh7, both lockfiles), `js-yaml` 4.3.0
-  (GHSA-5p4m-2wfm-xmqj, `site/`) and `nanoid` 3.3.16 (GHSA-2v37-7h3g-55p8,
-  `site/`), each bumped within its existing semver range — lockfile-only,
-  no manifest changes.
-- Dependabot security-group bumps: `mermaid` in both lockfiles (#217,
-  #218) and `js-yaml` 5.2.2 → 5.2.3 (#222).
+  `main` and every PR since they published (#226), bumping each dependency
+  within its existing semver range — lockfile-only, no manifest changes:
+  `dompurify` 3.4.12 → 3.4.13 (GHSA-55q2-fjhq-7xh7, both lockfiles),
+  `js-yaml` 4.3.0 → 4.3.1 (GHSA-5p4m-2wfm-xmqj, `site/`), and `nanoid`
+  3.3.16 → 3.3.18 (GHSA-2v37-7h3g-55p8, `site/`).
+- Dependabot security-group bumps of `mermaid` in both lockfiles (#217,
+  #218).
 
 ## [0.9.5] - 2026-08-05
 
