@@ -1232,3 +1232,41 @@ test('rejects input missing a required MIF L1 field instead of producing a garba
     rmSync(tmp, { recursive: true, force: true });
   }
 });
+
+test('regression (#224): a table that fits on one page starts on a fresh page instead of stranding its header at a page boundary', async () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'doc.json');
+  const out = join(tmp, 'out.pdf');
+  try {
+    // 26 one-line filler paragraphs leave roughly a header-plus-one-row
+    // sliver at the bottom of page 1: enough space that the unpatched
+    // per-row flow starts the table there, not enough for all seven rows.
+    const filler = Array.from({ length: 26 }, (_, i) => `Filler${i} pads the page.`).join('\n\n');
+    const table = [
+      '| TBLHDRA | TBLHDRB |',
+      '| --- | --- |',
+      ...Array.from({ length: 6 }, (_, i) => `| TBLROW${i}A | TBLROW${i}B |`),
+    ].join('\n');
+    const source = JSON.parse(readFileSync(fixture, 'utf8'));
+    source.content = `# Pagination fixture\n\n${filler}\n\n${table}\n\nTrailing paragraph.`;
+    writeFileSync(input, JSON.stringify(source));
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
+
+    const doc = await PDFDocument.load(readFileSync(out));
+    const pageOf = (token) => {
+      for (let p = 0; p < doc.getPageCount(); p++) {
+        if (decodedTextTokens(doc, p).includes(token)) return p;
+      }
+      return -1;
+    };
+    const headerPage = pageOf('TBLHDRA');
+    const lastRowPage = pageOf('TBLROW5A');
+    assert.ok(headerPage >= 0, 'table header must be drawn');
+    assert.ok(lastRowPage >= 0, 'last table row must be drawn');
+    assert.ok(headerPage > pageOf('Filler0'), 'fixture must actually force a page boundary before the table');
+    assert.equal(headerPage, lastRowPage, 'a one-page table must not split across a page boundary');
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
