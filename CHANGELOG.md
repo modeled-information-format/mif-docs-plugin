@@ -2,7 +2,7 @@
 id: changelog-mif-docs
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-05T02:32:14.854Z'
+modified: '2026-08-10T17:31:43.371Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -22,17 +22,17 @@ provenance:
   '@type': Provenance
   sourceType: agent_inferred
   trustLevel: user_stated
-  agent: claude-code/claude-sonnet-5
+  agent: claude-code/claude-fable-5
   wasAttributedTo:
     '@id': https://github.com/modeled-information-format
     '@type': prov:Agent
   wasGeneratedBy:
-    '@id': urn:mif:activity:claude-code-session:51b3df89-f0ea-4efb-9f66-160be77fa6ca
+    '@id': urn:mif:activity:claude-code-session:f684bec3-ab49-43f8-acf1-3c12faad6484
     '@type': prov:Activity
   wasDerivedFrom:
     - '@id': urn:mif:release:mif-docs-v0.1.0
       '@type': prov:Entity
-  agentVersion: 2.1.221
+  agentVersion: 2.1.226
 citations:
   - '@type': Citation
     citationType: specification
@@ -61,6 +61,36 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.9.6] - 2026-08-10
+
+### Changed
+
+- Dependabot bump: `js-yaml` 5.2.2 → 5.2.3 (#222).
+
+### Fixed
+
+- `mif-to-pdf`'s table renderer placed rows with per-row space checks only,
+  so a table starting near the bottom of a page stranded its header row (or
+  header plus a lone data row) before the remaining rows (#224, #225). Row
+  heights are now precomputed: a table that fits a full page starts on a
+  fresh one; a taller-than-one-page table requires header plus first data
+  row to fit before starting, breaks between rows, and repeats its header
+  on each continuation page. The post-table gap widened to a full line so
+  the following block no longer crowds the bottom border. Both stranding
+  cases are covered by regression tests proven to fail against the
+  unpatched renderer.
+
+### Security
+
+- Resolved the osv-scanner High/Medium advisories that had `sca` failing on
+  `main` and every PR since they published (#226), bumping each dependency
+  within its existing semver range — lockfile-only, no manifest changes:
+  `dompurify` 3.4.12 → 3.4.13 (GHSA-55q2-fjhq-7xh7, both lockfiles),
+  `js-yaml` 4.3.0 → 4.3.1 (GHSA-5p4m-2wfm-xmqj, `site/`), and `nanoid`
+  3.3.16 → 3.3.18 (GHSA-2v37-7h3g-55p8, `site/`).
+- Dependabot security-group bumps of `mermaid` in both lockfiles (#217,
+  #218).
 
 ## [0.9.5] - 2026-08-05
 
