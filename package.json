@@ -29,6 +29,6 @@
     "puppeteer": "25.4.0"
   },
   "devDependencies": {
-    "markdownlint-cli2": "0.23.2"
+    "markdownlint-cli2": "0.23.3"
   }
 }
