@@ -159,7 +159,7 @@ Every script is fail-closed: any failure exits non-zero.
 | `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file); `3` schema cache not hydrated locally (environment gap, not a document failure — run `npm run hydrate-schema`). |
 | `mif-convert.mjs` | `mif-convert <emit-jsonld\|emit-markdown\|roundtrip> <file> [--no-check]` | `0` success; `1` schema check / non-lossless round-trip; `2` usage error. |
 | `mif-to-pdf.mjs` | `mif-to-pdf <doc.json> [--output out.pdf]` | `0` PDF written; `1` unreadable/unparseable input or missing required MIF L1 field; `2` usage error (no file). |
-| `hydrate-schema.mjs` | `hydrate-schema [latest\|<version>]` | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
+| `hydrate-schema.mjs` | `hydrate-schema [<version>\|latest]` (default: the pinned release) | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
 | `hydrate-ontology.mjs` | `hydrate-ontology` | `0` ontology cached from published URI / ontologies repo / local sibling checkout; `1` unresolved. |
 | `validate-ontology.mjs` | `validate-ontology` | `0` ontology valid and all `entity_type` / relationship types resolve; `1` not hydrated or dangling reference. |
 | `validate-plugin.mjs` | `validate-plugin [<plugin-root>]` | `0` `plugin.json`, `marketplace.json`, `.mcp.json`, every `SKILL.md` frontmatter and its `evals/evals.json`, and every `commands/**/*.md` and `agents/**/*.md` frontmatter valid; `1` any structural violation. |
@@ -185,7 +185,9 @@ the node gates accept.
   `temporal`; L3 additionally requires `provenance` and `temporal.validFrom`.
 - `mif-convert emit-markdown` schema-checks the JSON-LD input before projecting,
   unless `--no-check` is given. `roundtrip` reports whether md↔JSON-LD is lossless.
-- `hydrate-schema` resolves `latest` by default and records the resolved version
+- `hydrate-schema` fetches the pinned MIF release (`MIF_SPEC_VERSION` in
+  `scripts/hydrate-schema.mjs`) by default, or `latest`/a version given as its
+  argument, and records the resolved version
   in `schema/VENDOR.lock`; offline, `mif-validate` falls back to the last
   hydrated copy and warns.
 - `planner-check` with no argument checks every recipe under

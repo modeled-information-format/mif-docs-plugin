@@ -59,7 +59,7 @@ entity:
   entity_type: architecture-document
 extensions:
   x-arc42-sections: 12
-  x-c4-companion: arch-c4-mif-docs
+  x-c4-companion: 28c12d34-0a87-50fe-98f5-35612b9a621a
 ---
 
 # mif-docs Plugin — Architecture (arc42)

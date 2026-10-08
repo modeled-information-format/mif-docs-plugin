@@ -17,9 +17,8 @@ import {
 
 const meta = {
   source: 'https://mif-spec.dev/schema',
-  mifSpecVersion: '1.4.1',
-  channel: '1.4.0',
-  resolvedVersion: '1.4.0',
+  channel: '1.4.1',
+  resolvedVersion: '1.4.1',
   files: ['mif.schema.json', 'citation.schema.json'],
 };
 
@@ -33,12 +32,7 @@ test('identical metadata is not a change, regardless of hydratedAt', () => {
 });
 
 test('a different resolvedVersion is a change', () => {
-  const existingLock = { ...meta, resolvedVersion: '1.3.0', hydratedAt: 'x' };
-  assert.equal(lockMetadataChanged(existingLock, meta), true);
-});
-
-test('a different target MIF release is a change', () => {
-  const existingLock = { ...meta, mifSpecVersion: '1.4.0', hydratedAt: 'x' };
+  const existingLock = { ...meta, resolvedVersion: '1.4.0', hydratedAt: 'x' };
   assert.equal(lockMetadataChanged(existingLock, meta), true);
 });
 

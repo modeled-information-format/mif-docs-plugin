@@ -81,13 +81,14 @@ Every MIF document needs three fields. Add them at the top of the file:
 
 ```yaml
 ---
-id: how-to-rotate-credentials
+id: 089659c2-d41f-57ee-845a-17301b334360
 type: procedural
 created: 2026-06-30T12:00:00Z
 ---
 ```
 
-`id` is a stable slug, `type` is the conceptType (`semantic`, `episodic`, or
+`id` is a UUID (MIF 1.4.0+ requires `@id` to be `urn:mif:<uuid>`; a slug fails
+validation), `type` is the conceptType (`semantic`, `episodic`, or
 `procedural`), and `created` is an ISO-8601 timestamp. This is L1 — enough to
 validate and to round-trip.
 

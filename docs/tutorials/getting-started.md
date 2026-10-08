@@ -101,7 +101,7 @@ a genre document with the MIF frontmatter floor on top:
 
 ```markdown
 ---
-id: how-to-clear-the-cache
+id: 2b053e96-5148-5691-a726-e0a8b01d54c0
 type: procedural
 created: 2026-06-30T10:00:00Z
 ---

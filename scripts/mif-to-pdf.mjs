@@ -207,7 +207,7 @@ function readJsonld(file) {
   const hasType = jsonld.conceptType !== undefined || jsonld.memoryType !== undefined;
   if (jsonld["@id"] === undefined || !hasType || jsonld.created === undefined) {
     console.error(
-      `mif-to-pdf: ${file} is missing a required MIF L1 field (@id/conceptType/created) — ` +
+      `mif-to-pdf: ${file} is missing a required MIF L1 field (@id, conceptType or memoryType, created) — ` +
         "not a MIF JSON-LD document. For a Markdown source, convert it first with " +
         "`node scripts/mif-convert.mjs emit-jsonld <doc.md>` and gate it with `mif-validate`.",
     );

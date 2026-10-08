@@ -23,16 +23,13 @@ const CACHE = join(ROOT, "schema", ".cache");
 const LOCK = join(ROOT, "schema", "VENDOR.lock");
 
 const BASE = "https://mif-spec.dev/schema";
-// The MIF release this plugin targets. Releases are coordinated across the MIF
-// tools, so the schema is pinned, never the floating `latest`: a new MIF
-// release cannot change what CI validates against until this pin moves.
+// The MIF release this plugin targets, fetched from its immutable
+// /schema/<version>/ mirror. Releases are coordinated across the MIF tools, so
+// the schema is pinned, never the floating `latest`: a new MIF release cannot
+// change what CI validates against until this pin moves.
 const MIF_SPEC_VERSION = "1.4.1";
-// The immutable mirror the files are fetched from. MIF 1.4.1 ships no schema
-// changes, so its byte-identical 1.4.0 mirror serves until /schema/1.4.1/ is
-// published; then set this to MIF_SPEC_VERSION.
-const SCHEMA_MIRROR = "1.4.0";
 // Pinned by default; override with `node hydrate-schema.mjs latest` or 1.3.0.
-const arg = process.argv[2] || SCHEMA_MIRROR;
+const arg = process.argv[2] || MIF_SPEC_VERSION;
 const channel = arg.replace(/^v/, "");
 
 const FILES = [
@@ -64,13 +61,13 @@ function readExisting(path) {
 async function main() {
   // Resolve `latest` alias to a concrete version via the catalog index.
   let resolved = channel;
-  try {
-    const idx = JSON.parse(await fetchText(`${BASE}/index.json`));
-    if (channel === "latest") {
+  if (channel === "latest") {
+    try {
+      const idx = JSON.parse(await fetchText(`${BASE}/index.json`));
       resolved = idx.aliases?.latest || idx.versions?.at(-1) || "latest";
+    } catch {
+      // index optional; fall back to the channel string in the path.
     }
-  } catch {
-    // index optional; fall back to the channel string in the path.
   }
 
   const versionSeg = channel === "latest" ? "latest" : channel;
@@ -98,7 +95,6 @@ async function main() {
   const existingLock = parseLock(readExisting(LOCK));
   const meta = {
     source: BASE,
-    mifSpecVersion: MIF_SPEC_VERSION,
     channel,
     resolvedVersion: resolved,
     files: fetched,

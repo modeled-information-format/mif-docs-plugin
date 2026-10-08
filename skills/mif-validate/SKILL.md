@@ -38,9 +38,9 @@ reporting an `emit-jsonld`/`emit-markdown`/`roundtrip` result.
 ## The schema is a refreshable cache, never the authority
 
 The bundled schema hydrates from `mif-spec.dev` into `schema/.cache/<ver>/`
-from a pinned release mirror, never the floating `latest`: `VENDOR.lock`
-records the MIF release this plugin targets (`mifSpecVersion`, 1.4.1) and the
-mirror the files came from (`resolvedVersion`). Offline, validation
+from the pinned MIF release's mirror (`MIF_SPEC_VERSION` in
+`scripts/hydrate-schema.mjs`), never the floating `latest`; `schema/VENDOR.lock`
+records the resolved version. Offline, validation
 falls back to the last hydrated version and warns. Determinism holds *within* a
 resolved version.
 

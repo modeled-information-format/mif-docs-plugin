@@ -65,7 +65,7 @@ entity:
   entity_type: runbook
 extensions:
   x-runbook-type: tactical
-  x-related-adr: adr-0003-attested-delivery
+  x-related-adr: a955b16b-f8bc-5676-abce-5c0ae60d9f10
 ---
 
 # mif-docs: Cut an Attested Release

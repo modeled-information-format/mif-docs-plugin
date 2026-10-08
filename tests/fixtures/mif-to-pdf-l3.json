@@ -45,7 +45,7 @@
     }
   ],
   "relationships": [
-    { "type": "relates-to", "target": "urn:mif:reference-skill-mif-to-pdf" }
+    { "type": "relates-to", "target": "urn:mif:92a151d5-4a2e-5bef-a34d-4338d3e5a430" }
   ],
   "entity": {
     "name": "mif-to-pdf fixture author",

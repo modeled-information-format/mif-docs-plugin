@@ -53,7 +53,7 @@
           "type": "json_field_equals",
           "file": "arc42-good.jsonld",
           "path": "@id",
-          "expected": "urn:mif:arc42-linkly",
+          "expected": "urn:mif:c5a6e64c-893c-51eb-b31c-fc7ba37f37d8",
           "description": "@id matches the canonical id from the source doc's frontmatter"
         },
         {
@@ -70,7 +70,7 @@
     },
     {
       "id": 3,
-      "prompt": "I have this MIF JSON-LD object from an internal API and I need the human-readable markdown version to paste into our wiki. Save it as restored.md.\n\n```json\n{\n  \"@context\": \"https://mif-spec.dev/schema/context.jsonld\",\n  \"@type\": \"Concept\",\n  \"@id\": \"urn:mif:scratch-note-api-timeout\",\n  \"conceptType\": \"semantic\",\n  \"created\": \"2026-06-29T10:00:00Z\",\n  \"content\": \"# API Timeout Note\\n\\nThe payments API times out after 30s under load.\"\n}\n```",
+      "prompt": "I have this MIF JSON-LD object from an internal API and I need the human-readable markdown version to paste into our wiki. Save it as restored.md.\n\n```json\n{\n  \"@context\": \"https://mif-spec.dev/schema/context.jsonld\",\n  \"@type\": \"Concept\",\n  \"@id\": \"urn:mif:404c33f0-3023-5844-868e-335e7326a345\",\n  \"conceptType\": \"semantic\",\n  \"created\": \"2026-06-29T10:00:00Z\",\n  \"content\": \"# API Timeout Note\\n\\nThe payments API times out after 30s under load.\"\n}\n```",
       "expected_output": "Schema-checks the JSON-LD first, then runs `node scripts/mif-convert.mjs emit-markdown` on it, producing restored.md with YAML frontmatter (id, type, created) followed by the body.",
       "files": [],
       "deterministic_checks": [
@@ -153,7 +153,7 @@
     },
     {
       "id": 6,
-      "prompt": "skills/feature-spec/templates/good.md only needs to clear Level 1 right now, but I want to know exactly what's still missing for Level 2 so I can plan the follow-up. Check it at --level 2 and save the results to level2-gap-report.md. Use a scratch copy at scratch-l1.md that has only the core fields (id, type, created) so the gap is obvious.\n\n```markdown\n---\nid: urn:mif:test-doc-scratch\ntype: semantic\ncreated: 2026-06-29T10:00:00Z\ntitle: Scratch Note\n---\n\n# Scratch Note\n\nMinimal L1 content.\n```",
+      "prompt": "skills/feature-spec/templates/good.md only needs to clear Level 1 right now, but I want to know exactly what's still missing for Level 2 so I can plan the follow-up. Check it at --level 2 and save the results to level2-gap-report.md. Use a scratch copy at scratch-l1.md that has only the core fields (id, type, created) so the gap is obvious.\n\n```markdown\n---\nid: urn:mif:f8ec8db9-6d3b-5ebb-a48c-c93b44e69449\ntype: semantic\ncreated: 2026-06-29T10:00:00Z\ntitle: Scratch Note\n---\n\n# Scratch Note\n\nMinimal L1 content.\n```",
       "expected_output": "Saves the scratch doc as scratch-l1.md, runs mif-validate at --level 2, gets a non-zero exit, and reports the specific missing Level 2 fields (namespace, modified, temporal) in level2-gap-report.md rather than a generic failure.",
       "files": [],
       "deterministic_checks": [

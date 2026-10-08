@@ -1,0 +1,36 @@
+# OSV-Scanner configuration.
+#
+# Accepted, justified vulnerability exceptions. Each entry is a deliberate risk
+# decision, not a silent suppression: no fix inside the range the dependent
+# package allows (or no fix at all), build-time or dev-only reach, and no
+# untrusted input. Revisit on each release.
+
+[[IgnoredVulns]]
+id = "GHSA-238p-pmpm-9mq7"
+# katex 0.16.47, CVSS 2.1 (low). Pulled in only by mermaid (via
+# @mermaid-js/mermaid-cli and astro-mermaid), which pins katex ^0.16; the fix
+# is 0.18.2, outside that range. Exploiting it requires prototype pollution
+# already present in the page. Remove once mermaid accepts katex >= 0.18.2.
+reason = "Low-severity katex advisory requiring pre-existing prototype pollution; only reachable through mermaid, which pins katex ^0.16 (fix is 0.18.2). Revisit when mermaid bumps katex."
+
+[[IgnoredVulns]]
+id = "GHSA-vfj7-8cjw-p6xm"
+# braces 3.0.3: stack-exhaustion DoS on deeply nested brace patterns. No fixed
+# release exists. Dev/build-time only (micromatch), matching patterns from this
+# repo's own config, never user input. Remove once braces ships a fix.
+reason = "No fixed braces release exists; dev/build-time-only transitive matching repo-authored patterns, never untrusted input. Revisit when braces ships a fix."
+
+[[IgnoredVulns]]
+id = "GHSA-r4xh-jqrq-34v2"
+# smol-toml 1.8.0: quadratic-time parse(). Dev-only: markdownlint-cli2 0.23.3
+# (its latest release) pins smol-toml exactly at 1.8.0, and it only parses this
+# repo's own markdownlint config. Remove once markdownlint-cli2 moves to >= 1.9.0.
+reason = "Dev-only quadratic parse in smol-toml, pinned exactly by markdownlint-cli2 (latest) and fed only this repo's lint config. Revisit when markdownlint-cli2 bumps smol-toml."
+
+[[IgnoredVulns]]
+id = "GHSA-rj75-hqrm-r3gf"
+# postcss-selector-parser 6.1.4: quadratic selector parsing (CPU exhaustion).
+# Build-time only, via @astrojs/starlight -> expressive-code -> postcss-nested,
+# which requires ^6; the fix is 7.1.6. It parses this site's own CSS at build
+# time, never user input, and nothing of it ships in the static output.
+reason = "Build-time-only CPU-exhaustion in postcss-selector-parser, reachable via starlight's expressive-code (postcss-nested requires ^6; fix is 7.1.6) on repo-authored CSS. Revisit when postcss-nested accepts v7."

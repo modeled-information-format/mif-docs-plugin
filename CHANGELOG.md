@@ -62,23 +62,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Aligns mif-docs with MIF specification **1.4.1** (which carries the 1.4.0
-schema and id rules unchanged).
+Aligns mif-docs with MIF specification **1.4.1**.
 
 ### Changed
 
-- **Schema pin**: `hydrate-schema` fetches a pinned release mirror instead of
-  the floating `latest`, so a new MIF release no longer changes what CI
-  validates against. `VENDOR.lock` records the target release
-  (`mifSpecVersion: 1.4.1`) and the mirror the files come from (1.4.0's,
-  byte-identical, until 1.4.1's is published). `node
-  scripts/hydrate-schema.mjs latest` still fetches the newest release.
+- **Schema pin**: `hydrate-schema` fetches the pinned MIF release's mirror
+  (`MIF_SPEC_VERSION`, 1.4.1, in `scripts/hydrate-schema.mjs`) instead of the
+  floating `latest`, so a new MIF release no longer changes what CI validates
+  against. `node scripts/hydrate-schema.mjs latest` still fetches the newest
+  release, and `index.json` is fetched only then.
 - **Ids (breaking for content)**: MIF 1.4.0 requires a concept `@id` of
   `urn:mif:<uuid>`. Every template and doc `id`, and every `urn:mif:`
   reference to one (relationship targets, provenance `wasDerivedFrom`), moves
   from its slug to `uuid5(uuid5(NAMESPACE_URL, "https://mif-spec.dev"), slug)`,
-  the derivation MIF's migration script and mif-rs use. Reserved
-  `urn:mif:activity:` and other non-concept provenance ids are unchanged.
+  the derivation MIF's migration script and mif-rs use; so do the `id:`
+  examples in the tutorials, how-to and evals, and the `x-related-adr` /
+  `x-c4-companion` cross-references. Reserved `urn:mif:activity:` and other
+  non-concept provenance ids are unchanged.
 - **`mif-frontmatter`**: `id` MUST be a UUID; the skill says how to mint or
   derive one.
 - **`mif-validate`**: says a per-document pass meets the L1 document floor, and
@@ -86,13 +86,22 @@ schema and id rules unchanged).
 - **`schema/profiles/level-1.json`**: description matches 1.4.0's L1 core
   (UUID `@id`; `conceptType` or the deprecated `memoryType`).
 
+### Security
+
+- **Deps**: in-range updates clear the osv-scanner findings: `astro` 7.2.8
+  (site), `js-yaml` 5.4.1, `dompurify` 3.4.16, `fast-uri` 3.1.8, `devalue`
+  5.9.4 and others. `osv-scanner.toml` (root and `site/`) records four
+  exceptions with no fix in range: katex, braces, smol-toml, and
+  postcss-selector-parser, each build-time or dev-only.
+
 ### Fixed
 
 - **`hydrate-schema`**: `latest` resolves through `index.json`'s
   `aliases.latest` (the field the catalog publishes), not a nonexistent
   top-level `latest`.
-- **`mif-to-pdf`**: accepts a document typed only by the deprecated
-  `memoryType`, which MIF 1.4.0's schema allows.
+- **`mif-validate`/`mif-convert`/`mif-to-pdf`**: accept a document typed only
+  by the deprecated `memoryType`, which MIF 1.4.0's schema allows; the
+  projection passes `memoryType` through and synthesizes no `conceptType`.
 
 ## [0.9.6] - 2026-08-10
 
