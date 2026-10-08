@@ -1,5 +1,5 @@
 ---
-id: changelog-bad-example
+id: e3c243f6-38e3-53a5-bfea-4fa4c307ce29
 type: episodic
 created: 2026-06-29T10:00:00Z
 namespace: changelog/antipattern

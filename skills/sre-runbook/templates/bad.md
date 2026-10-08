@@ -1,5 +1,5 @@
 ---
-id: runbook-bad-example
+id: 67ae6b14-f080-598a-a97e-34cc31c47291
 type: procedural
 created: 2026-06-29T10:00:00Z
 namespace: runbook/antipattern

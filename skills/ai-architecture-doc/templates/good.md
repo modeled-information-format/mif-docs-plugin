@@ -1,5 +1,5 @@
 ---
-id: ai-arch-notification-service
+id: 38318b96-f10a-5a58-ab32-1001512ee8d7
 type: semantic
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

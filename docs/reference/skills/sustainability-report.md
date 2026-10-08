@@ -1,5 +1,5 @@
 ---
-id: reference-skill-sustainability-report
+id: 278cf759-4342-5ec0-81c1-e003ed3174ef
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -47,9 +47,9 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/sustainability-report
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-engineering
+    target: urn:mif:d60dba7d-ef07-5ed0-a013-1b0b5e9b1ace
 ontology:
   '@type': OntologyReference
   id: mif-docs

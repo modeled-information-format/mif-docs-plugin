@@ -474,7 +474,7 @@ test('regression: naive extraction preserves line boundaries in code blocks and 
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:line-boundaries',
+      '@id': 'urn:mif:c5b460d6-f82f-586f-9d54-298717695b15',
       conceptType: 'semantic',
       created: '2026-07-16T12:00:00Z',
       title: 'Line boundary fixture',
@@ -545,7 +545,7 @@ test('regression: no duplicate title when the body opens with an H1 matching the
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:title-dedup',
+      '@id': 'urn:mif:f6802109-51cb-55da-9301-2c3ab5c27304',
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title,
@@ -597,7 +597,7 @@ test('regression: a short/acronym title that happens to be a substring of an unr
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:short-title-collision',
+      '@id': 'urn:mif:3265f3c8-a146-5a02-a063-ea1e57fc86a3',
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'API',
@@ -628,7 +628,7 @@ test('regression: an ordinary prose prefix before a colon does not falsely count
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:prose-prefix-collision',
+      '@id': 'urn:mif:8a54876d-cad0-5ac8-84be-5430ceac493d',
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'API',
@@ -661,7 +661,7 @@ test('regression: a fenced code block (e.g. Python) renders as legible line-pres
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:codeblock',
+      '@id': 'urn:mif:1e54491f-d83d-5ef7-9827-83dc41fa9f56',
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'Codeblock fixture',
@@ -738,7 +738,7 @@ test('regression: a ```mermaid fence renders as a real embedded diagram image, n
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:mermaid-graphic',
+      '@id': 'urn:mif:a469c0af-3f68-59f4-8e1e-137889872241',
       conceptType: 'semantic',
       created: '2026-07-16T12:00:00Z',
       title: 'Mermaid graphic fixture',
@@ -782,7 +782,7 @@ test('regression: a quadrantChart with a long quadrant label renders at a widene
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:mermaid-quadrant-width',
+      '@id': 'urn:mif:fb679650-e653-5124-833f-c52794081051',
       conceptType: 'semantic',
       created: '2026-07-16T12:00:00Z',
       title: 'Quadrant width fixture',
@@ -818,7 +818,7 @@ test('regression: a ```mermaid fence with invalid diagram syntax falls back to l
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:mermaid-fallback',
+      '@id': 'urn:mif:249ce3ef-dab9-58fa-b88f-dcb00ef8d45f',
       conceptType: 'semantic',
       created: '2026-07-16T12:00:00Z',
       title: 'Mermaid fallback fixture',
@@ -846,7 +846,7 @@ test('regression: a blockquote renders without leaking its literal > marker as v
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:blockquote',
+      '@id': 'urn:mif:4d337fd9-4901-509b-88f9-fada9fcb2065',
       conceptType: 'semantic',
       created: '2026-07-15T12:00:00Z',
       title: 'Blockquote fixture',
@@ -876,7 +876,7 @@ test('regression (#154): a long inline code span in a table cell wraps within it
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:codespan-table-overflow',
+      '@id': 'urn:mif:fceb252c-1395-568f-8e60-abef2c62d85e',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'Codespan table overflow fixture',
@@ -973,7 +973,7 @@ test('regression (#154): the shared wrapTokens fix also covers a paragraph with 
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:paragraph-long-link',
+      '@id': 'urn:mif:ec74d7ea-a9df-5c96-8f21-cefb9ca7ba5f',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'Paragraph long link fixture',
@@ -1048,7 +1048,7 @@ test('regression (#154): a table row with a wrapped multi-line cell grows to fit
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:table-row-height',
+      '@id': 'urn:mif:6b527977-387f-54cc-890f-a32d11380099',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'Table row height fixture',
@@ -1105,7 +1105,7 @@ test('regression (#153): a paragraph containing an arrow (U+2192, outside WinAns
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:winansi-arrow',
+      '@id': 'urn:mif:946b9830-ecf6-5925-af6f-cad63cd7c8e5',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'WinAnsi arrow fixture',
@@ -1138,7 +1138,7 @@ test('regression (#153): a fenced code block containing an unencodable character
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:winansi-arrow-codeblock',
+      '@id': 'urn:mif:f8a820c1-880a-5e19-ac79-b23845edf0da',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'WinAnsi arrow codeblock fixture',
@@ -1166,7 +1166,7 @@ test('regression (#153): a fenced code block whose info string (the [lang] label
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:winansi-arrow-fence-lang',
+      '@id': 'urn:mif:d3ebc867-7940-597d-aebd-781c71b43c78',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'WinAnsi arrow fence-lang fixture',
@@ -1198,7 +1198,7 @@ test('regression (#153): a character with no known ASCII fallback (outside WINAN
   writeFileSync(
     input,
     JSON.stringify({
-      '@id': 'urn:mif:concept:test:winansi-unmapped-char',
+      '@id': 'urn:mif:5dbbce6e-ddab-5d78-8bad-05a913ba206f',
       conceptType: 'semantic',
       created: '2026-07-18T12:00:00Z',
       title: 'WinAnsi unmapped character fixture',
@@ -1228,6 +1228,22 @@ test('rejects input missing a required MIF L1 field instead of producing a garba
     const r = runConverter(badInput, out);
     assert.equal(r.status, 1, 'non-MIF input must be rejected, not silently converted');
     assert.match(r.stderr, /missing a required MIF L1 field/);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test('accepts a document typed only by the deprecated memoryType (MIF 1.4.0)', () => {
+  const tmp = mkdtempSync(join(tmpdir(), 'mif-to-pdf-'));
+  const input = join(tmp, 'memory-type.json');
+  const out = join(tmp, 'out.pdf');
+  const doc = JSON.parse(readFileSync(fixture, 'utf8'));
+  doc.memoryType = doc.conceptType;
+  delete doc.conceptType;
+  writeFileSync(input, JSON.stringify(doc));
+  try {
+    const r = runConverter(input, out);
+    assert.equal(r.status, 0, r.stderr);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

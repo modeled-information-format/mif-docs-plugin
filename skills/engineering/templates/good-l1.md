@@ -1,5 +1,5 @@
 ---
-id: engineering-report-event-pipeline-mq
+id: dae48782-b4ce-5379-9abe-349e88672d38
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

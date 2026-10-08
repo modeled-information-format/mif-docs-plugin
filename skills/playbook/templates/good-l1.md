@@ -1,5 +1,5 @@
 ---
-id: playbook-sev1-outage
+id: a1dd36cd-8239-5d9a-be22-a90a2297ecce
 type: procedural
 created: 2026-06-29T10:00:00Z
 ---

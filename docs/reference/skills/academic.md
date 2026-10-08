@@ -1,5 +1,5 @@
 ---
-id: reference-skill-academic
+id: 7421a39d-94e1-54f4-9b79-a16751980ba5
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -46,11 +46,11 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/academic
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-engineering
+    target: urn:mif:d60dba7d-ef07-5ed0-a013-1b0b5e9b1ace
   - type: relates-to
-    target: urn:mif:reference-skill-google-design-doc
+    target: urn:mif:b2030d2f-0690-55f3-a64e-de659e0962f0
 ontology:
   '@type': OntologyReference
   id: mif-docs

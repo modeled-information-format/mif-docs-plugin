@@ -1,5 +1,5 @@
 ---
-id: reference-skill-mif-provenance
+id: c3dff367-13f4-52d2-9269-aad0bce695db
 type: semantic
 created: '2026-07-11T12:00:00Z'
 modified: '2026-07-28T22:29:59.646Z'
@@ -53,19 +53,19 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/mif-provenance
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-mif-frontmatter
+    target: urn:mif:776e28a8-7fd8-5a5d-b477-efde9b5358cc
   - type: relates-to
-    target: urn:mif:reference-skill-mif-validate
+    target: urn:mif:e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
   - type: relates-to
-    target: urn:mif:reference-provenance-ledger
+    target: urn:mif:428d53ce-77ee-5efc-ac7a-8a578afd6648
   - type: relates-to
-    target: urn:mif:how-to-witness-document-provenance
+    target: urn:mif:83ad8db9-625b-5714-9c40-3cdbb1e7d5a0
   - type: relates-to
-    target: urn:mif:explanation-witnessed-provenance
+    target: urn:mif:dd470312-e54f-5f45-8683-d97012a40c1c
   - type: derived-from
-    target: urn:mif:adr-0005-provenance-consent
+    target: urn:mif:bd9b282a-4701-5550-b898-87184c4bab7b
 ontology:
   '@type': OntologyReference
   id: mif-docs

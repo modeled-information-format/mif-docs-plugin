@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:mif-docs-plugin/mif-to-pdf:fixture-rich",
+  "@id": "urn:mif:17f02064-5fc6-5326-b374-8e527261700d",
   "conceptType": "semantic",
   "created": "2026-07-15T12:00:00Z",
   "modified": "2026-07-15T13:30:00Z",

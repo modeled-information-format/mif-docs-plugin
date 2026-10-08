@@ -1,5 +1,5 @@
 ---
-id: kiro-tasks-avatar-upload
+id: 83c09437-64e3-5c8d-84ca-2372983a09b3
 type: procedural
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

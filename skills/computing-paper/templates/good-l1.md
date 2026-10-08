@@ -1,5 +1,5 @@
 ---
-id: computing-paper-adaptive-batch-scheduler
+id: 1546a5bb-3df3-5399-babc-9ff44a3ac7cb
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

@@ -1,5 +1,5 @@
 ---
-id: market-research-report-bad-example
+id: d31c6a76-06d4-5bbf-84de-4740de25ebd8
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: market-research-report/antipattern

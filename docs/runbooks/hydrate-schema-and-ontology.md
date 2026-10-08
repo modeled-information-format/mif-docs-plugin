@@ -1,5 +1,5 @@
 ---
-id: runbook-hydrate-schema-ontology
+id: bc3f1a0a-10d8-59ee-830b-0279b1ed897d
 type: procedural
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'
@@ -33,7 +33,7 @@ provenance:
     '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
-    - '@id': urn:mif:adr-0002-ontologies-separate-repo
+    - '@id': urn:mif:13632ae1-eacd-5103-ab53-859403025359
       '@type': prov:Entity
     - '@id': https://mif-spec.dev/schema/
       '@type': prov:Entity
@@ -51,7 +51,7 @@ citations:
     url: https://github.com/modeled-information-format/ontologies
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0002-ontologies-separate-repo
+    target: urn:mif:13632ae1-eacd-5103-ab53-859403025359
 entity:
   name: mif-docs Hydrate Schema and Ontology Caches
   entity_type: runbook

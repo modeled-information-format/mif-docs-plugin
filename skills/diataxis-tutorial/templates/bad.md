@@ -1,5 +1,5 @@
 ---
-id: tutorial-bad-example
+id: a930f963-1688-578c-9262-b50d1cc4ebc5
 type: procedural
 created: 2026-06-29T10:00:00Z
 namespace: tutorials/antipattern

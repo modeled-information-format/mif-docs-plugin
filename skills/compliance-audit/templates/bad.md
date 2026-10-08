@@ -1,5 +1,5 @@
 ---
-id: compliance-audit-bad-example
+id: 16f511a4-626a-5e55-8d6c-9b57763cc478
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: compliance-audit/antipattern

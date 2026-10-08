@@ -1,5 +1,5 @@
 ---
-id: humanities-essay-remains-of-the-day-unreliable-narration
+id: cd9065a3-8f6c-5fb0-b1f9-ab87873e5e5e
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

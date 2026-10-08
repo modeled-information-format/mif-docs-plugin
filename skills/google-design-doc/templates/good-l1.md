@@ -1,5 +1,5 @@
 ---
-id: design-webhook-delivery-service
+id: e826f086-8164-5c90-bcd9-8883265c3007
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

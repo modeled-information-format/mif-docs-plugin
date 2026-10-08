@@ -1,5 +1,5 @@
 ---
-id: tutorial-first-mif-doc
+id: 6ee94237-a5f3-5545-b720-c2b102e186c9
 type: procedural
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

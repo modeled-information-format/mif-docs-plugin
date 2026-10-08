@@ -1,5 +1,5 @@
 ---
-id: business-plan-meridian-cold-brew-2026
+id: c29d5dba-32cc-5945-bc5a-f0a52f96e839
 type: semantic
 created: '2026-07-15T09:00:00Z'
 modified: '2026-07-15T18:00:00Z'

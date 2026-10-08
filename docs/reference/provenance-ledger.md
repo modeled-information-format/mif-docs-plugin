@@ -1,5 +1,5 @@
 ---
-id: reference-provenance-ledger
+id: 428d53ce-77ee-5efc-ac7a-8a578afd6648
 type: semantic
 created: '2026-07-11T12:00:00Z'
 modified: '2026-07-17T12:43:05.439Z'
@@ -47,9 +47,9 @@ citations:
     accessed: '2026-07-11'
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skill-mif-provenance
+    target: urn:mif:c3dff367-13f4-52d2-9269-aad0bce695db
   - type: derived-from
-    target: urn:mif:adr-0005-provenance-consent
+    target: urn:mif:bd9b282a-4701-5550-b898-87184c4bab7b
 ontology:
   '@type': OntologyReference
   id: mif-docs

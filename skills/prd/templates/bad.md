@@ -1,5 +1,5 @@
 ---
-id: prd-bad-example
+id: cf083639-63cf-5e4c-b76a-ec87d6776148
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: prd/antipattern

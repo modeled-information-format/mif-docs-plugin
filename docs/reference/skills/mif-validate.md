@@ -1,5 +1,5 @@
 ---
-id: reference-skill-mif-validate
+id: e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-07-12T02:37:45.074Z'
@@ -59,13 +59,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/mif-validate
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-mif-frontmatter
+    target: urn:mif:776e28a8-7fd8-5a5d-b477-efde9b5358cc
   - type: relates-to
-    target: urn:mif:reference-skill-ears-acceptance-criteria
+    target: urn:mif:6a9f7095-2d06-51d9-90be-0be973fe887e
   - type: relates-to
-    target: urn:mif:reference-skill-doc-set-planner
+    target: urn:mif:f8d4c638-fac3-5c75-b314-c7a5f047a81d
 ontology:
   '@type': OntologyReference
   id: mif-docs

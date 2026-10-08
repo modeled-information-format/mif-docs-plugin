@@ -1,5 +1,5 @@
 ---
-id: regulatory-disclosure-bad-example
+id: ff625631-8e09-5eb4-a33d-0c00065f6980
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: regulatory-disclosure/antipattern

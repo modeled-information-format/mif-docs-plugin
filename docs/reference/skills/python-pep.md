@@ -1,5 +1,5 @@
 ---
-id: reference-skill-python-pep
+id: 04f2e11f-67d6-567e-8ddd-871d812c7df5
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -52,11 +52,11 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/python-pep
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-adr
+    target: urn:mif:9308c842-4ad0-522d-b247-ba65030c9eb4
   - type: relates-to
-    target: urn:mif:reference-skill-rust-rfc
+    target: urn:mif:3abcc98b-23f7-5857-b2e3-7598013b89ac
 ontology:
   '@type': OntologyReference
   id: mif-docs

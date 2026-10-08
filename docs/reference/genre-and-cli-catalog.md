@@ -1,5 +1,5 @@
 ---
-id: reference-genre-and-cli
+id: d0a5927e-bee7-5329-968b-3f52e09415ef
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-08-04T15:39:41.700Z'
@@ -45,15 +45,15 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:tutorial-getting-started
+    target: urn:mif:febcf412-08e4-5822-b8a4-00a3e805fa30
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
   - type: relates-to
-    target: urn:mif:explanation-one-artifact-two-readers
+    target: urn:mif:a98891ee-c607-5dd9-8de4-13baac87616e
   - type: relates-to
-    target: urn:mif:explanation-documentation-taxonomy
+    target: urn:mif:4ddf37e9-f934-506d-b526-0fc619ed0018
 ontology:
   '@type': OntologyReference
   id: mif-docs

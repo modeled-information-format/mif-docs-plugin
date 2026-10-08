@@ -1,5 +1,5 @@
 ---
-id: pep-bad-example
+id: 4a650759-5263-506b-b9c3-d47e8210aaa9
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: pep/antipattern

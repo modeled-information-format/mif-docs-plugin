@@ -22,6 +22,12 @@ schema at `https://mif-spec.dev/schema/`.
 
 Fail-closed: any failure exits non-zero.
 
+These are per-document checks. MIF 1.4.0+ Level 1 (spec §13.1) also requires
+the document to sit in an OKF bundle (a directory of `.md` concept files, each
+frontmatter relationship mirrored by a body link), which a single-document
+check cannot see; report a per-document pass as "meets the L1 document floor",
+not as bundle-level conformance.
+
 ## When reporting results
 
 State the properties above as part of the answer, not just in your own
@@ -31,8 +37,10 @@ reporting an `emit-jsonld`/`emit-markdown`/`roundtrip` result.
 
 ## The schema is a refreshable cache, never the authority
 
-The bundled schema auto-hydrates from `mif-spec.dev` into `schema/.cache/<ver>/`
-and the resolved version is pinned in `schema/VENDOR.lock`. Offline, validation
+The bundled schema hydrates from `mif-spec.dev` into `schema/.cache/<ver>/`
+from a pinned release mirror, never the floating `latest`: `VENDOR.lock`
+records the MIF release this plugin targets (`mifSpecVersion`, 1.4.1) and the
+mirror the files came from (`resolvedVersion`). Offline, validation
 falls back to the last hydrated version and warns. Determinism holds *within* a
 resolved version.
 

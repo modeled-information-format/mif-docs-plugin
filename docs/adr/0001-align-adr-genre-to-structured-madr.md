@@ -6,7 +6,7 @@ description: >-
   check, so ADRs never diverge from the ecosystem.
 type: adr
 conceptType: semantic
-id: adr-0001-align-adr-to-smadr
+id: 92081186-1dc9-55e0-97aa-9a9a2b587e85
 namespace: adr/mif-docs
 x-ontology:
   id: mif-docs
@@ -66,9 +66,9 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0002-ontologies-separate-repo
+    target: urn:mif:13632ae1-eacd-5103-ab53-859403025359
   - type: relates-to
-    target: urn:mif:adr-0003-attested-delivery
+    target: urn:mif:a955b16b-f8bc-5676-abce-5c0ae60d9f10
 summary: >-
   The flagship adr genre aligns fully to Structured MADR; the structured-madr
   Action is the authority for ADR validation in both smadr (strict) and mif

@@ -1,5 +1,5 @@
 ---
-id: reference-skill-computing-paper
+id: 08e1d463-f6d5-5f7c-83d6-01f61109a39b
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -46,9 +46,9 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/computing-paper
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-engineering
+    target: urn:mif:d60dba7d-ef07-5ed0-a013-1b0b5e9b1ace
 ontology:
   '@type': OntologyReference
   id: mif-docs

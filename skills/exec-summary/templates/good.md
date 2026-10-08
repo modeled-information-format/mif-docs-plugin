@@ -1,5 +1,5 @@
 ---
-id: exec-summary-data-warehouse-consolidation
+id: 633882c9-2ee6-5a71-ab13-5e7f88572d01
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'

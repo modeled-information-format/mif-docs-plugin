@@ -1,5 +1,5 @@
 ---
-id: trend-analysis-data-center-electricity-demand
+id: a8417666-40b8-5c87-96b6-2755c7e7c48a
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'

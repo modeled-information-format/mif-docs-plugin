@@ -1,5 +1,5 @@
 ---
-id: briefing-payments-migration-2026-06-30
+id: 2dd4d215-16f9-590b-8625-ac814c0cae6b
 type: episodic
 created: '2026-06-30T09:00:00Z'
 modified: '2026-06-30T09:00:00Z'

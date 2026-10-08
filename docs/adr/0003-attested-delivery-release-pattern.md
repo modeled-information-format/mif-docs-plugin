@@ -6,7 +6,7 @@ description: >-
   verification before upload — so every release is independently verifiable.
 type: adr
 conceptType: semantic
-id: adr-0003-attested-delivery
+id: a955b16b-f8bc-5676-abce-5c0ae60d9f10
 namespace: adr/mif-docs
 x-ontology:
   id: mif-docs
@@ -75,11 +75,11 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0001-align-adr-to-smadr
+    target: urn:mif:92081186-1dc9-55e0-97aa-9a9a2b587e85
   - type: relates-to
-    target: urn:mif:adr-0002-ontologies-separate-repo
+    target: urn:mif:13632ae1-eacd-5103-ab53-859403025359
   - type: realized-by
-    target: urn:mif:runbook-cut-attested-release
+    target: urn:mif:bcb731a5-1b66-5990-af7a-f68629fe3be1
 summary: >-
   From v0.1.0, releases are reproducible git-archive tarballs carrying SLSA build
   provenance, fail-closed verified before upload; modeled on

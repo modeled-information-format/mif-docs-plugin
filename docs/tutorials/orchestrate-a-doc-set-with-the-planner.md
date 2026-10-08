@@ -1,5 +1,5 @@
 ---
-id: tutorial-orchestrate-doc-set
+id: f747abd7-447b-5067-8809-83d9b3b5c22d
 type: procedural
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -17,13 +17,13 @@ temporal:
   recordedAt: '2026-06-30T12:00:00Z'
 relationships:
   - type: relates-to
-    target: urn:mif:tutorial-getting-started
+    target: urn:mif:febcf412-08e4-5822-b8a4-00a3e805fa30
   - type: relates-to
-    target: urn:mif:tutorial-compose-spec-set
+    target: urn:mif:9e3c36be-da5d-5b14-b1f0-d1d58284f9c0
   - type: relates-to
-    target: urn:mif:reference-skill-doc-set-planner
+    target: urn:mif:f8d4c638-fac3-5c75-b314-c7a5f047a81d
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ontology:
   '@type': OntologyReference
   id: mif-docs

@@ -1,5 +1,5 @@
 ---
-id: changelog-mif-docs
+id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
 modified: '2026-08-10T17:31:43.371Z'
@@ -61,6 +61,38 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+Aligns mif-docs with MIF specification **1.4.1** (which carries the 1.4.0
+schema and id rules unchanged).
+
+### Changed
+
+- **Schema pin**: `hydrate-schema` fetches a pinned release mirror instead of
+  the floating `latest`, so a new MIF release no longer changes what CI
+  validates against. `VENDOR.lock` records the target release
+  (`mifSpecVersion: 1.4.1`) and the mirror the files come from (1.4.0's,
+  byte-identical, until 1.4.1's is published). `node
+  scripts/hydrate-schema.mjs latest` still fetches the newest release.
+- **Ids (breaking for content)**: MIF 1.4.0 requires a concept `@id` of
+  `urn:mif:<uuid>`. Every template and doc `id`, and every `urn:mif:`
+  reference to one (relationship targets, provenance `wasDerivedFrom`), moves
+  from its slug to `uuid5(uuid5(NAMESPACE_URL, "https://mif-spec.dev"), slug)`,
+  the derivation MIF's migration script and mif-rs use. Reserved
+  `urn:mif:activity:` and other non-concept provenance ids are unchanged.
+- **`mif-frontmatter`**: `id` MUST be a UUID; the skill says how to mint or
+  derive one.
+- **`mif-validate`**: says a per-document pass meets the L1 document floor, and
+  that MIF 1.4.0+ Level 1 also requires an OKF bundle.
+- **`schema/profiles/level-1.json`**: description matches 1.4.0's L1 core
+  (UUID `@id`; `conceptType` or the deprecated `memoryType`).
+
+### Fixed
+
+- **`hydrate-schema`**: `latest` resolves through `index.json`'s
+  `aliases.latest` (the field the catalog publishes), not a nonexistent
+  top-level `latest`.
+- **`mif-to-pdf`**: accepts a document typed only by the deprecated
+  `memoryType`, which MIF 1.4.0's schema allows.
 
 ## [0.9.6] - 2026-08-10
 

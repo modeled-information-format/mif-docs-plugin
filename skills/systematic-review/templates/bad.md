@@ -1,5 +1,5 @@
 ---
-id: systematic-review-bad-example
+id: 6d21a417-edd8-5d83-acf9-26da91fcf2b5
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: systematic-review/antipattern

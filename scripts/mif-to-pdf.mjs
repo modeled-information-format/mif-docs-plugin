@@ -203,7 +203,9 @@ function readJsonld(file) {
     console.error(`mif-to-pdf: ${file} is not valid JSON: ${e.message}`);
     process.exit(1);
   }
-  if (jsonld["@id"] === undefined || jsonld.conceptType === undefined || jsonld.created === undefined) {
+  // MIF 1.4.0: conceptType, or the deprecated memoryType alone, satisfies the type requirement.
+  const hasType = jsonld.conceptType !== undefined || jsonld.memoryType !== undefined;
+  if (jsonld["@id"] === undefined || !hasType || jsonld.created === undefined) {
     console.error(
       `mif-to-pdf: ${file} is missing a required MIF L1 field (@id/conceptType/created) — ` +
         "not a MIF JSON-LD document. For a Markdown source, convert it first with " +

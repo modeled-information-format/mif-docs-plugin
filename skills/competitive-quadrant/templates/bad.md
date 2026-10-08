@@ -1,5 +1,5 @@
 ---
-id: competitive-quadrant-bad-example
+id: 14e7b161-2a6f-5c3f-ab39-6e7259ad43b2
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: competitive-quadrant/antipattern

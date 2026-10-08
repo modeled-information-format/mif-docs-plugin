@@ -1,5 +1,5 @@
 ---
-id: sustainability-report-bad-example
+id: 582df548-d73f-54e1-876b-c6297c99ea85
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: sustainability-report/antipattern

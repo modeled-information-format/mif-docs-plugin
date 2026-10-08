@@ -1,5 +1,5 @@
 ---
-id: how-to-install-mif-mcp
+id: e5405fda-1bbc-52a0-b0e5-598397048d63
 type: procedural
 created: '2026-07-05T12:00:00Z'
 modified: '2026-07-09T00:00:00Z'
@@ -18,13 +18,13 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
   - type: relates-to
-    target: urn:mif:how-to-ingest-and-search
+    target: urn:mif:ab686156-bb99-5f84-8b9b-80f14eecca93
   - type: relates-to
-    target: urn:mif:reference-corpus-layer
+    target: urn:mif:a566b5e9-3243-57da-b8bb-83bad1993f75
   - type: relates-to
-    target: urn:mif:reference-genre-and-cli
+    target: urn:mif:d0a5927e-bee7-5329-968b-3f52e09415ef
 ontology:
   '@type': OntologyReference
   id: mif-docs

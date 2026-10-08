@@ -1,6 +1,6 @@
 {
   "level": 1,
   "title": "MIF conformance floor — Level 1 (Core)",
-  "description": "The MIF core required fields only (@context, @type, @id, conceptType, content, created), enforced by the canonical schema. No overlay beyond it.",
+  "description": "The MIF core required fields only (@context, @type, a urn:mif:<uuid> @id, conceptType or the deprecated memoryType, content, created), enforced by the canonical schema. No overlay beyond it. MIF 1.4.0 Level 1 also requires the document to sit in an OKF bundle (a directory of .md concept files), which a single-document check cannot see.",
   "required": []
 }

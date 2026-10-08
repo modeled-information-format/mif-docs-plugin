@@ -1,5 +1,5 @@
 ---
-id: pep-9999-math-clamp
+id: d67527f0-168b-5cff-9408-d2e1fc45703c
 type: semantic
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

@@ -1,5 +1,5 @@
 ---
-id: c4-bad-example
+id: cad0fb15-fc9d-58a3-a125-ad504b8fb934
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: architecture/c4/antipattern

@@ -1,5 +1,5 @@
 ---
-id: runbook-cut-attested-release
+id: bcb731a5-1b66-5990-af7a-f68629fe3be1
 type: procedural
 created: '2026-06-30T10:00:00Z'
 modified: '2026-07-28T23:51:23.410Z'
@@ -33,7 +33,7 @@ provenance:
     '@id': urn:mif:activity:claude-code-session:4e347ba7-847b-4614-985d-a4daba31a6e4
     '@type': prov:Activity
   wasDerivedFrom:
-    - '@id': urn:mif:adr-0003-attested-delivery
+    - '@id': urn:mif:a955b16b-f8bc-5676-abce-5c0ae60d9f10
       '@type': prov:Entity
     - '@id': urn:mif:source:release.yml
       '@type': prov:Entity
@@ -57,9 +57,9 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0003-attested-delivery
+    target: urn:mif:a955b16b-f8bc-5676-abce-5c0ae60d9f10
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
 entity:
   name: mif-docs Cut an Attested Release
   entity_type: runbook

@@ -1,5 +1,5 @@
 ---
-id: reference-skill-mif-corpus
+id: 576d7894-9f72-5f32-af25-a27706e5f8a4
 type: semantic
 created: '2026-07-05T12:00:00Z'
 modified: '2026-08-04T15:49:20.909Z'
@@ -46,13 +46,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/mif-corpus
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-corpus-layer
+    target: urn:mif:a566b5e9-3243-57da-b8bb-83bad1993f75
   - type: relates-to
-    target: urn:mif:reference-skill-mif-validate
+    target: urn:mif:e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
   - type: relates-to
-    target: urn:mif:reference-skill-doc-set-planner
+    target: urn:mif:f8d4c638-fac3-5c75-b314-c7a5f047a81d
 ontology:
   '@type': OntologyReference
   id: mif-docs

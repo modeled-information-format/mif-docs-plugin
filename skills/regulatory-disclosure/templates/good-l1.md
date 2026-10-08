@@ -1,5 +1,5 @@
 ---
-id: regulatory-disclosure-solara-grid-fy2025-10k
+id: 7f5b95ca-2fdd-5867-9d7a-9e25dc10f142
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

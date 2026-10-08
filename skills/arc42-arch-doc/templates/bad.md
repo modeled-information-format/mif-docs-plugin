@@ -1,5 +1,5 @@
 ---
-id: arc42-bad-example
+id: 182a9fb4-1476-5263-bedc-0c76cdffe526
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: architecture/antipattern

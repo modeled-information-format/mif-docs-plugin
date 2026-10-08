@@ -6,7 +6,7 @@ description: >-
   committing a copy here that would drift.
 type: adr
 conceptType: semantic
-id: adr-0002-ontologies-separate-repo
+id: 13632ae1-eacd-5103-ab53-859403025359
 namespace: adr/mif-docs
 x-ontology:
   id: mif-docs
@@ -63,9 +63,9 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0001-align-adr-to-smadr
+    target: urn:mif:92081186-1dc9-55e0-97aa-9a9a2b587e85
   - type: relates-to
-    target: urn:mif:adr-0003-attested-delivery
+    target: urn:mif:a955b16b-f8bc-5676-abce-5c0ae60d9f10
 summary: >-
   The MIF ontology stays in the org-shared ontologies repo; the plugin hydrates
   it from a raw URL at dev time and vendors a fixed copy into the release

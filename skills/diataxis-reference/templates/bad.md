@@ -1,5 +1,5 @@
 ---
-id: reference-bad-example
+id: 10337e3c-1539-5e2e-8f9a-c16a86e95bfd
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: reference/antipattern

@@ -1,5 +1,5 @@
 ---
-id: academic-report-bad-example
+id: f35356f2-7313-5a17-8d11-7535f830eeb1
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: academic/antipattern

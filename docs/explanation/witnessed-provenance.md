@@ -1,5 +1,5 @@
 ---
-id: explanation-witnessed-provenance
+id: dd470312-e54f-5f45-8683-d97012a40c1c
 type: semantic
 created: '2026-07-11T20:00:00Z'
 namespace: explanation/design
@@ -46,13 +46,13 @@ citations:
     accessed: '2026-07-11'
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-witness-document-provenance
+    target: urn:mif:83ad8db9-625b-5714-9c40-3cdbb1e7d5a0
   - type: relates-to
-    target: urn:mif:explanation-one-artifact-two-readers
+    target: urn:mif:a98891ee-c607-5dd9-8de4-13baac87616e
   - type: relates-to
-    target: urn:mif:reference-skill-mif-provenance
+    target: urn:mif:c3dff367-13f4-52d2-9269-aad0bce695db
   - type: relates-to
-    target: urn:mif:adr-0005-provenance-consent
+    target: urn:mif:bd9b282a-4701-5550-b898-87184c4bab7b
 ontology:
   '@type': OntologyReference
   id: mif-docs

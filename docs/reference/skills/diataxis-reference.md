@@ -1,5 +1,5 @@
 ---
-id: reference-skill-diataxis-reference
+id: 41c6e3a7-5004-5565-97fd-580483877ac7
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -52,13 +52,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/diataxis-reference
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-diataxis-tutorial
+    target: urn:mif:ec47e1d8-c9be-59f8-a146-432ca1edf92d
   - type: relates-to
-    target: urn:mif:reference-skill-diataxis-how-to
+    target: urn:mif:91cb1e5e-f6cb-5594-ba29-3ef40865212c
   - type: relates-to
-    target: urn:mif:reference-skill-diataxis-explanation
+    target: urn:mif:792e2200-62ca-526f-b89f-1edbc33409d4
 ontology:
   '@type': OntologyReference
   id: mif-docs

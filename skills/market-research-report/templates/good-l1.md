@@ -1,5 +1,5 @@
 ---
-id: market-research-report-ai-grocery-list-apps-2026
+id: c4dab2b5-df46-517e-82de-26ca7b69f45f
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

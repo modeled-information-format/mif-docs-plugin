@@ -32,13 +32,21 @@ the canonical source for this enum; don't restate its definitions here.
 
 | Level | Frontmatter fields | Emit when |
 | --- | --- | --- |
-| **L1 (hard floor)** | `id`, `type` (enum: `semantic` \| `episodic` \| `procedural`), `created` (+ body becomes `content`) | **Always.** Below L1 is a skill error. |
+| **L1 (hard floor)** | `id` (a UUID), `type` (enum: `semantic` \| `episodic` \| `procedural`), `created` (+ body becomes `content`) | **Always.** Below L1 is a skill error. |
 | **L2** | `namespace`, `modified`, `temporal` | review cadence / topic namespace known |
 | **L3** | `provenance`, `citations[]`, `relationships[]` | doc sourced from real, attributable input |
 
 ### Field projection (markdown frontmatter -> JSON-LD)
 
-- `id` -> `@id` (auto-prefixed `urn:mif:` if not already a URN)
+- `id` -> `@id` (auto-prefixed `urn:mif:` if not already a URN). MIF 1.4.0+
+  requires `@id` to be `urn:mif:<uuid>`, so `id` MUST be a UUID: a slug such
+  as `prd-saved-carts` fails the schema. Mint a random UUIDv4 for a new
+  document; to derive a stable id from an existing slug, use UUIDv5 in the
+  MIF namespace, `uuid5(uuid5(NAMESPACE_URL, "https://mif-spec.dev"), slug)`,
+  the same derivation MIF's migration script and mif-rs use. A relationship
+  `target` naming another concept by URN uses that concept's
+  `urn:mif:<uuid>`; a bundle-relative path (`/semantic/policy.md`) is the
+  RECOMMENDED target for a concept in the same bundle.
 - `type` -> `conceptType`; MUST be one of `semantic`, `episodic`, `procedural`
   (see [Documentation Taxonomy](../../docs/explanation/documentation-taxonomy.md)
   for what each means and how to pick one). `@type` is always `Concept`. The

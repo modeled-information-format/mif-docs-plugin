@@ -1,5 +1,5 @@
 ---
-id: explanation-two-views
+id: 80773171-9c04-5cde-93ea-9a5ef1df411d
 type: semantic
 created: '2026-06-29T10:00:00Z'
 namespace: explanation/architecture

@@ -1,5 +1,5 @@
 ---
-id: adr-bad-example
+id: abd34641-11cf-5c28-8927-cbdedc254475
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: adr/antipattern

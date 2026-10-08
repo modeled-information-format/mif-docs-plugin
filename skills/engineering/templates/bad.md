@@ -1,5 +1,5 @@
 ---
-id: engineering-report-bad-example
+id: 2eecb311-ae80-537b-aa5a-5c26d8514d57
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: engineering/antipattern

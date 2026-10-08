@@ -1,5 +1,5 @@
 ---
-id: computing-paper-bad-example
+id: fa29c163-2622-51f8-8ac9-7edb809395cc
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: computing-paper/antipattern

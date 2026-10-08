@@ -1,5 +1,5 @@
 ---
-id: humanities-essay-dickinson-dash
+id: bdaa6f21-0e1f-5e6b-a720-65d21ba7d3d4
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

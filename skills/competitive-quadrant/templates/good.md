@@ -1,5 +1,5 @@
 ---
-id: competitive-quadrant-api-gateway-platforms
+id: 85804fc0-edb6-551c-a2ef-9e4aa8a5bc29
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'
