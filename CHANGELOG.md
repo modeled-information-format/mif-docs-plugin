@@ -1,5 +1,5 @@
 ---
-id: changelog-mif-docs
+id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
 modified: '2026-08-10T17:31:43.371Z'
@@ -61,6 +61,45 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+Aligns mif-docs with MIF specification **1.4.1**.
+
+### Changed
+
+- **Schema pin**: `hydrate-schema` fetches the pinned MIF release's mirror
+  (`MIF_SPEC_VERSION`, 1.4.1, in `scripts/hydrate-schema.mjs`) instead of the
+  floating `latest`, so a new MIF release no longer changes what CI validates
+  against. `node scripts/hydrate-schema.mjs latest` still fetches the newest
+  release, and `index.json` is fetched only then.
+- **Ids (breaking for content)**: MIF 1.4.0 requires a concept `@id` of
+  `urn:mif:<uuid>`. Every template and doc `id`, and every `urn:mif:`
+  reference to one (relationship targets, provenance `wasDerivedFrom`), moves
+  from its slug to `uuid5(uuid5(NAMESPACE_URL, "https://mif-spec.dev"), slug)`,
+  the derivation MIF's migration script and mif-rs use; so do the `id:`
+  examples in the tutorials, how-to and evals, and the `x-related-adr` /
+  `x-c4-companion` cross-references. Reserved `urn:mif:activity:` and other
+  non-concept provenance ids are unchanged.
+- **`mif-frontmatter`**: `id` MUST be a UUID; the skill says how to mint or
+  derive one.
+- **`mif-validate`**: says a per-document pass meets the L1 document floor, and
+  that MIF 1.4.0+ Level 1 also requires an OKF bundle.
+- **`schema/profiles/level-1.json`**: description matches 1.4.0's L1 core
+  (UUID `@id`; `conceptType` or the deprecated `memoryType`).
+
+### Security
+
+- **Deps**: `osv-scanner.toml` (root and `site/`) records the four advisories
+  left after the Dependabot updates, none with a fix in range: katex, braces,
+  smol-toml, and postcss-selector-parser, each build-time or dev-only.
+
+### Fixed
+
+- **`hydrate-schema`**: `latest` resolves through `index.json`'s
+  `aliases.latest` (the field the catalog publishes), not a nonexistent
+  top-level `latest`.
+- **`mif-validate`/`mif-convert`/`mif-to-pdf`**: accept a document typed only
+  by the deprecated `memoryType`, which MIF 1.4.0's schema allows; the
+  projection passes `memoryType` through and synthesizes no `conceptType`.
 
 ## [0.9.6] - 2026-08-10
 

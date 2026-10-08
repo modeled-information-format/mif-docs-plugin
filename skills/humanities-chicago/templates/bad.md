@@ -1,5 +1,5 @@
 ---
-id: humanities-essay-bad-example
+id: 98c3210f-d055-5cd6-8e83-9cc3942d9cef
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: humanities-chicago/antipattern

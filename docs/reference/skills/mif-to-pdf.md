@@ -1,5 +1,5 @@
 ---
-id: reference-skill-mif-to-pdf
+id: 92a151d5-4a2e-5bef-a34d-4338d3e5a430
 type: semantic
 created: '2026-07-15T18:00:00Z'
 modified: '2026-07-16T13:20:19.537Z'
@@ -71,11 +71,11 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/mif-to-pdf
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-mif-frontmatter
+    target: urn:mif:776e28a8-7fd8-5a5d-b477-efde9b5358cc
   - type: relates-to
-    target: urn:mif:reference-skill-mif-validate
+    target: urn:mif:e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
 ontology:
   '@type': OntologyReference
   id: mif-docs

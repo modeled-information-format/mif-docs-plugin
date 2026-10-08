@@ -1,5 +1,5 @@
 ---
-id: csr-bad-example
+id: 3113f275-102a-5619-a5a2-7aac48668fd3
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: clinical-submission/antipattern

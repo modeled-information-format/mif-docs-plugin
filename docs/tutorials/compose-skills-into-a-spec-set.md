@@ -1,5 +1,5 @@
 ---
-id: tutorial-compose-spec-set
+id: 9e3c36be-da5d-5b14-b1f0-d1d58284f9c0
 type: procedural
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -17,13 +17,13 @@ temporal:
   recordedAt: '2026-06-30T12:00:00Z'
 relationships:
   - type: relates-to
-    target: urn:mif:tutorial-orchestrate-doc-set
+    target: urn:mif:f747abd7-447b-5067-8809-83d9b3b5c22d
   - type: relates-to
-    target: urn:mif:reference-skill-feature-spec
+    target: urn:mif:138f94bd-3adc-51e0-a23c-fa5ebedb5172
   - type: relates-to
-    target: urn:mif:reference-skill-ears-acceptance-criteria
+    target: urn:mif:6a9f7095-2d06-51d9-90be-0be973fe887e
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ontology:
   '@type': OntologyReference
   id: mif-docs

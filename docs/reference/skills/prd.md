@@ -1,5 +1,5 @@
 ---
-id: reference-skill-prd
+id: f3c0b22b-a8f5-5640-a50e-3e0fc300347f
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -52,9 +52,9 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/prd
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-feature-spec
+    target: urn:mif:138f94bd-3adc-51e0-a23c-fa5ebedb5172
 ontology:
   '@type': OntologyReference
   id: mif-docs

@@ -74,3 +74,18 @@ test('no meta keys leak into the output through the passthrough spread', () => {
   );
   assert.equal(out['@context'], 'https://mif-spec.dev/schema/context.jsonld', 'the canonical @context must win, not a stray frontmatter value');
 });
+
+test('a memoryType-only document projects (MIF 1.4.0) and round-trips without a synthesized type', async () => {
+  const { toMarkdown } = await import('../scripts/lib/projection.mjs');
+  const fm = { id: '7b3c1e90-5a2f-4c8d-9e10-2f6a4b8c1d3e', memoryType: 'semantic', created: '2026-01-01T00:00:00Z' };
+  const out = toJsonld(doc({ ...fm }));
+  assert.equal(out.memoryType, 'semantic');
+  assert.equal('conceptType' in out, false);
+  const back = toMarkdown(out);
+  assert.equal('type' in back.frontmatter, false);
+  assert.equal(back.frontmatter.memoryType, 'semantic');
+});
+
+test('a document with neither type nor memoryType is rejected', () => {
+  assert.throws(() => toJsonld(doc({ id: 'x', created: '2026-01-01T00:00:00Z' })), /missing required field: type/);
+});

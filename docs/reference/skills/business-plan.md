@@ -1,5 +1,5 @@
 ---
-id: reference-skill-business-plan
+id: 049227f7-b039-547e-9e96-7c7c16741a90
 type: semantic
 created: '2026-07-15T13:45:00Z'
 modified: '2026-07-15T18:00:00Z'
@@ -70,13 +70,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/business-plan
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-market-research-report
+    target: urn:mif:fe77a138-2c3e-5358-b5cb-560253765bd2
   - type: relates-to
-    target: urn:mif:reference-skill-prd
+    target: urn:mif:f3c0b22b-a8f5-5640-a50e-3e0fc300347f
   - type: relates-to
-    target: urn:mif:reference-skill-svg-charts
+    target: urn:mif:c11ee6d8-8302-595a-8d52-a82588d1918f
 ontology:
   '@type': OntologyReference
   id: mif-docs

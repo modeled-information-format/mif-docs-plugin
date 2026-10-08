@@ -1,5 +1,5 @@
 ---
-id: runbook-hydrate-schema-ontology
+id: bc3f1a0a-10d8-59ee-830b-0279b1ed897d
 type: procedural
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'
@@ -33,7 +33,7 @@ provenance:
     '@id': urn:mif:activity:mif-docs-self-documentation
     '@type': prov:Activity
   wasDerivedFrom:
-    - '@id': urn:mif:adr-0002-ontologies-separate-repo
+    - '@id': urn:mif:13632ae1-eacd-5103-ab53-859403025359
       '@type': prov:Entity
     - '@id': https://mif-spec.dev/schema/
       '@type': prov:Entity
@@ -51,13 +51,13 @@ citations:
     url: https://github.com/modeled-information-format/ontologies
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0002-ontologies-separate-repo
+    target: urn:mif:13632ae1-eacd-5103-ab53-859403025359
 entity:
   name: mif-docs Hydrate Schema and Ontology Caches
   entity_type: runbook
 extensions:
   x-runbook-type: tactical
-  x-related-adr: adr-0002-ontologies-separate-repo
+  x-related-adr: 13632ae1-eacd-5103-ab53-859403025359
 ---
 
 # mif-docs: Hydrate Schema & Ontology Caches
@@ -101,7 +101,10 @@ not churn it:
 
 ## 4. Hydrate the schema
 
-Fetch the canonical schema into the local cache and record the resolved version.
+Fetch the pinned MIF release's schema into the local cache and record the
+resolved version. The pin is `MIF_SPEC_VERSION` in `scripts/hydrate-schema.mjs`;
+a new MIF release changes nothing here until that constant moves. `npm run
+hydrate-schema -- latest` fetches the newest release instead.
 
 ```bash
 npm run hydrate-schema
@@ -114,8 +117,9 @@ resolved version is recorded in `schema/VENDOR.lock`. Confirm the lock advanced:
 git diff -- schema/VENDOR.lock
 ```
 
-A changed `VENDOR.lock` (new `version` / resolved source) confirms the hydrate
-took. If `VENDOR.lock` is unchanged, you were already current — that is fine.
+A changed `VENDOR.lock` (new `resolvedVersion`) confirms the hydrate took. If
+`VENDOR.lock` is unchanged, the cache already held the pinned release — that is
+fine; a newer MIF release does not show up here until the pin moves.
 
 ## 5. Hydrate the ontology
 

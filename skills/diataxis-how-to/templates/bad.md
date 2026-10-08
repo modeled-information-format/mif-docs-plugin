@@ -1,5 +1,5 @@
 ---
-id: how-to-bad-example
+id: c6408ea5-1a86-523e-b670-67b51d0ac3b3
 type: procedural
 created: 2026-06-29T10:00:00Z
 namespace: how-to/antipattern

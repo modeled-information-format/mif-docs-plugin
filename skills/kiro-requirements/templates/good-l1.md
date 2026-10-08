@@ -1,5 +1,5 @@
 ---
-id: kiro-req-avatar-upload
+id: 8fd37e35-8393-5670-aee0-fc2fa58fff8b
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

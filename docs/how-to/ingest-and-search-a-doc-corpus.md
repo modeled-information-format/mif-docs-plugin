@@ -1,5 +1,5 @@
 ---
-id: how-to-ingest-and-search
+id: ab686156-bb99-5f84-8b9b-80f14eecca93
 type: procedural
 created: '2026-07-05T12:00:00Z'
 modified: '2026-07-28T22:29:27.455Z'
@@ -17,9 +17,9 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:reference-corpus-layer
+    target: urn:mif:a566b5e9-3243-57da-b8bb-83bad1993f75
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -105,7 +105,7 @@ returns `(no matches)`.
 ## Find cross-link candidates
 
 ```bash
-mif-cli find-similar "urn:mif:reference-corpus-layer" --limit 5
+mif-cli find-similar "urn:mif:a566b5e9-3243-57da-b8bb-83bad1993f75" --limit 5
 ```
 
 The anchor id must already be ingested (a 404 problem envelope tells you it

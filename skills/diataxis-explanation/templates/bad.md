@@ -1,5 +1,5 @@
 ---
-id: explanation-bad-example
+id: 1f59543c-fd00-54b6-9135-46579d0c1e39
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: explanation/antipattern

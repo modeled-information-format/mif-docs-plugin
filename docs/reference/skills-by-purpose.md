@@ -1,5 +1,5 @@
 ---
-id: reference-skills-by-purpose
+id: d8972202-0b4d-52ea-89d7-90abe228e820
 type: semantic
 created: '2026-06-30T11:00:00Z'
 modified: '2026-07-28T19:29:33.015Z'
@@ -46,11 +46,11 @@ citations:
     accessed: '2026-06-30'
 relationships:
   - type: relates-to
-    target: urn:mif:reference-genre-and-cli
+    target: urn:mif:d0a5927e-bee7-5329-968b-3f52e09415ef
   - type: relates-to
-    target: urn:mif:tutorial-getting-started
+    target: urn:mif:febcf412-08e4-5822-b8a4-00a3e805fa30
   - type: relates-to
-    target: urn:mif:explanation-one-artifact-two-readers
+    target: urn:mif:a98891ee-c607-5dd9-8de4-13baac87616e
 ontology:
   '@type': OntologyReference
   id: mif-docs

@@ -1,5 +1,5 @@
 ---
-id: tutorial-first-mif-doc
+id: 6ee94237-a5f3-5545-b720-c2b102e186c9
 type: procedural
 created: 2026-06-29T10:00:00Z
 ---
@@ -20,7 +20,7 @@ Create `hello.md`:
 
 ```markdown
 ---
-id: hello-mif
+id: f481d5cd-48e2-5cf4-bb85-ea7b06ce1806
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

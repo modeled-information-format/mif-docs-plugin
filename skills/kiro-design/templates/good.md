@@ -1,5 +1,5 @@
 ---
-id: kiro-design-avatar-upload
+id: 138267b4-62e0-55db-a00a-1da7698c8050
 type: semantic
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

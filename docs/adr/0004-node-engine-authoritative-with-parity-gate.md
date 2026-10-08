@@ -6,7 +6,7 @@ description: >-
   parity job with an explicit expected-disagreement ledger.
 type: adr
 conceptType: semantic
-id: adr-0004-node-engine-authoritative
+id: 2ae2c4c0-6ca6-5254-b711-cacc79f87413
 namespace: adr/mif-docs
 x-ontology:
   id: mif-docs
@@ -46,9 +46,9 @@ provenance:
   agentVersion: 2.1.220
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0001-align-adr-to-smadr
+    target: urn:mif:92081186-1dc9-55e0-97aa-9a9a2b587e85
   - type: relates-to
-    target: urn:mif:adr-0003-attested-delivery
+    target: urn:mif:a955b16b-f8bc-5676-abce-5c0ae60d9f10
 citations:
   - '@type': Citation
     citationType: repository

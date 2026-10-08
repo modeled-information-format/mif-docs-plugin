@@ -1,5 +1,5 @@
 ---
-id: reference-skill-changelog
+id: 461f0dcd-13aa-589c-80e0-9e7ec7680b26
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-07-28T19:29:51.406Z'
@@ -53,7 +53,7 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/changelog
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ontology:
   '@type': OntologyReference
   id: mif-docs

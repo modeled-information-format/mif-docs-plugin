@@ -1,5 +1,5 @@
 ---
-id: c4-internet-banking-system
+id: 00b58029-88ca-52bb-960a-58c21cce1528
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

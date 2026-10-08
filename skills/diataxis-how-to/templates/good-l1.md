@@ -1,5 +1,5 @@
 ---
-id: how-to-rotate-api-key-no-downtime
+id: 737e5c88-b310-50b8-b207-54c9a271cc62
 type: procedural
 created: 2026-06-29T10:00:00Z
 ---

@@ -1,5 +1,5 @@
 ---
-id: rfc-optional-chaining-operator
+id: b29a6c46-68c1-509a-80f0-f7d72a673501
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

@@ -1,5 +1,5 @@
 ---
-id: arc42-linkly
+id: c5a6e64c-893c-51eb-b31c-fc7ba37f37d8
 type: semantic
 created: '2026-06-29T10:00:00Z'
 modified: '2026-06-29T10:00:00Z'

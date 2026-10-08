@@ -1,5 +1,5 @@
 ---
-id: legal-memo-bad-example
+id: 89506d6e-db92-5199-bd47-2f7b8d92dbb8
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: legal-memo/antipattern

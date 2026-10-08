@@ -1,5 +1,5 @@
 ---
-id: design-bad-example
+id: ec9f60dd-1204-57ed-b8ba-0d0f6c92e8c3
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: design/antipattern

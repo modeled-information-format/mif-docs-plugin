@@ -23,8 +23,13 @@ const CACHE = join(ROOT, "schema", ".cache");
 const LOCK = join(ROOT, "schema", "VENDOR.lock");
 
 const BASE = "https://mif-spec.dev/schema";
-// `latest` by default; override with `node hydrate-schema.mjs v1.0.0` or 1.0.0.
-const arg = process.argv[2] || "latest";
+// The MIF release this plugin targets, fetched from its immutable
+// /schema/<version>/ mirror. Releases are coordinated across the MIF tools, so
+// the schema is pinned, never the floating `latest`: a new MIF release cannot
+// change what CI validates against until this pin moves.
+const MIF_SPEC_VERSION = "1.4.1";
+// Pinned by default; override with `node hydrate-schema.mjs latest` or 1.3.0.
+const arg = process.argv[2] || MIF_SPEC_VERSION;
 const channel = arg.replace(/^v/, "");
 
 const FILES = [
@@ -56,13 +61,13 @@ function readExisting(path) {
 async function main() {
   // Resolve `latest` alias to a concrete version via the catalog index.
   let resolved = channel;
-  try {
-    const idx = JSON.parse(await fetchText(`${BASE}/index.json`));
-    if (channel === "latest") {
-      resolved = idx.latest || idx.versions?.at(-1) || "latest";
+  if (channel === "latest") {
+    try {
+      const idx = JSON.parse(await fetchText(`${BASE}/index.json`));
+      resolved = idx.aliases?.latest || idx.versions?.at(-1) || "latest";
+    } catch {
+      // index optional; fall back to the channel string in the path.
     }
-  } catch {
-    // index optional; fall back to the channel string in the path.
   }
 
   const versionSeg = channel === "latest" ? "latest" : channel;

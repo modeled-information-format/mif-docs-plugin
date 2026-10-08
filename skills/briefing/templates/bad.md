@@ -1,5 +1,5 @@
 ---
-id: briefing-bad-example
+id: b7fe4102-2995-59e6-a380-e46bc29ab069
 type: episodic
 created: 2026-06-30T09:00:00Z
 namespace: briefing/antipattern

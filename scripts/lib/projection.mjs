@@ -90,7 +90,11 @@ export function toJsonld({ frontmatter, body }) {
   const id = fm.id ?? fm["@id"];
   const type = fm.type ?? fm.conceptType;
   if (id === undefined) throw new Error("frontmatter missing required field: id");
-  if (type === undefined) throw new Error("frontmatter missing required field: type");
+  // MIF 1.4.0: the deprecated memoryType alone also satisfies the type
+  // requirement; it passes through verbatim and no conceptType is synthesized.
+  if (type === undefined && fm.memoryType === undefined) {
+    throw new Error("frontmatter missing required field: type (or the deprecated memoryType)");
+  }
   delete fm.id;
   delete fm.type;
   stripKeys(fm, META_KEYS);
@@ -99,7 +103,7 @@ export function toJsonld({ frontmatter, body }) {
     "@context": CONTEXT_IRI,
     "@type": "Concept",
     "@id": ID_PREFIX + stripIdPrefix(id),
-    conceptType: type,
+    ...(type === undefined ? {} : { conceptType: type }),
     ...fm, // created + every other frontmatter field, verbatim
     content: normalizeBody(body),
   };
@@ -122,7 +126,7 @@ export function toMarkdown(jsonld) {
     : atId;
 
   // Reconstruct frontmatter with the human-facing keys first, then passthrough.
-  const frontmatter = { id, type: conceptType, ...obj };
+  const frontmatter = conceptType === undefined ? { id, ...obj } : { id, type: conceptType, ...obj };
   return { frontmatter, body: normalizeBody(content) };
 }
 

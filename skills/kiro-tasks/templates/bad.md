@@ -1,5 +1,5 @@
 ---
-id: kiro-tasks-bad-example
+id: 6a4d1485-3eb5-541c-90ca-32904d6bfdeb
 type: procedural
 created: 2026-06-29T10:00:00Z
 namespace: spec/kiro/tasks/antipattern

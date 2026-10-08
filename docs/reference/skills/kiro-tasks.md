@@ -1,5 +1,5 @@
 ---
-id: reference-skill-kiro-tasks
+id: 2afc8508-5ee4-570c-bbae-f52982c3703e
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -46,11 +46,11 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/kiro-tasks
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-kiro-requirements
+    target: urn:mif:adda9d07-cdd9-5391-ba64-08188770c562
   - type: relates-to
-    target: urn:mif:reference-skill-kiro-design
+    target: urn:mif:6f6fcc98-7ffa-58f4-b0b9-25edbbb38f84
 ontology:
   '@type': OntologyReference
   id: mif-docs

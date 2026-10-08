@@ -1,5 +1,5 @@
 ---
-id: reference-skill-engineering
+id: d60dba7d-ef07-5ed0-a013-1b0b5e9b1ace
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -52,11 +52,11 @@ citations:
     accessed: '2026-07-01'
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-adr
+    target: urn:mif:9308c842-4ad0-522d-b247-ba65030c9eb4
   - type: relates-to
-    target: urn:mif:reference-skill-google-design-doc
+    target: urn:mif:b2030d2f-0690-55f3-a64e-de659e0962f0
 ontology:
   '@type': OntologyReference
   id: mif-docs

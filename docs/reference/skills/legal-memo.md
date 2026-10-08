@@ -1,5 +1,5 @@
 ---
-id: reference-skill-legal-memo
+id: 2e302277-b696-5c22-8f78-735d4f380378
 type: semantic
 created: '2026-07-01T00:00:00Z'
 modified: '2026-07-01T00:00:00Z'
@@ -46,9 +46,9 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/legal-memo
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-adr
+    target: urn:mif:9308c842-4ad0-522d-b247-ba65030c9eb4
 ontology:
   '@type': OntologyReference
   id: mif-docs

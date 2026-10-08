@@ -1,5 +1,5 @@
 ---
-id: rfc-bad-example
+id: fe3a45f1-0019-588c-9c73-52f96719312b
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: rfc/antipattern

@@ -1,5 +1,5 @@
 ---
-id: exec-summary-bad-example
+id: e0814000-2ba7-53b4-99a9-5ddadfbd2987
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: exec-summary/antipattern

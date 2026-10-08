@@ -1,5 +1,5 @@
 ---
-id: arch-arc42-mif-docs
+id: b09eb8b9-b1d0-5e0b-9065-df0c73b2a95c
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-07-28T22:28:58.886Z'
@@ -52,14 +52,14 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin
 relationships:
   - type: relates-to
-    target: urn:mif:arch-c4-mif-docs
+    target: urn:mif:28c12d34-0a87-50fe-98f5-35612b9a621a
     strength: 0.7
 entity:
   name: mif-docs Plugin
   entity_type: architecture-document
 extensions:
   x-arc42-sections: 12
-  x-c4-companion: arch-c4-mif-docs
+  x-c4-companion: 28c12d34-0a87-50fe-98f5-35612b9a621a
 ---
 
 # mif-docs Plugin — Architecture (arc42)

@@ -1,5 +1,5 @@
 ---
-id: playbook-bad-example
+id: 6df77a8a-1bdf-59ac-9827-b51238d88684
 type: procedural
 created: 2026-06-29T10:00:00Z
 namespace: playbook/antipattern

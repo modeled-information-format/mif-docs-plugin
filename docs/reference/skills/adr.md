@@ -1,5 +1,5 @@
 ---
-id: reference-skill-adr
+id: 9308c842-4ad0-522d-b247-ba65030c9eb4
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -32,7 +32,7 @@ provenance:
       '@type': prov:Entity
     - '@id': urn:mif:skill:adr
       '@type': prov:Entity
-    - '@id': urn:mif:adr-0001-align-adr-to-smadr
+    - '@id': urn:mif:92081186-1dc9-55e0-97aa-9a9a2b587e85
       '@type': prov:Entity
 citations:
   - '@type': Citation
@@ -59,13 +59,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/adr
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:adr-0001-align-adr-to-smadr
+    target: urn:mif:92081186-1dc9-55e0-97aa-9a9a2b587e85
   - type: relates-to
-    target: urn:mif:reference-skill-rust-rfc
+    target: urn:mif:3abcc98b-23f7-5857-b2e3-7598013b89ac
   - type: relates-to
-    target: urn:mif:reference-skill-python-pep
+    target: urn:mif:04f2e11f-67d6-567e-8ddd-871d812c7df5
 ontology:
   '@type': OntologyReference
   id: mif-docs

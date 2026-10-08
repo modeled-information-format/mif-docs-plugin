@@ -1,5 +1,5 @@
 ---
-id: legal-memo-hendricks-noncompete-2026
+id: 1f8a57b8-7f10-5e76-85bf-2a225eecc4a4
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'

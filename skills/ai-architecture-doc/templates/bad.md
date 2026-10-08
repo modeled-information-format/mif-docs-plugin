@@ -1,5 +1,5 @@
 ---
-id: ai-arch-bad-example
+id: d1b4f87a-932e-5a63-b3a3-1ad42ec5e201
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: spec/architecture/antipattern

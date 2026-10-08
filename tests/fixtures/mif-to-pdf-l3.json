@@ -1,7 +1,7 @@
 {
   "@context": "https://mif-spec.dev/schema/context.jsonld",
   "@type": "Concept",
-  "@id": "urn:mif:concept:mif-docs-plugin/mif-to-pdf:fixture-l3",
+  "@id": "urn:mif:61a9aa17-a45c-5a14-aa67-4f45dca18050",
   "conceptType": "semantic",
   "created": "2026-07-15T12:00:00Z",
   "modified": "2026-07-15T13:30:00Z",
@@ -45,7 +45,7 @@
     }
   ],
   "relationships": [
-    { "type": "relates-to", "target": "urn:mif:reference-skill-mif-to-pdf" }
+    { "type": "relates-to", "target": "urn:mif:92a151d5-4a2e-5bef-a34d-4338d3e5a430" }
   ],
   "entity": {
     "name": "mif-to-pdf fixture author",

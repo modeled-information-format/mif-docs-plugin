@@ -1,5 +1,5 @@
 ---
-id: reference-skill-c4-model-diagram
+id: 50ca956f-6106-572b-a166-6822a49c414e
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -52,13 +52,13 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/c4-model-diagram
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-arc42-arch-doc
+    target: urn:mif:2685127d-b9da-51df-b69e-d2c20ab7b205
   - type: relates-to
-    target: urn:mif:reference-skill-google-design-doc
+    target: urn:mif:b2030d2f-0690-55f3-a64e-de659e0962f0
   - type: relates-to
-    target: urn:mif:reference-skill-ai-architecture-doc
+    target: urn:mif:f3aeebe9-1d88-5fd4-a18f-237fb79e69d1
 ontology:
   '@type': OntologyReference
   id: mif-docs

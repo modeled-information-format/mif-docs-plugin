@@ -1,5 +1,5 @@
 ---
-id: how-to-write-ears-criteria
+id: e8769e7c-6493-5f79-b68a-9965cbef28dc
 type: procedural
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -17,11 +17,11 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skill-ears-acceptance-criteria
+    target: urn:mif:6a9f7095-2d06-51d9-90be-0be973fe887e
   - type: relates-to
-    target: urn:mif:tutorial-compose-spec-set
+    target: urn:mif:9e3c36be-da5d-5b14-b1f0-d1d58284f9c0
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ontology:
   '@type': OntologyReference
   id: mif-docs

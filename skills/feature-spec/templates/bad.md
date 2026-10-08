@@ -1,5 +1,5 @@
 ---
-id: feature-bad-example
+id: 3a0cf6e5-346e-5410-a211-d3d31fa001c9
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: spec/feature/antipattern

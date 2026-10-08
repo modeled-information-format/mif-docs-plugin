@@ -1,5 +1,5 @@
 ---
-id: academic-report-rag-retrieval-evaluation
+id: 8419cbed-7f41-5eac-a51a-a4c67a649656
 type: semantic
 created: '2026-06-30T10:00:00Z'
 modified: '2026-06-30T10:00:00Z'

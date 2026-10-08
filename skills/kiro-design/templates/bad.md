@@ -1,5 +1,5 @@
 ---
-id: kiro-design-bad-example
+id: 4cb232d6-687c-5097-94e1-7a414a1fe18b
 type: semantic
 created: 2026-06-29T10:00:00Z
 namespace: spec/kiro/design/antipattern

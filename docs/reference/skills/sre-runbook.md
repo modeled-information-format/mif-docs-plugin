@@ -1,5 +1,5 @@
 ---
-id: reference-skill-sre-runbook
+id: 3fd7e825-3ebb-524e-a04d-3405076d2c0e
 type: semantic
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -46,9 +46,9 @@ citations:
     url: https://github.com/modeled-information-format/mif-docs-plugin/tree/main/skills/sre-runbook
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:reference-skill-playbook
+    target: urn:mif:372f597f-531c-532b-903f-a0b886d70d6c
 ontology:
   '@type': OntologyReference
   id: mif-docs

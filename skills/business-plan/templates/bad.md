@@ -1,5 +1,5 @@
 ---
-id: business-plan-bad-example
+id: 5e72076d-6927-5b9e-a4c5-85e41f6eff8d
 type: semantic
 created: 2026-07-15T09:00:00Z
 namespace: business-plan/antipattern

@@ -1,5 +1,5 @@
 ---
-id: trend-analysis-bad-example
+id: 046ba358-6312-554a-9a7a-6229cf0c85ce
 type: semantic
 created: 2026-06-30T10:00:00Z
 namespace: trend-analysis/antipattern

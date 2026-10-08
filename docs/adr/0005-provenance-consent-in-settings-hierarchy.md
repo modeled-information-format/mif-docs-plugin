@@ -6,7 +6,7 @@ description: >-
   refusal at any scope wins, and configuration errors fail closed to disabled.
 type: adr
 conceptType: semantic
-id: adr-0005-provenance-consent
+id: bd9b282a-4701-5550-b898-87184c4bab7b
 namespace: adr/mif-docs
 x-ontology:
   id: mif-docs
@@ -46,11 +46,11 @@ provenance:
   agentVersion: 2.1.220
 relationships:
   - type: relates-to
-    target: urn:mif:adr-0004-node-engine-authoritative
+    target: urn:mif:2ae2c4c0-6ca6-5254-b711-cacc79f87413
   - type: relates-to
-    target: urn:mif:reference-skill-mif-provenance
+    target: urn:mif:c3dff367-13f4-52d2-9269-aad0bce695db
   - type: relates-to
-    target: urn:mif:reference-provenance-ledger
+    target: urn:mif:428d53ce-77ee-5efc-ac7a-8a578afd6648
 citations:
   - '@type': Citation
     citationType: documentation

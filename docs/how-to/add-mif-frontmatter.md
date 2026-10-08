@@ -1,5 +1,5 @@
 ---
-id: how-to-add-mif-frontmatter
+id: 863330a0-a451-5c64-a9d3-1ee1147c06a2
 type: procedural
 created: '2026-06-30T12:00:00Z'
 modified: '2026-06-30T12:00:00Z'
@@ -16,11 +16,11 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
   - type: relates-to
-    target: urn:mif:reference-skill-mif-frontmatter
+    target: urn:mif:776e28a8-7fd8-5a5d-b477-efde9b5358cc
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -81,13 +81,14 @@ Every MIF document needs three fields. Add them at the top of the file:
 
 ```yaml
 ---
-id: how-to-rotate-credentials
+id: 089659c2-d41f-57ee-845a-17301b334360
 type: procedural
 created: 2026-06-30T12:00:00Z
 ---
 ```
 
-`id` is a stable slug, `type` is the conceptType (`semantic`, `episodic`, or
+`id` is a UUID (MIF 1.4.0+ requires `@id` to be `urn:mif:<uuid>`; a slug fails
+validation), `type` is the conceptType (`semantic`, `episodic`, or
 `procedural`), and `created` is an ISO-8601 timestamp. This is L1 — enough to
 validate and to round-trip.
 
@@ -129,7 +130,7 @@ than an island:
 ```yaml
 relationships:
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
 ```
 
 ## Step 5 — Prove it conforms

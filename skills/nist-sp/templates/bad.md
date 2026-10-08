@@ -1,5 +1,5 @@
 ---
-id: nist-sp-bad-example
+id: 55dbd4f6-5926-5eb1-8185-87ef2df458ca
 type: semantic
 created: 2026-07-01T10:00:00Z
 namespace: nist-sp/antipattern

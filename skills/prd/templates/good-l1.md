@@ -1,5 +1,5 @@
 ---
-id: prd-saved-carts
+id: 70aed89d-1d93-592d-9dc1-1ee1d3e80d4e
 type: semantic
 created: 2026-06-29T10:00:00Z
 ---

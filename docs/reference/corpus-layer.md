@@ -1,5 +1,5 @@
 ---
-id: reference-corpus-layer
+id: a566b5e9-3243-57da-b8bb-83bad1993f75
 type: semantic
 created: '2026-07-05T12:00:00Z'
 modified: '2026-08-04T15:48:55.755Z'
@@ -17,9 +17,9 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-ingest-and-search
+    target: urn:mif:ab686156-bb99-5f84-8b9b-80f14eecca93
   - type: relates-to
-    target: urn:mif:reference-skill-mif-validate
+    target: urn:mif:e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
 ontology:
   '@type': OntologyReference
   id: mif-docs

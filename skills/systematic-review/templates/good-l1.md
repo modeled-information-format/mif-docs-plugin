@@ -1,5 +1,5 @@
 ---
-id: systematic-review-telehealth-cbt-adult-depression
+id: b15e76c1-bb7a-58a4-b181-499b61bec49d
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

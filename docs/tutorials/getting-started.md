@@ -1,5 +1,5 @@
 ---
-id: tutorial-getting-started
+id: febcf412-08e4-5822-b8a4-00a3e805fa30
 type: procedural
 created: '2026-06-30T10:00:00Z'
 modified: '2026-07-28T22:30:12.036Z'
@@ -16,17 +16,17 @@ temporal:
   recordedAt: '2026-07-05T19:00:00Z'
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
   - type: relates-to
-    target: urn:mif:how-to-install-mif-mcp
+    target: urn:mif:e5405fda-1bbc-52a0-b0e5-598397048d63
   - type: relates-to
-    target: urn:mif:reference-skill-mif-corpus
+    target: urn:mif:576d7894-9f72-5f32-af25-a27706e5f8a4
   - type: relates-to
-    target: urn:mif:how-to-witness-document-provenance
+    target: urn:mif:83ad8db9-625b-5714-9c40-3cdbb1e7d5a0
   - type: relates-to
-    target: urn:mif:reference-genre-and-cli
+    target: urn:mif:d0a5927e-bee7-5329-968b-3f52e09415ef
   - type: relates-to
-    target: urn:mif:explanation-one-artifact-two-readers
+    target: urn:mif:a98891ee-c607-5dd9-8de4-13baac87616e
 ontology:
   '@type': OntologyReference
   id: mif-docs
@@ -101,7 +101,7 @@ a genre document with the MIF frontmatter floor on top:
 
 ```markdown
 ---
-id: how-to-clear-the-cache
+id: 2b053e96-5148-5691-a726-e0a8b01d54c0
 type: procedural
 created: 2026-06-30T10:00:00Z
 ---

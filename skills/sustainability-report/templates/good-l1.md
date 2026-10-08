@@ -1,5 +1,5 @@
 ---
-id: sustainability-report-solvane-textiles-2025
+id: 19278ba4-bb82-5ee8-a698-308f65b14d7b
 type: semantic
 created: 2026-06-30T10:00:00Z
 ---

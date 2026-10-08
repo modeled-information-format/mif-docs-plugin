@@ -1,5 +1,5 @@
 ---
-id: how-to-run-mif-validate
+id: eaf53ca5-abad-56bd-8ea2-8bf5402e7491
 type: procedural
 created: '2026-06-30T12:00:00Z'
 modified: '2026-07-12T02:38:15.311Z'
@@ -17,13 +17,13 @@ temporal:
   ttl: P1Y
 relationships:
   - type: relates-to
-    target: urn:mif:how-to-validate-and-author
+    target: urn:mif:13ddfe21-b287-5589-82d9-d9eb8f954f8a
   - type: relates-to
-    target: urn:mif:reference-skill-mif-validate
+    target: urn:mif:e9c994fc-55a7-56a4-b8b4-9273afbbbc6a
   - type: relates-to
-    target: urn:mif:reference-skills-by-purpose
+    target: urn:mif:d8972202-0b4d-52ea-89d7-90abe228e820
   - type: relates-to
-    target: urn:mif:explanation-one-artifact-two-readers
+    target: urn:mif:a98891ee-c607-5dd9-8de4-13baac87616e
 ontology:
   '@type': OntologyReference
   id: mif-docs
