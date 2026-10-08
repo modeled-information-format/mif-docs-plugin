@@ -27,7 +27,7 @@ const BASE = "https://mif-spec.dev/schema";
 // /schema/<version>/ mirror. Releases are coordinated across the MIF tools, so
 // the schema is pinned, never the floating `latest`: a new MIF release cannot
 // change what CI validates against until this pin moves.
-const MIF_SPEC_VERSION = "1.4.1";
+const MIF_SPEC_VERSION = "1.4.2";
 // Pinned by default; override with `node hydrate-schema.mjs latest` or 1.3.0.
 const arg = process.argv[2] || MIF_SPEC_VERSION;
 const channel = arg.replace(/^v/, "");

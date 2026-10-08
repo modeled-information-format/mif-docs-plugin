@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-08-10T17:31:43.371Z'
+modified: '2026-10-08T00:00:00.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -62,12 +62,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-Aligns mif-docs with MIF specification **1.4.1**.
+## [0.10.0] - 2026-10-08
+
+Aligns mif-docs with MIF specification **1.4.2** (the coordinated release of
+the 1.4.x line; its schemas are byte-identical to 1.4.1's).
 
 ### Changed
 
+- **MIF pin**: `MIF_SPEC_VERSION` and `schema/VENDOR.lock` move from 1.4.1 to
+  **1.4.2**, the coordinated MIF release published with artifacts.
 - **Schema pin**: `hydrate-schema` fetches the pinned MIF release's mirror
-  (`MIF_SPEC_VERSION`, 1.4.1, in `scripts/hydrate-schema.mjs`) instead of the
+  (`MIF_SPEC_VERSION`, 1.4.2, in `scripts/hydrate-schema.mjs`) instead of the
   floating `latest`, so a new MIF release no longer changes what CI validates
   against. `node scripts/hydrate-schema.mjs latest` still fetches the newest
   release, and `index.json` is fetched only then.
