@@ -88,11 +88,9 @@ Aligns mif-docs with MIF specification **1.4.1**.
 
 ### Security
 
-- **Deps**: in-range updates clear the osv-scanner findings: `astro` 7.2.8
-  (site), `js-yaml` 5.4.1, `dompurify` 3.4.16, `fast-uri` 3.1.8, `devalue`
-  5.9.4 and others. `osv-scanner.toml` (root and `site/`) records four
-  exceptions with no fix in range: katex, braces, smol-toml, and
-  postcss-selector-parser, each build-time or dev-only.
+- **Deps**: `osv-scanner.toml` (root and `site/`) records the four advisories
+  left after the Dependabot updates, none with a fix in range: katex, braces,
+  smol-toml, and postcss-selector-parser, each build-time or dev-only.
 
 ### Fixed
 
