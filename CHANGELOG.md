@@ -91,6 +91,11 @@ Aligns mif-docs with MIF specification **1.4.1**.
 - **Deps**: `osv-scanner.toml` (root and `site/`) records the four advisories
   left after the Dependabot updates, none with a fix in range: katex, braces,
   smol-toml, and postcss-selector-parser, each build-time or dev-only.
+- **Deps**: npm `overrides` now force the patched releases, replacing three of
+  those waivers: katex `^0.18.2` (GHSA-238p-pmpm-9mq7, root and `site/`),
+  smol-toml `^1.9.0` (GHSA-r4xh-jqrq-34v2, root), and postcss-selector-parser
+  `^7.1.6` (GHSA-rj75-hqrm-r3gf, `site/`). Only the braces waiver
+  (GHSA-vfj7-8cjw-p6xm, no fixed release) remains in either config.
 
 ### Fixed
 
