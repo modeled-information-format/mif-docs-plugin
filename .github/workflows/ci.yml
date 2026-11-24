@@ -17,21 +17,21 @@ permissions:
 jobs:
   # Every `uses:` in this repo MUST be pinned to a full 40-char commit SHA. Thin
   # caller of the org central pin-check reusable (consume, never reinvent).
-  # modeled-information-format/.github main @ 789b6ba
+  # modeled-information-format/.github main @ c72b3fa
   pin-check:
     permissions:
       contents: read
     uses: >-
-      modeled-information-format/.github/.github/workflows/pin-check.yml@801dc88df4d12908445865f9d96d9708f52f9900
+      modeled-information-format/.github/.github/workflows/pin-check.yml@c72b3fae829318990ba3da9b9d5ea0671ac5151f
 
   # Workflow YAML lint via the central reusable-actionlint (verified, pinned
   # actionlint download lives in the reusable).
-  # modeled-information-format/.github main @ 789b6ba
+  # modeled-information-format/.github main @ c72b3fa
   validate-workflows:
     permissions:
       contents: read
     uses: >-
-      modeled-information-format/.github/.github/workflows/reusable-actionlint.yml@801dc88df4d12908445865f9d96d9708f52f9900
+      modeled-information-format/.github/.github/workflows/reusable-actionlint.yml@c72b3fae829318990ba3da9b9d5ea0671ac5151f
 
   # SCA: OSV-Scanner + dependency-review, as a thin caller of the org central
   # reusable (consume, never reinvent).
@@ -42,7 +42,7 @@ jobs:
       security-events: write
       pull-requests: write
     uses: >-
-      modeled-information-format/.github/.github/workflows/reusable-sca-osv.yml@801dc88df4d12908445865f9d96d9708f52f9900
+      modeled-information-format/.github/.github/workflows/reusable-sca-osv.yml@c72b3fae829318990ba3da9b9d5ea0671ac5151f
     with:
       fail-on-severity: high
 
@@ -135,7 +135,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@9f698171ed81b15d1823a05fc7211befd50c8ae0 # v6.0.3
       - name: Validate ADR — structured-MADR mode (strict)
-        uses: modeled-information-format/structured-madr@2f7af807dc71caa042783ef4e45cff6a28fd7d79 # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@b6690ae74f6f8042c05ad7ea77c5bb5745ed4a2a # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: smadr
           path: skills/adr/templates
@@ -143,7 +143,7 @@ jobs:
           strict: 'true'
           fail-on-error: 'true'
       - name: Validate ADR — MIF conformance mode (level 3)
-        uses: modeled-information-format/structured-madr@2f7af807dc71caa042783ef4e45cff6a28fd7d79 # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@b6690ae74f6f8042c05ad7ea77c5bb5745ed4a2a # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: mif
           mif-level: '3'
@@ -157,7 +157,7 @@ jobs:
       # type: adr document elsewhere, so nothing can sit between the two
       # gates validated by neither.
       - name: Validate project ADRs — structured-MADR mode (strict)
-        uses: modeled-information-format/structured-madr@2f7af807dc71caa042783ef4e45cff6a28fd7d79 # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@b6690ae74f6f8042c05ad7ea77c5bb5745ed4a2a # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: smadr
           path: docs/adr
@@ -165,7 +165,7 @@ jobs:
           strict: 'true'
           fail-on-error: 'true'
       - name: Validate project ADRs — MIF conformance mode (level 3)
-        uses: modeled-information-format/structured-madr@2f7af807dc71caa042783ef4e45cff6a28fd7d79 # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
+        uses: modeled-information-format/structured-madr@b6690ae74f6f8042c05ad7ea77c5bb5745ed4a2a # main: internal actions SHA-pinned (org policy; v1.2.0 left setup-node on a tag)
         with:
           mode: mif
           mif-level: '3'
