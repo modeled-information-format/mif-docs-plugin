@@ -179,7 +179,7 @@ yield the identical result every time.
 
 - **CI** (`.github/workflows/ci.yml`) runs three job groups: `pin-check` plus
   `actionlint` (thin callers of the org central `.github` reusables
-  `@789b6baf`); `validate` (validate-plugin, hydrate-schema, mif-validate over
+  `@c72b3fae`); `validate` (validate-plugin, hydrate-schema, mif-validate over
   every shipped `good.md`, check-exemplars, planner-check, `test:hook`,
   `lint:md`); and `adr-smadr` (the structured-madr action in both smadr and mif
   modes). All green on `main`.
