@@ -2,7 +2,7 @@
 id: 576d7894-9f72-5f32-af25-a27706e5f8a4
 type: semantic
 created: '2026-07-05T12:00:00Z'
-modified: '2026-08-04T15:49:20.909Z'
+modified: '2026-11-25T15:06:25.000Z'
 namespace: reference/skills
 title: 'Skill reference: mif-corpus'
 tags:
@@ -91,9 +91,11 @@ Four operations over a local vector store: **ingest** (validate a MIF doc,
 prove its round-trip, embed its content, upsert the vector), **search**
 (rank stored docs against a free-text query), **find-similar** (rank docs
 against an already-ingested one, anchor excluded), and **corpus-stats**
-(count, embedding dimension, db path). Results are `(score, id)` pairs in
-cosine similarity, most similar first, keyed by the documents' `urn:mif:`
-ids.
+(count, embedding dimension, db path). Results are `(score, id)` pairs, best
+first, keyed by the documents' `urn:mif:` ids. The score is cosine
+similarity, except for a search on mif-rs 0.13.0 or later in its default
+hybrid mode, where it is a rank-fusion value and the match's `cosine` field
+carries the similarity.
 
 The output is always a *candidate list* for a person or a genre skill to act
 on — cross-link suggestions, coverage checks, corpus navigation. It is never

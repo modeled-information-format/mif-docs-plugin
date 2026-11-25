@@ -45,14 +45,38 @@ enhancement layer: nothing in this suite's conformance path depends on it.
 | Operation | MCP tool | CLI | Behavior |
 | --- | --- | --- | --- |
 | Ingest | `ingest_mif_document` | `mif-cli ingest <file>` | validate + prove round-trip + embed + store |
-| Search | `search_documents` | `mif-cli search "<query>"` | rank stored docs by cosine similarity to the query |
+| Search | `search_documents` | `mif-cli search "<query>"` | rank stored docs against the query (see "Reading search scores") |
 | Similar | `find_similar_documents` | `mif-cli find-similar <id>` | rank docs similar to an ingested one, anchor excluded |
 | Stats | `corpus_stats` | `mif-cli corpus-stats` | count, embedding dimension, db path |
 
-Search and similar results are `(score, id)` pairs, most similar first. Scores
-are cosine similarity; on this suite's own corpus, useful matches typically
-land in the ~0.55-0.78 range. Treat results as **candidates for a human or a
-genre skill to act on** — never as a validation verdict.
+Search and similar results are `(score, id)` pairs, best first. Treat results
+as **candidates for a human or a genre skill to act on** — never as a
+validation verdict.
+
+## Reading search scores
+
+What `score` means depends on the mif-rs release and the search mode. Check
+before comparing a score with a threshold.
+
+- **`find-similar`, and `search` on mif-rs 0.12.0 and earlier**: `score` is
+  cosine similarity. On this suite's own corpus, useful matches typically
+  land in the ~0.55-0.78 range.
+- **`search` on mif-rs 0.13.0 and later**: the default mode is `hybrid`, which
+  also ranks by exact terms so an identifier is found by the text that holds
+  it. `score` is then a rank-fusion value that never exceeds about 0.033. It
+  orders the results and says nothing about how similar a match is.
+
+To judge similarity on 0.13.0 and later:
+
+- **MCP**: read the match's `cosine` field. When a match has no `cosine`
+  field, the server predates hybrid search and `score` is the cosine.
+- **CLI**: run `mif-cli --version`. On 0.13.0 or later pass `--mode semantic`,
+  which prints cosine scores, or pass `--format json` and read `cosine`.
+
+Never compare a hybrid `score` with the 0.55-0.78 range. A match on 0.13.0
+and later also carries the passage that matched (`heading`, `text`, `span`);
+`get_passage` / `mif-cli get-passage <id> --heading <heading>` returns that
+section alone, so there is no need to read the whole document.
 
 ## Multi-root queries (spanning a shared central store)
 
@@ -69,9 +93,12 @@ one via `mif-corpus ingest`, at an XDG-conformant path —
 `$HOME/.local/share/claude-artifact-authoring/corpus/vectors.db`, i.e.
 `${XDG_DATA_HOME:-$HOME/.local/share}` with the default expanded).
 
-- Results are **merge-ranked by cosine similarity across every root** for
+- Results are **merged into one ranked list across every root** for
   `search`/`find-similar` — not grouped or root-ordered — with each match
-  additionally tagged with the root it came from. Single-root behavior (no
+  additionally tagged with the root it came from. `find-similar`, and
+  `search` in semantic mode, merge by cosine similarity; hybrid `search`
+  ranks cosine similarities together and keeps each document's exact-term
+  rank from its own root. Single-root behavior (no
   `--extra-db-path`/`extra_db_paths` given) is unchanged.
 - `corpus-stats`/`corpus_stats` is not a ranked search — with extra roots it
   returns the primary root's `count`/`dim` plus a `total_count` and a

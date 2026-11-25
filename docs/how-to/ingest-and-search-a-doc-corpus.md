@@ -2,7 +2,7 @@
 id: ab686156-bb99-5f84-8b9b-80f14eecca93
 type: procedural
 created: '2026-07-05T12:00:00Z'
-modified: '2026-07-28T22:29:27.455Z'
+modified: '2026-11-25T15:06:25.000Z'
 namespace: how-to/corpus
 title: How to Ingest and Search a MIF Doc Corpus
 tags:
@@ -98,9 +98,18 @@ the failure signal.
 mif-cli search "how do I validate a document against the MIF schema" --limit 5
 ```
 
-The output is ranked `(score, id)` pairs, most similar first. Useful matches
-on this suite's corpus typically score about 0.55-0.78. An empty store
-returns `(no matches)`.
+The output is ranked `(score, id)` pairs, best first. An empty store returns
+`(no matches)`.
+
+What the score means depends on the mif-rs release. On 0.12.0 and earlier it
+is cosine similarity, and useful matches on this suite's corpus typically
+score about 0.55-0.78. On 0.13.0 and later the default ranking also counts
+exact terms, and the score is a rank-fusion value that never exceeds about
+0.033. To see cosine similarity there, ask for the semantic ranking:
+
+```bash
+mif-cli search "how do I validate a document against the MIF schema" --limit 5 --mode semantic
+```
 
 ## Find cross-link candidates
 

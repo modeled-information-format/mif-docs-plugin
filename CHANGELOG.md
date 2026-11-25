@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-10-08T00:00:00.000Z'
+modified: '2026-11-25T15:07:08.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,18 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Fixed
+
+- **`doc-set-planner`, `mif-corpus`**: the existing-coverage check compares
+  a hit's cosine similarity with its 0.55 threshold, not the raw `score`.
+  From mif-rs 0.13.0, `search` ranks in hybrid mode by default and `score` is
+  a rank-fusion value that never exceeds about 0.033, so the check would
+  never have fired. The skills now read the match's `cosine` field when it
+  has one, fall back to `score` on mif-rs 0.12.0 and earlier, and use
+  `--mode semantic` on the CLI. `mif-corpus` gains a "Reading search scores"
+  section, and the corpus how-to and reference pages say what `score` means
+  in each release and mode.
 
 ## [0.10.0] - 2026-10-08
 

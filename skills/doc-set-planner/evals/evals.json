@@ -100,7 +100,7 @@
     {
       "id": 7,
       "prompt": "Plan the diataxis doc set for our webhook subsystem. We already have a semantic corpus over docs/ at .mif/vectors.db.",
-      "expected_output": "Loads the diataxis recipe, and before emitting the plan searches the corpus for each planned member's scope; any hit scoring around 0.55 or higher is surfaced in the plan as an existing-coverage decision (extend the found doc or create and cross-link it), with the score and urn:mif id shown.",
+      "expected_output": "Loads the diataxis recipe, and before emitting the plan searches the corpus for each planned member's scope; any hit whose cosine similarity is around 0.55 or higher is surfaced in the plan as an existing-coverage decision (extend the found doc or create and cross-link it), with the cosine similarity and urn:mif id shown. The similarity is read from the match's cosine field when it has one (mif-rs 0.13.0 or later, or mif-cli search --mode semantic), not from a hybrid rank-fusion score.",
       "files": [],
       "deterministic_checks": [
         {
