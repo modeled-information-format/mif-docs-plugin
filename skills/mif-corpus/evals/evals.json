@@ -32,7 +32,7 @@
       "expected_output": "Runs search_documents (or mif-cli search) with a natural-language query against .mif/vectors.db and presents the ranked (score, id) results, identifying the top match.",
       "files": [],
       "expectations": [
-        "Presents ranked results with their cosine scores and ids verbatim from the tool output, without inventing or reordering matches",
+        "Presents ranked results with their scores and ids verbatim from the tool output, without inventing or reordering matches, and does not describe a hybrid rank-fusion score (mif-rs 0.13.0 or later) as a cosine similarity",
         "Frames the result as a discovery candidate, not a validation verdict — conformance questions still go to mif-validate"
       ]
     },

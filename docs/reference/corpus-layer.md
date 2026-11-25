@@ -2,7 +2,7 @@
 id: a566b5e9-3243-57da-b8bb-83bad1993f75
 type: semantic
 created: '2026-07-05T12:00:00Z'
-modified: '2026-08-04T15:48:55.755Z'
+modified: '2026-11-25T15:06:25.000Z'
 namespace: reference/corpus
 title: The Semantic Corpus Layer
 tags:
@@ -83,9 +83,19 @@ enhancement — no gate, hook, or genre skill depends on it.
 | Ontology | `resolve_ontology_reference` | `ontology resolve` | three-tier `extends` chain |
 
 Ingest is fail-closed: a document that fails schema validation or the
-lossless round-trip stores nothing. Scores are cosine similarity in
-`-1.0..=1.0`; on this suite's own corpus, useful matches typically score
-about `0.55` to `0.78`.
+lossless round-trip stores nothing.
+
+| Operation and release | What `score` is |
+| --- | --- |
+| Similar, any release | cosine similarity in `-1.0..=1.0` |
+| Search, mif-rs 0.12.0 and earlier | cosine similarity in `-1.0..=1.0` |
+| Search, mif-rs 0.13.0 and later, mode `semantic` | cosine similarity in `-1.0..=1.0` |
+| Search, mif-rs 0.13.0 and later, mode `hybrid` (the default) | rank-fusion value, at most `2/61` (about `0.033`) |
+
+On this suite's own corpus, useful matches typically have a cosine similarity
+of about `0.55` to `0.78`. From mif-rs 0.13.0 a search match reports its
+cosine similarity as `cosine` in every mode (MCP, and `mif-cli --format json`),
+beside the heading, text, and span of the passage that matched.
 
 ## Contracts
 

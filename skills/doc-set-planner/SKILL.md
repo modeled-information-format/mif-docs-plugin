@@ -58,10 +58,15 @@ When the optional mif-rs tooling is available (an `mif-mcp` server or the
 conventions), the engine uses it at exactly two points:
 
 - **Plan** — search the corpus (`search_documents` / `mif-cli search`) with
-  each planned member's one-line scope. A hit scoring roughly 0.55 or higher
-  is surfaced in the plan as an existing-coverage decision: extend the found
-  doc, or proceed and cross-link it. State the score and id; the human (or
-  calling context) decides.
+  each planned member's one-line scope. A hit whose **cosine similarity** is
+  roughly 0.55 or higher is surfaced in the plan as an existing-coverage
+  decision: extend the found doc, or proceed and cross-link it. Read the
+  similarity as the `mif-corpus` skill's "Reading search scores" section
+  says: the match's `cosine` field when it has one, otherwise `score`; on
+  the CLI with mif-rs 0.13.0 or later, pass `--mode semantic`. Since mif-rs
+  0.13.0 the default `score` is a rank-fusion value that never reaches 0.55,
+  so comparing it would hide every existing doc. State the cosine similarity
+  and id; the human (or calling context) decides.
 - **Reconcile** — for each produced member, run find-similar
   (`find_similar_documents` / `mif-cli find-similar`) on its `urn:mif:` id
   and offer the top matches as candidate `relationships[]` targets beyond
