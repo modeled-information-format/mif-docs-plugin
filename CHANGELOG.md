@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-11-25T15:07:08.000Z'
+modified: '2026-11-25T15:31:03.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,8 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.1] - 2026-11-25
 
 ### Fixed
 
