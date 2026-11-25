@@ -2,7 +2,7 @@
 id: bcb731a5-1b66-5990-af7a-f68629fe3be1
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-11-25T15:43:00.000Z'
+modified: '2026-11-25T15:46:31.000Z'
 namespace: runbook/mif-docs-release
 title: 'mif-docs: Cut an Attested Release'
 tags:
@@ -285,10 +285,19 @@ install moves separately:
   release when that marketplace is refreshed in the app's plugin settings.
   Nothing run on a workstation forces it.
 
-Either way, Claude Code does not install the plugin's npm packages (its
-`package.json` sets `overrides`), so the installed copy needs `npm ci` and
-`npm run hydrate-schema` run in it once before `mif-validate` and the guard
-hook work. Confirm a command-line install with:
+Either way, the installed copy needs `npm run hydrate-schema` run in it once
+before `mif-validate` and the guard hook work, since the schema is fetched and
+not shipped. Claude Code installs the plugin's npm packages itself, but only
+while the root `package.json` carries no npm `overrides`: it does not apply
+them, and skips the package install entirely when they are present. Keep
+overrides in `tools/lint/package.json`, where the lint tooling lives, and
+confirm before cutting a release:
+
+```bash
+node -e 'process.exit("overrides" in require("./package.json") ? 1 : 0)'
+```
+
+Expected result: exit status 0. Confirm a command-line install with:
 
 ```bash
 claude plugin list | grep -A1 'mif-docs@modeled-information-format'

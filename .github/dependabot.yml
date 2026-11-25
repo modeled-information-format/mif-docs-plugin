@@ -11,7 +11,9 @@ updates:
     commit-message:
       prefix: "ci"
   - package-ecosystem: "npm"
-    directory: "/"
+    directories:
+      - "/"
+      - "/tools/lint"
     schedule:
       interval: "weekly"
       day: "monday"

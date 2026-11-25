@@ -1,0 +1,14 @@
+{
+  "name": "mif-docs-lint-tools",
+  "version": "0.0.0",
+  "description": "Markdown lint tooling for the mif-docs repo. Kept out of the plugin's own package.json so that file carries no npm overrides, which stop Claude Code installing the plugin's packages.",
+  "private": true,
+  "license": "MIT",
+  "devDependencies": {
+    "markdownlint-cli2": "0.24.2"
+  },
+  "overrides": {
+    "katex": "^0.18.2",
+    "smol-toml": "^1.9.0"
+  }
+}
