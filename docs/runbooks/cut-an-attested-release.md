@@ -2,7 +2,7 @@
 id: bcb731a5-1b66-5990-af7a-f68629fe3be1
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-07-28T23:51:23.410Z'
+modified: '2026-11-25T15:43:00.000Z'
 namespace: runbook/mif-docs-release
 title: 'mif-docs: Cut an Attested Release'
 tags:
@@ -237,8 +237,28 @@ auto-generated branch dismisses the hub's own pre-approval (standard
 branch-protection behavior on new commits) — merge with `--admin` rather
 than waiting for a fresh approval that has to come from a human anyway.
 
+**Check the hub is enabled first.** GitHub disables a workflow in a repository
+that has had no activity for 60 days, and releases of this plugin can be
+further apart than that. A disabled hub accepts the dispatch and runs nothing,
+so `notify-catalog-hub` still reports success and no PR ever appears (this
+happened for v0.10.1, which was pinned by hand).
+
+```bash
+gh api repos/modeled-information-format/.github/actions/workflows \
+  -q '.workflows[] | select(.path | test("plugin-catalog-update-hub")) | .state'
+```
+
+Expected result: `active`. If it prints `disabled_inactivity`, enable it and
+then use the fallback below, since the dispatch that was sent is gone:
+
+```bash
+gh workflow enable plugin-catalog-update-hub.yml \
+  --repo modeled-information-format/.github
+```
+
 **Fallback — only if 20+ minutes pass with no PR appearing at all** (the
-dispatch failed, or the hub run itself errored): trigger it by hand —
+dispatch failed, the hub was disabled, or the hub run itself errored): trigger
+it by hand —
 
 ```bash
 gh workflow run plugin-catalog-update-hub.yml \
@@ -251,6 +271,30 @@ sha) and open the PR by hand. `catalog-admission` re-verifies the release
 attestation fail-closed either way; once merged,
 `claude plugin install mif-docs@modeled-information-format` resolves to the
 new version.
+
+### 7a. How installed copies reach the new release
+
+Merging the marketplace pin does not change any installed copy. Each kind of
+install moves separately:
+
+- **Command-line install** — the user runs
+  `claude plugin marketplace update modeled-information-format` and then
+  `claude plugin update mif-docs@modeled-information-format`.
+- **Claude desktop or web app, from a claude.ai account marketplace** — the
+  account's sync copies the plugin to each machine. It moves to the new
+  release when that marketplace is refreshed in the app's plugin settings.
+  Nothing run on a workstation forces it.
+
+Either way, Claude Code does not install the plugin's npm packages (its
+`package.json` sets `overrides`), so the installed copy needs `npm ci` and
+`npm run hydrate-schema` run in it once before `mif-validate` and the guard
+hook work. Confirm a command-line install with:
+
+```bash
+claude plugin list | grep -A1 'mif-docs@modeled-information-format'
+```
+
+Expected result: a `Version:` line showing the release just cut.
 
 ## 8. Detection, symptoms & rollback
 

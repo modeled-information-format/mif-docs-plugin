@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-11-25T15:31:03.000Z'
+modified: '2026-11-25T15:43:00.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,17 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+### Documentation
+
+- **README**: says that Claude Code does not install the plugin's npm
+  packages (its `package.json` sets `overrides`), so an installed copy needs
+  `npm ci` and `npm run hydrate-schema` once; and adds an Update section
+  covering a command-line install and a claude.ai account marketplace.
+- **Release runbook**: section 7 checks that `plugin-catalog-update-hub` is
+  enabled before waiting on its PR (GitHub disables it after 60 days without
+  activity, and a disabled hub drops the release's dispatch silently), and a
+  new section 7a says how each kind of installed copy reaches a release.
 
 ## [0.10.1] - 2026-11-25
 

@@ -29,6 +29,30 @@ claude plugin marketplace add modeled-information-format/claude-code-plugins
 claude plugin install mif-docs@modeled-information-format
 ```
 
+Claude Code does not install this plugin's npm packages, because its
+`package.json` sets `overrides`. Until they are installed, `mif-validate` and
+the fail-closed guard hook cannot run. After installing or updating, run this
+once in the installed copy (`claude plugin list --json` shows its path):
+
+```bash
+npm ci
+npm run hydrate-schema
+```
+
+### Update
+
+A command-line install follows the marketplace's pinned release:
+
+```bash
+claude plugin marketplace update modeled-information-format
+claude plugin update mif-docs@modeled-information-format
+```
+
+In the Claude desktop and web apps, a plugin added from a claude.ai account
+marketplace is copied to each machine by the account's own sync. It moves to
+a new release when that marketplace is refreshed in the app's plugin settings,
+not when the commands above are run.
+
 The release is attested with SLSA build provenance — verify the artifact before
 trusting it:
 
