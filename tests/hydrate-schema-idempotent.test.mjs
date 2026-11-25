@@ -13,6 +13,7 @@ import {
   lockMetadataChanged,
   parseLock,
   shouldWriteLock,
+  integrityViolations,
 } from '../scripts/lib/hydrate-schema-lib.mjs';
 
 const meta = {
@@ -111,4 +112,38 @@ test('parseLock round-trips a valid lock', () => {
 test('an unreadable lock is treated as absent, so the run rewrites it', () => {
   const fileStates = meta.files.map(() => cached('{"a":1}'));
   assert.equal(shouldWriteLock(fileStates, parseLock('{ broken'), meta), true);
+});
+
+// The lock pins a sha256 per file for its resolved version. mif-validate
+// fetches the schema by itself on first use, so a download for that version
+// is checked against the pins before it is cached.
+const PINNED = {
+  resolvedVersion: '1.4.2',
+  sha256: { 'mif.schema.json': 'aaa', 'context.jsonld': 'bbb' },
+};
+
+test('a download matching the pinned digests has no integrity violations', () => {
+  assert.deepEqual(
+    integrityViolations(PINNED, '1.4.2', { 'mif.schema.json': 'aaa', 'context.jsonld': 'bbb' }),
+    [],
+  );
+});
+
+test('a pinned file served with different bytes is an integrity violation', () => {
+  assert.deepEqual(
+    integrityViolations(PINNED, '1.4.2', { 'mif.schema.json': 'zzz', 'context.jsonld': 'bbb' }),
+    ['mif.schema.json'],
+  );
+});
+
+test('a file the lock does not pin, or a download that skipped a file, violates nothing', () => {
+  assert.deepEqual(integrityViolations(PINNED, '1.4.2', { 'citation.schema.json': 'ccc' }), []);
+  assert.deepEqual(integrityViolations(PINNED, '1.4.2', { 'mif.schema.json': 'aaa' }), []);
+});
+
+test('nothing is pinned for another version, a lock without digests, or no lock', () => {
+  const digests = { 'mif.schema.json': 'zzz' };
+  assert.deepEqual(integrityViolations(PINNED, '1.5.0', digests), []);
+  assert.deepEqual(integrityViolations({ resolvedVersion: '1.4.2' }, '1.4.2', digests), []);
+  assert.deepEqual(integrityViolations(null, '1.4.2', digests), []);
 });

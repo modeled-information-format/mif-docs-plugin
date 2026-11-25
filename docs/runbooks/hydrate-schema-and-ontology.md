@@ -2,7 +2,7 @@
 id: bc3f1a0a-10d8-59ee-830b-0279b1ed897d
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-11-25T18:06:10.000Z'
 namespace: runbook/mif-docs-hydration
 title: 'mif-docs: Hydrate Schema & Ontology Caches'
 tags:
@@ -149,14 +149,18 @@ warning during release prep, stop and restore network before continuing.
 
 This fallback works because a failed `hydrate-schema` never rewrites
 `schema/VENDOR.lock` — it stays pointed at whatever version was last
-successfully hydrated, whose cache is still on disk. `mif-validate` itself
-never triggers a hydrate or warns; it just reads whatever `VENDOR.lock`
-already points to. That means a plugin instance that has **never** been
-hydrated at all (a fresh install, before `npm run hydrate-schema` has ever
-run on this machine) has no last-known-good copy to fall back to — there
-is nothing to be stale relative to. `mif-validate` reports that case as a
-distinct, non-fallback error (exit `3`) telling you to hydrate for the
-first time, rather than a schema-resolution warning.
+successfully hydrated, whose cache is still on disk. `mif-validate` reads
+whatever `VENDOR.lock` already points to and never refreshes a cache that is
+present.
+
+A plugin instance that has **never** been hydrated (a fresh install) has no
+last-known-good copy to fall back to. There, `mif-validate` runs
+`hydrate-schema` itself, once, and says so on stderr. The download is checked
+against the sha256 digests `VENDOR.lock` pins for its version, and a file
+that does not match is refused and not cached. If that fetch fails (no
+network, or a digest mismatch), or `MIF_DOCS_NO_AUTO_HYDRATE=1` forbids it,
+`mif-validate` reports a distinct error (exit `3`) with the reason, rather
+than a schema-resolution warning.
 
 ## 7. Verification
 

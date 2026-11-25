@@ -8,6 +8,7 @@
 // round-trip oracle, so either form can be the authored input or the emitted
 // output.
 import { readFileSync, existsSync, readdirSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import Ajv2020 from "ajv/dist/2020.js";
@@ -173,20 +174,58 @@ function schemaNotHydrated(detail) {
   return err;
 }
 
-export function loadValidator() {
+// Where the hydrated schema should be, or why it is not there.
+function locateSchema() {
   const lockPath = join(ROOT, "schema", "VENDOR.lock");
-  if (!existsSync(lockPath)) {
-    throw schemaNotHydrated(`missing ${lockPath}`);
-  }
+  if (!existsSync(lockPath)) return { missing: `missing ${lockPath}` };
   const lock = JSON.parse(readFileSync(lockPath, "utf8"));
   const dir = join(ROOT, "schema", ".cache", lock.resolvedVersion);
   const schemaPath = join(dir, "mif.schema.json");
   // A partial/interrupted hydrate can leave the directory present but the
   // schema file itself missing — check the file, not just its parent, so
   // that case still gets the coded error rather than a raw ENOENT.
-  if (!existsSync(schemaPath)) {
-    throw schemaNotHydrated(`missing ${schemaPath}`);
+  if (!existsSync(schemaPath)) return { missing: `missing ${schemaPath}` };
+  return { lock, dir, schemaPath };
+}
+
+// Fetch the pinned schema by running hydrate-schema.mjs, which checks the
+// download against the digests in VENDOR.lock. Returns null on success, or a
+// one-line reason it could not.
+function hydrateNow() {
+  const res = spawnSync(process.execPath, [join(ROOT, "scripts", "hydrate-schema.mjs")], {
+    cwd: ROOT,
+    encoding: "utf8",
+    // Short enough to finish, or give up, inside the 30-second budget of the
+    // hooks that load the validator.
+    timeout: 20_000,
+  });
+  if (res.status === 0) return null;
+  const output = `${res.stderr || ""}`.trim().split("\n")[0];
+  return res.error?.message || output || `hydrate-schema exited ${res.status}`;
+}
+
+// The schema cache is gitignored and is not part of a release, so every
+// fresh install starts without it. Rather than fail until someone runs
+// `npm run hydrate-schema` by hand, the first load fetches it. Set
+// MIF_DOCS_NO_AUTO_HYDRATE=1 to forbid the network call; the load then fails
+// with SCHEMA_NOT_HYDRATED as it always did.
+export function loadValidator() {
+  let located = locateSchema();
+  if (located.missing) {
+    if (process.env.MIF_DOCS_NO_AUTO_HYDRATE === "1") {
+      throw schemaNotHydrated(located.missing);
+    }
+    const failure = hydrateNow();
+    if (failure) {
+      throw schemaNotHydrated(`${located.missing}; fetching it automatically failed: ${failure}`);
+    }
+    located = locateSchema();
+    if (located.missing) throw schemaNotHydrated(located.missing);
+    console.error(
+      `mif-docs: the schema cache was empty; fetched MIF schema ${located.lock.resolvedVersion} from mif-spec.dev`,
+    );
   }
+  const { lock, dir, schemaPath } = located;
   const mif = JSON.parse(readFileSync(schemaPath, "utf8"));
 
   const ajv = new Ajv2020({ allErrors: true, strict: false });

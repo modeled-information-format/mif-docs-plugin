@@ -29,18 +29,19 @@ claude plugin marketplace add modeled-information-format/claude-code-plugins
 claude plugin install mif-docs@modeled-information-format
 ```
 
-Claude Code installs the plugin's npm packages with it. The canonical MIF
-schema is fetched, not shipped, so `mif-validate` and the fail-closed guard
-hook cannot run until it is hydrated. After installing or updating, run this
-once in the installed copy (`claude plugin list --json` shows its path):
+Nothing else needs running. Claude Code installs the plugin's npm packages
+with it. The canonical MIF schema is fetched, not shipped: the first time
+`mif-validate` or the fail-closed guard hook runs, it downloads the pinned
+schema from `mif-spec.dev` and checks every file against the sha256 recorded
+in `schema/VENDOR.lock` before caching it. That first use needs network
+access. On a machine without it, set `MIF_DOCS_NO_AUTO_HYDRATE=1` to stop the
+attempt and run `npm run hydrate-schema` in the installed copy when online
+(`claude plugin list --json` shows its path).
 
-```bash
-npm run hydrate-schema
-```
-
-On v0.10.1 and earlier the packages are not installed either (that release's
-`package.json` set npm `overrides`, which Claude Code does not apply); run
-`npm ci` in the installed copy first.
+Releases before v0.10.3 do not fetch the schema themselves; run
+`npm run hydrate-schema` in the installed copy once. On v0.10.1 and earlier
+the packages are not installed either (that release's `package.json` set npm
+`overrides`, which Claude Code does not apply); run `npm ci` there first.
 
 ### Update
 

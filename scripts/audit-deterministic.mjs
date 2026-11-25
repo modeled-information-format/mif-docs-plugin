@@ -186,7 +186,7 @@ if (enabled.has("frontmatter-schema") || enabled.has("mif-level-gap")) {
   } catch (e) {
     const reason =
       e.code === "SCHEMA_NOT_HYDRATED"
-        ? "schema not hydrated — run `npm run hydrate-schema` in the mif-docs plugin"
+        ? `${e.message} (in the mif-docs plugin)`
         : `validator failed to load: ${e.message}`;
     if (enabled.has("frontmatter-schema")) skipped.push({ check_id: "frontmatter-schema", reason });
     if (enabled.has("mif-level-gap")) skipped.push({ check_id: "mif-level-gap", reason });
