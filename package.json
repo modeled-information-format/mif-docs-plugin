@@ -1,6 +1,6 @@
 {
   "name": "mif-docs",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "description": "MIF-first documentation skill suite plugin \u2014 tooling (mif-validate, plugin manifest validation).",
   "type": "module",
   "private": true,
@@ -18,7 +18,7 @@
     "doctor": "node scripts/doctor.mjs",
     "check-doc-links": "node scripts/check-doc-links.mjs",
     "test:hook": "node --test tests/*.test.mjs",
-    "lint:md": "markdownlint-cli2 \"**/*.md\" \"#node_modules\""
+    "lint:md": "npm --prefix tools/lint ci --no-audit --no-fund && tools/lint/node_modules/.bin/markdownlint-cli2 \"**/*.md\" \"#node_modules\""
   },
   "dependencies": {
     "@mermaid-js/mermaid-cli": "12.2.0",
@@ -27,12 +27,5 @@
     "js-yaml": "5.5.0",
     "pdf-lib": "1.17.1",
     "puppeteer": "25.18.1"
-  },
-  "devDependencies": {
-    "markdownlint-cli2": "0.24.2"
-  },
-  "overrides": {
-    "katex": "^0.18.2",
-    "smol-toml": "^1.9.0"
   }
 }

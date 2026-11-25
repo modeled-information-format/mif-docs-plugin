@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-11-25T15:31:03.000Z'
+modified: '2026-11-25T15:46:31.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,31 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.2] - 2026-11-25
+
+### Fixed
+
+- **Install**: Claude Code now installs the plugin's npm packages. The root
+  `package.json` set npm `overrides` (the katex and smol-toml security pins),
+  which Claude Code does not apply, so it skipped the package install and a
+  fresh install could not run `mif-validate` or the guard hook until `npm ci`
+  was run by hand. Only the markdown lint tooling needed the pins, so it
+  moves, with them, to `tools/lint/package.json`; `npm run lint:md` installs
+  and runs it from there. The resolved versions are unchanged. The braces
+  scan waiver in `osv-scanner.toml` moves there too, beside the only root-level
+  lockfile that still resolves braces.
+
+### Documentation
+
+- **README**: says an installed copy needs `npm run hydrate-schema` once, and
+  adds an Update section covering a command-line install and a claude.ai
+  account marketplace.
+- **Release runbook**: section 7 checks that `plugin-catalog-update-hub` is
+  enabled before waiting on its PR (GitHub disables it after 60 days without
+  activity, and a disabled hub drops the release's dispatch silently), and a
+  new section 7a says how each kind of installed copy reaches a release and
+  that the root `package.json` must carry no `overrides`.
 
 ## [0.10.1] - 2026-11-25
 
