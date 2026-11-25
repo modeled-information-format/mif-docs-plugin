@@ -204,8 +204,9 @@ used below (all under `${CLAUDE_PLUGIN_ROOT}/scripts/`):
 - `${CLAUDE_PLUGIN_ROOT}/skills` — genre skills; genre-conformance judgment
   is grounded in the matching genre skill file, not general knowledge.
 
-If the deterministic runner reports its schema or ontology cache is not
-hydrated, run `npm run hydrate-schema` / `npm run hydrate-ontology` in
+The runner fetches the schema itself when its cache is empty. If it still
+reports the schema cache is not hydrated (the fetch failed), or the ontology
+cache is not, run `npm run hydrate-schema` / `npm run hydrate-ontology` in
 `${CLAUDE_PLUGIN_ROOT}` once and retry before giving up on those checks.
 
 ## Step 1 — Discover targets and load state (scripts only, no Agent call)

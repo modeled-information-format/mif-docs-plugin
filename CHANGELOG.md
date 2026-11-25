@@ -2,7 +2,7 @@
 id: 12c4bdeb-e36a-5687-9588-abad9a8d2c9f
 type: episodic
 created: '2026-06-30T00:00:00Z'
-modified: '2026-11-25T15:46:31.000Z'
+modified: '2026-11-25T18:06:10.000Z'
 namespace: changelog/mif-docs
 title: Changelog
 tags:
@@ -61,6 +61,23 @@ The format is based on
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [0.10.3] - 2026-11-25
+
+### Changed
+
+- **`mif-validate`, guard hook**: an empty schema cache is filled on first
+  use. The cache is not part of a release, so every fresh install started
+  without it, and `mif-validate` and the fail-closed guard hook failed until
+  `npm run hydrate-schema` was run by hand. The validator now runs it once
+  itself and says so on stderr. If the fetch fails it exits 3 with the reason,
+  as before. `MIF_DOCS_NO_AUTO_HYDRATE=1` forbids the network call.
+- **`hydrate-schema`**: `schema/VENDOR.lock` pins a sha256 for each schema
+  file. A download for the pinned version is checked against those digests
+  before anything is cached, and a file that does not match is refused. The
+  digests equal the ones mif-rs vendors for MIF 1.4.2. Cache files are written
+  through a temp file and a rename, so a concurrent validator never reads a
+  half-written schema.
 
 ## [0.10.2] - 2026-11-25
 

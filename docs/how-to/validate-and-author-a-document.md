@@ -2,7 +2,7 @@
 id: 13ddfe21-b287-5589-82d9-d9eb8f954f8a
 type: procedural
 created: '2026-06-30T10:00:00Z'
-modified: '2026-06-30T10:00:00Z'
+modified: '2026-11-25T18:06:10.000Z'
 namespace: how-to/authoring
 title: How to Validate and Author a MIF Document
 tags:
@@ -72,8 +72,9 @@ want to produce.
 
 - The mif-docs plugin installed (`claude plugin install
   mif-docs@modeled-information-format`).
-- The canonical schema hydrated locally — run `npm run hydrate-schema` once if
-  `schema/VENDOR.lock` is absent.
+- Network access the first time you validate: `mif-validate` fetches the
+  canonical schema itself when its cache is empty. Offline, run
+  `npm run hydrate-schema` in the plugin once while you have a connection.
 - Node.js 20+ on your `PATH`.
 
 ## Validate any document

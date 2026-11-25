@@ -7,16 +7,22 @@
 // schema/VENDOR.lock for reproducibility. Offline, mif-validate falls back to
 // the last hydrated version and warns; this script surfaces the fetch failure.
 //
+// VENDOR.lock also pins each file's sha256. mif-validate runs this script by
+// itself the first time it finds the cache empty, so a download for the pinned
+// version is checked against those digests before anything is written: bytes
+// that do not match are refused, never cached.
+//
 // Idempotent: VENDOR.lock records the resolved schema IDENTITY — source,
-// channel, resolvedVersion, and the file set. hydratedAt moves only when that
+// channel, resolvedVersion, the file set, and the digests. hydratedAt moves only when that
 // identity changes, or when a file already in the cache comes back from
 // upstream with different bytes. Repopulating the gitignored schema/.cache/
 // is not itself a change, so a fresh clone can hydrate and stay clean, and a
 // re-run against an unchanged schema writes nothing at all.
-import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
+import { mkdirSync, writeFileSync, readFileSync, existsSync, renameSync } from "node:fs";
+import { createHash } from "node:crypto";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { parseLock, shouldWriteLock } from "./lib/hydrate-schema-lib.mjs";
+import { parseLock, shouldWriteLock, integrityViolations } from "./lib/hydrate-schema-lib.mjs";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const CACHE = join(ROOT, "schema", ".cache");
@@ -50,6 +56,14 @@ async function fetchText(url) {
 // file disappears between existsSync and readFileSync — is treated as
 // "nothing there," never thrown. Both the idempotency check and the
 // error-path lock lookup below depend on this never throwing.
+// Write through a sibling temp file and rename, so a validator running at the
+// same moment never reads a half-written schema.
+function writeAtomic(path, text) {
+  const tmp = `${path}.${process.pid}.tmp`;
+  writeFileSync(tmp, text);
+  renameSync(tmp, path);
+}
+
 function readExisting(path) {
   try {
     return existsSync(path) ? readFileSync(path, "utf8") : null;
@@ -75,16 +89,12 @@ async function main() {
   mkdirSync(join(outDir, "definitions"), { recursive: true });
   mkdirSync(join(outDir, "ontology"), { recursive: true });
 
-  const fetched = [];
-  const fileStates = [];
+  // Fetch everything first and write nothing: the digests are checked
+  // against the lock before any byte reaches the cache.
+  const downloads = [];
   for (const rel of FILES) {
     try {
-      const text = await fetchText(`${BASE}/${versionSeg}/${rel}`);
-      const dest = join(outDir, rel);
-      const existing = readExisting(dest);
-      if (existing !== text) writeFileSync(dest, text);
-      fileStates.push({ existing, fetched: text });
-      fetched.push(rel);
+      downloads.push({ rel, text: await fetchText(`${BASE}/${versionSeg}/${rel}`) });
     } catch (e) {
       // citation/ontology are not load-bearing for core validation; warn only.
       if (rel === "mif.schema.json") throw e;
@@ -93,11 +103,34 @@ async function main() {
   }
 
   const existingLock = parseLock(readExisting(LOCK));
+  const sha256 = {};
+  for (const { rel, text } of downloads) {
+    sha256[rel] = createHash("sha256").update(text).digest("hex");
+  }
+  const violations = integrityViolations(existingLock, resolved, sha256);
+  if (violations.length) {
+    throw new Error(
+      `integrity check failed for ${violations.join(", ")}: the bytes served for MIF schema ` +
+        `${resolved} do not match the sha256 pinned in schema/VENDOR.lock. Nothing was cached.`,
+    );
+  }
+
+  const fetched = [];
+  const fileStates = [];
+  for (const { rel, text } of downloads) {
+    const dest = join(outDir, rel);
+    const existing = readExisting(dest);
+    if (existing !== text) writeAtomic(dest, text);
+    fileStates.push({ existing, fetched: text });
+    fetched.push(rel);
+  }
+
   const meta = {
     source: BASE,
     channel,
     resolvedVersion: resolved,
     files: fetched,
+    sha256,
   };
 
   if (!shouldWriteLock(fileStates, existingLock, meta)) {

@@ -40,9 +40,12 @@ reporting an `emit-jsonld`/`emit-markdown`/`roundtrip` result.
 The bundled schema hydrates from `mif-spec.dev` into `schema/.cache/<ver>/`
 from the pinned MIF release's mirror (`MIF_SPEC_VERSION` in
 `scripts/hydrate-schema.mjs`), never the floating `latest`; `schema/VENDOR.lock`
-records the resolved version. Offline, validation
-falls back to the last hydrated version and warns. Determinism holds *within* a
-resolved version.
+records the resolved version and a sha256 per file. A fresh install has no
+cache: the first validation fetches it, checks each file against those
+digests, and says so on stderr. If that fetch fails, `mif-validate` exits 3
+with the reason; that is a tooling gap, not a document failure, and the remedy
+is `npm run hydrate-schema` with network access. Offline, validation uses the
+last hydrated version. Determinism holds *within* a resolved version.
 
 ## Commands
 

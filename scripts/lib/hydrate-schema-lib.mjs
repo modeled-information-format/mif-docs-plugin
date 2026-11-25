@@ -10,7 +10,25 @@ export function lockMetadataChanged(existingLock, meta) {
     existingLock.source !== meta.source ||
     existingLock.channel !== meta.channel ||
     existingLock.resolvedVersion !== meta.resolvedVersion ||
-    JSON.stringify(existingLock.files) !== JSON.stringify(meta.files)
+    JSON.stringify(existingLock.files) !== JSON.stringify(meta.files) ||
+    JSON.stringify(existingLock.sha256 ?? null) !== JSON.stringify(meta.sha256 ?? null)
+  );
+}
+
+// The files whose fetched bytes do not match the digest the lock pins for
+// this exact schema version. A MIF release's /schema/<version>/ mirror is
+// immutable, so a pinned file that comes back different is a tampered or
+// corrupted download, never an update: the caller must refuse to cache it.
+//
+// Nothing is pinned, and so nothing can violate, when there is no lock, the
+// lock predates digests, or the run resolves a different version than the
+// lock records (a deliberate re-pin, or the `latest` channel).
+export function integrityViolations(existingLock, resolvedVersion, digests) {
+  const pinned = existingLock?.sha256;
+  if (!pinned || typeof pinned !== "object") return [];
+  if (existingLock.resolvedVersion !== resolvedVersion) return [];
+  return Object.keys(digests).filter(
+    (rel) => typeof pinned[rel] === "string" && pinned[rel] !== digests[rel],
   );
 }
 

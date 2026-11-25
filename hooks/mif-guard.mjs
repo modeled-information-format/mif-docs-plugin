@@ -118,15 +118,17 @@ if (res.error) {
 
 if (res.status === 0) allow();
 
-// mif-validate exits 3 specifically when the schema cache itself was never
-// hydrated locally — an environment/tooling gap, not a document-conformance
-// problem. Give the actual remedy instead of telling the model to fix
-// frontmatter that may already be conformant.
+// mif-validate exits 3 specifically when the schema cache is empty and could
+// not be filled — it fetches the schema itself on first use, so this means
+// that fetch failed (no network, or it was forbidden) — an environment/tooling
+// gap, not a document-conformance problem. Give the actual remedy instead of
+// telling the model to fix frontmatter that may already be conformant.
 if (res.status === 3) {
   block(
     `MIF fail-closed guard could not validate ${file}: the plugin's schema cache is not ` +
       `hydrated.\n\n${(res.stderr || res.stdout || '').trim()}\n\n` +
-      `Run \`npm run hydrate-schema\` in the mif-docs plugin's install directory ` +
+      `The schema is normally fetched automatically on first use. With network access, ` +
+      `run \`npm run hydrate-schema\` in the mif-docs plugin's install directory ` +
       `(${pluginRoot}), then retry the write.`,
   );
 }

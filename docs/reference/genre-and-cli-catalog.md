@@ -2,7 +2,7 @@
 id: d0a5927e-bee7-5329-968b-3f52e09415ef
 type: semantic
 created: '2026-06-30T10:00:00Z'
-modified: '2026-08-04T15:39:41.700Z'
+modified: '2026-11-25T18:06:10.000Z'
 namespace: reference/catalog
 title: mif-docs genre and CLI catalog
 tags:
@@ -156,7 +156,7 @@ Every script is fail-closed: any failure exits non-zero.
 
 | Script | Invocation | Exit behavior |
 | --- | --- | --- |
-| `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file); `3` schema cache not hydrated locally (environment gap, not a document failure — run `npm run hydrate-schema`). |
+| `mif-validate.mjs` | `mif-validate <file> [--level 1\|2\|3] [--no-roundtrip]` | `0` valid; `1` schema/level/round-trip failure; `2` usage error (no file); `3` schema cache empty and the automatic fetch failed or was forbidden (environment gap, not a document failure — run `npm run hydrate-schema` with network access). |
 | `mif-convert.mjs` | `mif-convert <emit-jsonld\|emit-markdown\|roundtrip> <file> [--no-check]` | `0` success; `1` schema check / non-lossless round-trip; `2` usage error. |
 | `mif-to-pdf.mjs` | `mif-to-pdf <doc.json> [--output out.pdf]` | `0` PDF written; `1` unreadable/unparseable input or missing required MIF L1 field; `2` usage error (no file). |
 | `hydrate-schema.mjs` | `hydrate-schema [<version>\|latest]` (default: the pinned release) | `0` schema cached + `VENDOR.lock` written; `1` fetch failure (reports last hydrated version). |
@@ -188,8 +188,11 @@ the node gates accept.
 - `hydrate-schema` fetches the pinned MIF release (`MIF_SPEC_VERSION` in
   `scripts/hydrate-schema.mjs`) by default, or `latest`/a version given as its
   argument, and records the resolved version
-  in `schema/VENDOR.lock`; offline, `mif-validate` falls back to the last
-  hydrated copy and warns.
+  and each file's sha256 in `schema/VENDOR.lock`. A download for the pinned
+  version that does not match those digests is refused. `mif-validate` runs
+  it once by itself when the cache is empty, unless
+  `MIF_DOCS_NO_AUTO_HYDRATE=1` is set; offline, it uses the last hydrated
+  copy.
 - `planner-check` with no argument checks every recipe under
   `skills/doc-set-planner/recipes/`.
 
