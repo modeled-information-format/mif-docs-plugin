@@ -72,7 +72,9 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   fresh install could not run `mif-validate` or the guard hook until `npm ci`
   was run by hand. Only the markdown lint tooling needed the pins, so it
   moves, with them, to `tools/lint/package.json`; `npm run lint:md` installs
-  and runs it from there. The resolved versions are unchanged.
+  and runs it from there. The resolved versions are unchanged. The braces
+  scan waiver in `osv-scanner.toml` moves there too, beside the only root-level
+  lockfile that still resolves braces.
 
 ### Documentation
 
